@@ -25,11 +25,11 @@ var topupMode = TOPUP_INTERNET;
 var chargerTimer = null;
 var rateType = "1";
 var voucherToConvert = "";
-var juanfiExtendedServerIP = "10.10.10.252"; //change according to your JuanFI extended server IP address
+var juanfiExtendedServerIP = "10.10.10.252"; //change according to your JuanFI extended server (Orange PI) IP address
 
 var juanfiExtendedServerUrl = `http://${juanfiExtendedServerIP}:8080/api/portal`; //do not change value of this line
 
-var redeemRatioValue = 1;
+var redeemRatioValue = 1; //do not change value of this line to avoid conflict/misrepresentation of UI to API data
 
 $(document).ready(function(){
 	//$(document).ajaxStart(function(){ $("#loaderDiv").removeClass("hidden"); });
@@ -314,20 +314,18 @@ $(document).ready(function(){
 				$("#remainTime").html(timeRemainingStr);
 				if(timeRemaining > 0){
 					isPaused = true;
-					$("#connectionStatus").html("Paused");
-					$("#connectionStatus").attr("class", "text-color-yellow");
-					
-					$("#statusImg").attr("src", "assets/img/off_wifi.png");
-					$("#statusImg").removeClass("hide");
-					$("#statusImg").removeClass("blinking1").removeClass("blinking2");
 				}else{
-					$("#connectionStatus").html("Disconnected");
-					$("#connectionStatus").attr("class", "blinking1");
-					$("#remainTime").html("00:00:00");
-					$("#statusImg").attr("src", "assets/img/no_wifi.png");
-					$("#statusImg").removeClass("hide");
-					$("#statusImg").addClass("blinking1");
+					setStorageValue("isPaused", "0");
+					removeStorageValue(macNoColon+"tempValidity");
+					isPaused = false;
+					$("#remainingTimeWrapper").addClass("hide");
 				}
+
+				$("#connectionStatus").html("Disconnected");
+				$("#connectionStatus").attr("class", "blinking1");
+				$("#statusImg").attr("src", "assets/img/off_wifi.png");
+				$("#statusImg").removeClass("hide");
+				$("#statusImg").addClass("blinking1");
 			}
 
 			if(!!timeExpiry){
@@ -337,7 +335,7 @@ $(document).ready(function(){
 			}else{
 				$("#expirationTimeWrapper").addClass("hide");
 			}
-
+			
 			if(showPauseTime && isPaused){
 				setStorageValue(isPaused, "1");
 				$("#pauseRemainTime").html(getStorageValue(voucher+"remain"));
@@ -349,6 +347,8 @@ $(document).ready(function(){
 						hideLoader();
 					});
 				});
+			}else{
+				$("#resumeTimeBtn").addClass("hide");
 			}
 
 			setStorageValue('activeVoucher', voucherCode);
@@ -364,6 +364,14 @@ $(document).ready(function(){
 			}else{
 				$("#pauseTimeBtn").addClass("hide");
 			}
+
+			
+			// Initial call to display immediately
+			updateDeviceDateTime();
+
+			// Update every second (1000 milliseconds)
+			setInterval(updateDeviceDateTime, 1000);
+
 			hideLoader();
 		});
 	});
@@ -1289,7 +1297,7 @@ function onRedeemRewardPtsConfirmBtnEvt(macNoColon){
 						return;
 					}
 
-					if(!result.status){
+					if(result.status === "false"){
 						$.toast({
 							title: 'Failed',
 							content: 'Failed to redeem points.',
@@ -1307,9 +1315,9 @@ function onRedeemRewardPtsConfirmBtnEvt(macNoColon){
 							type: 'success',
 							delay: 4000
 						});
-						setTimeout(function (){
+						/* setTimeout(function (){
 							newLogin();
-				 		}, 3000);
+				 		}, 1000); */
 					}
 				},
 				error: function(d){
@@ -1356,6 +1364,7 @@ function logoutVoucher(macNoColon){
 				if(result.status === "success"){
 					$("#resumeTimeBtn").removeClass("hide");
 					setStorageValue("isPaused", "0");
+					
 					$.toast({
 						title: 'Success',
 						content: 'You have been successfully disconnected to the network. Page will reload shortly.',
@@ -1456,4 +1465,9 @@ function loginVoucher(macNoColon, cb){
 		});
 		cb();
 	}
+}
+
+function updateDeviceDateTime() {
+	var now = new Date();
+	$("#deviceDate").text(now);
 }
