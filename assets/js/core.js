@@ -25,193 +25,357 @@ var topupMode = TOPUP_INTERNET;
 var chargerTimer = null;
 var rateType = "1";
 var voucherToConvert = "";
+var juanfiExtendedServerIP = "10.10.10.252"; //change according to your JuanFI extended server IP address
 
 var juanfiExtendedServerUrl = `http://${juanfiExtendedServerIP}:8080/api/portal`; //do not change value of this line
 
+var redeemRatioValue = 1;
 
 $(document).ready(function(){
-  $( "#saveVoucherButton" ).prop('disabled', true);	
-  $( "#cncl" ).prop('disabled', false);
-  $('#coinToast').toast({delay: 1000, animation: true});
-  $('#coinSlotError').toast({delay: 5000, animation: true});
-  var voucherError = false;
-  
-  $('#insertCoinModal').on('hidden.bs.modal', function () {
-		clearInterval(timer);
-		timer = null;
-		insertingCoin = false;
-		insertcoinbg.pause();
-		insertcoinbg.currentTime = 0.0;
-		if(totalCoinReceived == 0){
-			$.ajax({
-			  type: "POST",
-			  url: "http://"+vendorIpAddress+"/cancelTopUp",
-			  data: "voucher="+voucher+"&mac="+mac,
-			  success: function(data){
-				$("#loaderDiv").attr("class","spinner hidden");
-			  },error: function (jqXHR, exception) {
-				$("#loaderDiv").attr("class","spinner hidden");
-			  }
+	//$(document).ajaxStart(function(){ $("#loaderDiv").removeClass("hidden"); });
+    //$(document).ajaxStop(function(){ $("#loaderDiv").addClass("hidden"); });
+
+	showLoader();
+
+	fetchPortalConfig(function(data, error){
+		if(!!error){
+			hideLoader();
+			$.toast({
+				title: 'Failed',
+				content: 'Failed to connect to server. Try again later.',
+				type: 'error',
+				delay: 4000
+			});
+			return;
+		}
+
+		isMultiVendo = data.isMultiVendo;
+		multiVendoOption = data.multiVendoOption;
+		multiVendoAddresses = data.multiVendoAddresses;
+		loginOption = data.loginOption;
+		dataRateOption = data.dataRateOption;
+		vendorIpAddress = data.vendorIpAddress;
+		chargingEnable = data.chargingEnable;
+		eloadEnable = data.eloadEnable;
+		showPauseTime = data.showPauseTime;
+		showMemberLogin = data.showMemberLogin;
+		showExtendTimeButton = data.showExtendTimeButton;
+		macAsVoucherCode = data.macAsVoucherCode;
+		qrCodeVoucherPurchase = data.qrCodeVoucherPurchase;
+		disableVoucherInput = data.disableVoucherInput;
+
+		// handle the data if needed
+		$( "#saveVoucherButton" ).prop('disabled', true);	
+		$( "#cncl" ).prop('disabled', false);
+		$('#coinToast').toast({delay: 1000, animation: true});
+		$('#coinSlotError').toast({delay: 5000, animation: true});
+		var voucherError = false;
+		
+		$('#insertCoinModal').on('hidden.bs.modal', function () {
+				clearInterval(timer);
+				timer = null;
+				insertingCoin = false;
+				insertcoinbg.pause();
+				insertcoinbg.currentTime = 0.0;
+				if(totalCoinReceived == 0){
+					$.ajax({
+					type: "POST",
+					url: "http://"+vendorIpAddress+"/cancelTopUp",
+					data: "voucher="+voucher+"&mac="+mac,
+					success: function(data){
+						hideLoader();
+					},error: function (jqXHR, exception) {
+						hideLoader();
+					}
+					});
+				}
+				
+			});
+
+		$('#eloadModal').on('hidden.bs.modal', function () {
+			insertingCoin = false;
+		});
+
+		if(loginError != "" && ((voucher != null && voucher != ""))){
+			voucherError = true;
+			removeStorageValue("isPaused");
+			removeStorageValue("activeVoucher");
+			voucher = "";
+			$.toast({
+				title: 'Error',
+				content: "Invalid voucher, please make sure voucher is valid",
+				type: 'error',
+				delay: 5000
 			});
 		}
 		
-	});
-
-	$('#eloadModal').on('hidden.bs.modal', function () {
-		insertingCoin = false;
-	});
-
-	if(loginError != "" && ((voucher != null && voucher != ""))){
-		voucherError = true;
-		removeStorageValue("isPaused");
-		removeStorageValue("activeVoucher");
-		voucher = "";
-		$.toast({
-			title: 'Error',
-			content: "Invalid voucher, please make sure voucher is valid",
-			type: 'error',
-			delay: 5000
-		});
-	}
-  
-  if(isMultiVendo){
-	  if(multiVendoOption == 1){
-		$("#vendoSelectDiv").attr("style", "display: none");
-		for(var i=0;i<multiVendoAddresses.length;i++){
-			var currentHotspot = hotspotAddress.split(":")[0];
-			if(multiVendoAddresses[i].hotspotAddress == currentHotspot){
-				vendorIpAddress = multiVendoAddresses[i].vendoIp;
+		if(isMultiVendo){
+			if(multiVendoOption == 1){
+				$("#vendoSelectDiv").addClass("hide");
+				for(var i=0;i<multiVendoAddresses.length;i++){
+					var currentHotspot = hotspotAddress.split(":")[0];
+					if(multiVendoAddresses[i].hotspotAddress == currentHotspot){
+						vendorIpAddress = multiVendoAddresses[i].vendoIp;
+					}
+				}  
+			}else if(multiVendoOption == 2){
+				$("#vendoSelectDiv").addClass("hide");
+				for(var i=0;i<multiVendoAddresses.length;i++){
+					var currentInterfaceName = interfaceName;
+					if(multiVendoAddresses[i].interfaceName == currentInterfaceName){
+						vendorIpAddress = multiVendoAddresses[i].vendoIp;
+					}
+				}  
+			}else{
+				var selectedVendo = getStorageValue('selectedVendo');
+				if(selectedVendo === "null"){ selectedVendo = null; }
+				
+				for(var i=0;i<multiVendoAddresses.length;i++){
+					$("#vendoSelected").append($('<option>', {
+						value: multiVendoAddresses[i].vendoIp,
+						text: multiVendoAddresses[i].vendoName
+					}));
+					if(i === 0 && (!selectedVendo)){
+						setStorageValue('selectedVendo', multiVendoAddresses[i].vendoIp);
+						selectedVendo = multiVendoAddresses[i].vendoIp;
+					}
+				}  
+				if(selectedVendo != null){
+					vendorIpAddress = selectedVendo;
+				}
+				$("#vendoSelected").val(vendorIpAddress);
+				$("#vendoSelected").change(function(){
+					vendorIpAddress = $("#vendoSelected").val();
+					setStorageValue('selectedVendo', vendorIpAddress);
+					evaluateChargingButton();
+					evaluateEloadButton();
+				});
 			}
-		}  
-	  }else if(multiVendoOption == 2){
-		$("#vendoSelectDiv").attr("style", "display: none");
-		for(var i=0;i<multiVendoAddresses.length;i++){
-			var currentInterfaceName = interfaceName;
-			if(multiVendoAddresses[i].interfaceName == currentInterfaceName){
-				vendorIpAddress = multiVendoAddresses[i].vendoIp;
-			}
-		}  
-	  }else{
-		for(var i=0;i<multiVendoAddresses.length;i++){
-			$("#vendoSelected").append($('<option>', {
-			  value: multiVendoAddresses[i].vendoIp,
-			  text: multiVendoAddresses[i].vendoName
-			}));
-		}  
-		var selectedVendo = getStorageValue('selectedVendo');
-		if(selectedVendo != null){
-			vendorIpAddress = selectedVendo;
+			
+			
+			$("#vendoSelected").trigger("change");
+
+		}else{
+			$("#vendoSelectDiv").addClass("hide");
 		}
-		$("#vendoSelected").val(vendorIpAddress);
-		$("#vendoSelected").change(function(){
-			vendorIpAddress = $("#vendoSelected").val();
-			setStorageValue('selectedVendo', vendorIpAddress);
-			evaluateChargingButton();
+		
+		if(!dataRateOption){
+			$("#dataInfoDiv").addClass("hide");
+			$("#dataInfoDiv2").addClass("hide");
+		}
+		
+		if(!showMemberLogin){
+			$("#memberLoginBtn").addClass("hide");
+		}
+		
+		if(!showExtendTimeButton){
+			var inserType = $( "#insertBtn" ).attr('data-insert-type');
+			if(inserType == "extend"){
+					$("#insertBtn").addClass("hide");
+			}
+		}
+
+		if(macAsVoucherCode){
+			var macNoColon = replaceAll(mac, ":");
+			voucher = macNoColon;
+			$("#voucherInput").val(macNoColon);
+		}
+		
+		if( qrCodeVoucherPurchase ){
+			$("#scanQrBtn").attr("style", "display: block");
+		}
+			
+		if(!chargingEnable){
+			if(isMultiVendo){
+				evaluateChargingButton();
+			}else{
+				$("#chargingBtn").addClass("hide");
+				$("#rateTypeDiv").addClass("hide");
+			}
+		}
+
+		if(!eloadEnable){
+			if(isMultiVendo){
 			evaluateEloadButton();
+			}else{
+			$("#eloadBtn").addClass("hide");
+			}
+		}
+		
+		var redirectLogin = getStorageValue("redirectLogin");
+		if(redirectLogin == "1"){
+			removeStorageValue("redirectLogin");
+			location.reload();
+			return;
+		}
+
+		var forceLogout = getStorageValue("forceLogout");
+		if(forceLogout == "1"){
+				removeStorageValue("forceLogout");
+				setStorageValue("redirectLogin", "1");
+				setStorageValue("ignoreSaveCode", "1");
+				document.forcelogout.submit();
+				return;
+		}
+		
+		var insertCoinTrigger = getStorageValue("insertCoinRefreshed");
+		
+		var macNoColon = replaceAll(mac, ":");
+		
+		var ignoreSaveCode = getStorageValue("ignoreSaveCode");
+		if(ignoreSaveCode == null || ignoreSaveCode == "0"){
+			ignoreSaveCode = "0";
+		}
+		
+		if(ignoreSaveCode != "1" && insertCoinTrigger != "1" && (!voucherError) && $("#voucherInput").length > 0){
+			$.ajax({
+				type: "GET",
+				url: "/data/"+macNoColon+".txt?query="+new Date().getTime(),
+				success: function(data){
+					var macData = data.split("#");
+					voucher = macData[0];
+					$('#voucherInput').val(voucher);
+					$("#connectBtn").click();
+				}
+			});
+		}
+
+		$('#resumeTimeBtn').addClass("hide");
+
+		fetchUserInfo(macNoColon, function(userData, error){
+			if(!!error){
+				hideLoader();
+				$.toast({
+					title: 'Failed',
+					content: 'Failed to retrieve your voucher details. Try again later.',
+					type: 'error',
+					delay: 4000
+				});
+				return;
+			}
+			let {isOnline,
+				voucherCode,
+				pointsEnabled,
+				totalPoints,
+				timeRemaining,
+				timeExpiry,
+				timeRemainingStr} = userData;
+				
+			if(pointsEnabled === true){
+				var min = parseInt($('#redeemSlider').attr('min'),10) || 0;
+	
+				$("#rewardPoints").html((!!totalPoints) ? totalPoints.toFixed(2) : "0");
+				$(".redeemRatio").text(redeemRatioValue);
+				$("#rewardDtls").removeClass("hide");
+				if(totalPoints > min){
+					$("#rewardDtlsWrapper").removeClass("col-sm-12").addClass("col-sm-6");
+					$("#rewardBtnWrapper").removeClass("hide");
+					
+					onRedeemRewardPtsEvt();
+					onRedeemRewardPtsConfirmBtnEvt(macNoColon);
+					onRedeemRewardPtsSliderChangeEvt();
+				}else{
+					$("#rewardDtlsWrapper").removeClass("col-sm-6").addClass("col-sm-12");
+					$("#rewardBtnWrapper").addClass("hide");
+				}
+			}else{
+				$("#rewardDtls").addClass("hide");
+			}
+
+			$("#voucherCode").html(voucherCode);
+			var isPaused = (!isOnline);
+			
+			if(isOnline){
+				$("#connectionStatus").html("Connected");
+				$("#connectionStatus").attr("class", "blinking2");
+				$("#statusImg").attr("src", "assets/img/wifi.png");
+				$("#statusImg").removeClass("hide");
+				$("#statusImg").addClass("blinking2");
+
+				var time = timeRemaining;
+				$("#remainTime").html(secondsToDhms(time));
+				remainingTimer = setInterval(function(){
+					time--;
+					$("#remainTime").html(secondsToDhms(time));
+					if(time <= 0){
+						$.toast({
+							title: 'Success',
+							content: 'Time limit exceeded, Thank you for the purchase, will be logout shortly',
+							type: 'success',
+							delay: 5000
+						});
+						clearInterval(remainingTimer);
+						setTimeout(function(){
+							newLogin();
+						}, 4000);
+					}
+				}, 1000);
+			}else{
+				$("#remainTime").html(timeRemainingStr);
+				if(timeRemaining > 0){
+					isPaused = true;
+					$("#connectionStatus").html("Paused");
+					$("#connectionStatus").attr("class", "text-color-yellow");
+					
+					$("#statusImg").attr("src", "assets/img/off_wifi.png");
+					$("#statusImg").removeClass("hide");
+					$("#statusImg").removeClass("blinking1").removeClass("blinking2");
+				}else{
+					$("#connectionStatus").html("Disconnected");
+					$("#connectionStatus").attr("class", "blinking1");
+					$("#remainTime").html("00:00:00");
+					$("#statusImg").attr("src", "assets/img/no_wifi.png");
+					$("#statusImg").removeClass("hide");
+					$("#statusImg").addClass("blinking1");
+				}
+			}
+
+			if(!!timeExpiry){
+				let expirationTime = new Date(timeExpiry);
+				$("#expirationTime").html(expirationTime.toLocaleString());
+				$("#expirationTimeImg").attr("src", "assets/img/time.png");
+			}else{
+				$("#expirationTimeWrapper").addClass("hide");
+			}
+
+			if(showPauseTime && isPaused){
+				setStorageValue(isPaused, "1");
+				$("#pauseRemainTime").html(getStorageValue(voucher+"remain"));
+				$("#resumeTimeBtn").removeClass("hide");
+
+				$('#resumeTimeBtn').on('click', function(){
+					showLoader();
+					loginVoucher(macNoColon, function(){
+						hideLoader();
+					});
+				});
+			}
+
+			setStorageValue('activeVoucher', voucherCode);
+
+			if(showPauseTime && isOnline){
+				$("#pauseTimeBtn").removeClass("hide");
+				$("#pauseTimeBtn").on('click', function(){
+					var r = confirm("Are you sure you want to temporarily disconnect from the network?");
+					if(r){
+						pause(macNoColon);
+					}
+				});
+			}else{
+				$("#pauseTimeBtn").addClass("hide");
+			}
+			hideLoader();
 		});
-	  }
-	  
-	  
-	  $("#vendoSelected").trigger("change");
-
-  }else{
-	  $("#vendoSelectDiv").attr("style", "display: none");
-  }
-  
-  if(!dataRateOption){
-	 $("#dataInfoDiv").attr("style", "display: none");
-	 $("#dataInfoDiv2").attr("style", "display: none");
-  }
-  
-  if(!showPauseTime){
-	   $("#pauseTimeBtn").attr("style", "display: none");
-  }
-  
-  if(!showMemberLogin){
-	   $("#memberLoginBtn").attr("style", "display: none");
-  }
-  
-  if(!showExtendTimeButton){
-	   var inserType = $( "#insertBtn" ).attr('data-insert-type');
-	   if(inserType == "extend"){
-			$("#insertBtn").attr("style", "display: none");
-	   }
-  }
-
-  if(macAsVoucherCode){
-	var macNoColon = replaceAll(mac, ":");
-	voucher = macNoColon;
-	$("#voucherInput").val(macNoColon);
-  }
-  
-  if( qrCodeVoucherPurchase ){
-	  $("#scanQrBtn").attr("style", "display: block");
-  }
-    
-  if(!chargingEnable){
-	  if(isMultiVendo){
-		evaluateChargingButton();
-	  }else{
-		$("#chargingBtn").attr("style", "display: none");
-		$("#rateTypeDiv").attr("style", "display: none");
-	  }
-  }
-
-  if(!eloadEnable){
-	if(isMultiVendo){
-	  evaluateEloadButton();
-	}else{
-	  $("#eloadBtn").attr("style", "display: none");
-	}
-  }
-
-  
-  var redirectLogin = getStorageValue("redirectLogin");
-  if(redirectLogin == "1"){
-	  removeStorageValue("redirectLogin");
-	  location.reload();
-	  return;
-  }
-
-  var forceLogout = getStorageValue("forceLogout");
-  if(forceLogout == "1"){
-		removeStorageValue("forceLogout");
-		setStorageValue("redirectLogin", "1");
-		setStorageValue("ignoreSaveCode", "1");
-		document.forcelogout.submit();
-		return;
-  }
-
-  
-  var insertCoinTrigger = getStorageValue("insertCoinRefreshed");
- 
-  var macNoColon = replaceAll(mac, ":");
-  
-  var ignoreSaveCode = getStorageValue("ignoreSaveCode");
-  if(ignoreSaveCode == null || ignoreSaveCode == "0"){
-	  ignoreSaveCode = "0";
-  }
-  
-  if(ignoreSaveCode != "1" && insertCoinTrigger != "1" && (!voucherError) && $("#voucherInput").length > 0){
-	  $.ajax({
-		  type: "GET",
-		  url: "/data/"+macNoColon+".txt?query="+new Date().getTime(),
-		  success: function(data){
-			var macData = data.split("#");
-			voucher = macData[0];
-			$('#voucherInput').val(voucher);
-			$("#connectBtn").click();
-		  }
-	  });
-  }
-
-  fetchUserInfo(macNoColon);
-  
-  var isPaused = getStorageValue("isPaused");
-  if(isPaused == "1"){
-	  $("#pauseRemainTime").html(getStorageValue(voucher+"remain"));
-  }
+	});
 });
+
+function showLoader(){
+	$("#loaderDiv").removeClass("hidden");
+}
+
+function hideLoader(){
+	$("#loaderDiv").addClass("hidden");
+}
 
 function replaceAll(str, rep){
 	var aa = str;
@@ -229,14 +393,17 @@ if(voucher != ""){
 }
 
 function evaluateChargingButton(){
-	var style = $("#chargingBtn").attr("style");
-	$("#chargingBtn").attr("style", style+"; display: block"); 
-	$("#rateTypeDiv").attr("style", "display: block");
+	//var style = $("#chargingBtn").attr("style");
+	//$("#chargingBtn").attr("style", style+"; display: block"); 
+	$("#chargingBtn").removeClass("hide");
+	//$("#rateTypeDiv").attr("style", "display: block");
+	$("#rateTypeDiv").removeClass("hide");
 	for(var i=0;i<multiVendoAddresses.length;i++){
 	  if(multiVendoAddresses[i].vendoIp == vendorIpAddress && (!multiVendoAddresses[i].chargingEnable)){
-		  style = $("#chargingBtn").attr("style");
-		  $("#chargingBtn").attr("style", style+"; display: none");
-		  $("#rateTypeDiv").attr("style", "display: none");
+		  //style = $("#chargingBtn").attr("style");
+		  //$("#chargingBtn").attr("style", style+"; display: none");
+		  $("#chargingBtn").addClass("hide");
+		  $("#rateTypeDiv").addClass("hide");
 		  break;
 	  }
 	}
@@ -270,7 +437,7 @@ function insertBtnAction(){
 	$("#progressDiv").attr('style','width: 100%');
 	$( "#saveVoucherButton" ).prop('disabled', true);
 	$( "#cncl" ).prop('disabled', false);
-	$("#loaderDiv").attr("class","spinner");
+	showLoader();
 	totalCoinReceived = 0;
 	
 	var totalCoinReceivedSaved = getStorageValue("totalCoinReceived");
@@ -461,7 +628,7 @@ function addChargerTime(port, portName, retryCount){
 	  url: "http://"+vendorIpAddress+"/topUp",
 	  data: "voucher="+portName+"&topupType=CHARGER&chargerPort="+port+"&mac="+mac,
 	  success: function(data){
-		$("#loaderDiv").attr("class","spinner hidden");
+		hideLoader();
 		if(data.status == "true"){
 			voucher = data.voucher;
 			$('#insertCoinModal').modal('show');
@@ -520,7 +687,7 @@ function callTopupAPI(retryCount){
 	  url: "http://"+vendorIpAddress+"/topUp",
 	  data: "voucher="+voucher+"&mac="+mac+ipAddCriteria+extendTimeCriteria,
 	  success: function(data){
-		$("#loaderDiv").attr("class","spinner hidden");
+		hideLoader();
 		if(data.status == "true"){
 			voucher = data.voucher;
 			$('#insertCoinModal').modal('show');
@@ -544,7 +711,7 @@ function callTopupAPI(retryCount){
 			if(retryCount < 3){
 				callTopupAPI(retryCount+1);
 			}else{
-				$("#loaderDiv").attr("class","spinner hidden");
+				hideLoader();
 				notifyCoinSlotError("coin.slot.notavailable");
 			}
 		  }, 1000 );
@@ -553,7 +720,7 @@ function callTopupAPI(retryCount){
 }
 
 function saveVoucherBtnAction(){
-	$("#loaderDiv").attr("class","spinner");
+	showLoader();
 	
 	if(topupMode == TOPUP_INTERNET){
 		setStorageValue('activeVoucher', voucher);
@@ -572,7 +739,7 @@ function saveVoucherBtnAction(){
 	  success: function(data){
 	
 			totalCoinReceived = 0;
-			$("#loaderDiv").attr("class","spinner hidden");
+			hideLoader();
 			if(data.status == "true"){
 				if(topupMode == TOPUP_CHARGER){
 					populateChargingStations();
@@ -594,21 +761,9 @@ function saveVoucherBtnAction(){
 					
 					var type = $( "#saveVoucherButton" ).attr('data-save-type');
 
-					if(type == "extend"){
-							$.ajax({
-							  type: "POST",
-							  url: "/logout",
-							  data: "erase-cookie=true",
-							  success: function(data){
-								  setStorageValue('reLogin', '1');
-								  location.reload();
-							  }
-							 });
-					}else{
-						setTimeout(function (){
-							newLogin();
-						}, 3000);
-					}
+					setTimeout(function (){
+						newLogin();
+					}, 1000);
 				}
 			}else{
 				notifyCoinSlotError(data.errorCode);
@@ -616,7 +771,7 @@ function saveVoucherBtnAction(){
 		
 		
 	  },error: function (jqXHR, exception) {
-		 $("#loaderDiv").attr("class","spinner hidden");
+		 hideLoader();
 		 if(totalCoinReceived > 0){
 		    $.toast({
 			  title: 'Warning',
@@ -686,21 +841,8 @@ function checkCoin(){
 							});
 							var type = $( "#saveVoucherButton" ).attr('data-save-type');
 							setTimeout(function (){
-
-								if(type == "extend"){
-									$.ajax({
-									type: "POST",
-									url: "/logout",
-									data: "erase-cookie=true",
-									success: function(data){
-										setStorageValue('reLogin', '1');
-										location.reload();
-									}
-									});
-								}else{
-									newLogin();
-								}
-							}, 3000);
+								newLogin();
+							}, 1000);
 						}else if(topupMode == TOPUP_CHARGER){
 							populateChargingStations();
 							$.toast({
@@ -847,11 +989,12 @@ function removeStorageValue(key){
 	}
 }
 
-function pause(){
-	var vc = getStorageValue("activeVoucher");
+function pause(macNoColon){
+	showLoader();
 	setStorageValue("isPaused", "1");
-	//setStorageValue(vc+"remain", $("#remainTime").html());
-	document.logout.submit();
+	logoutVoucher(macNoColon, function(){
+		hideLoader();
+	});
 }
 
 function resume(){
@@ -981,75 +1124,336 @@ function parseTime(str){
 	}
 }
 
-function fetchUserInfo(macNoColon){
+function fetchUserInfo(macNoColon, cb){
 	$.ajax({
 		type: "GET",
 		url: `${juanfiExtendedServerUrl}/user-info?mac=${macNoColon}`,
 		success: function(data){
-			if(!data) return;
+			if(!data){
+				cb(null);
+				return;
+			}
 
+			var isOnline = data.isOnline;
 			var voucherCode = data.code;
 			var pointsEnabled = data.pointsEnabled;
 			var totalPoints = data.totalPoints;
 			var timeRemainingStr = data.timeRemaining;
 			var timeRemaining = data.timeRemainingInSeconds;
-			var timeExpiry = (!data.timeExpiry) ? "" : data.timeExpiry;
-			var isOnline = data.isOnline;
-
-			console.log("kk" + data.timeExpiry + ": " + timeExpiry)
-			if(pointsEnabled === true){
-				$("#pointsHolder").removeClass("hide");
-				$("#rewardPoints").html(totalPoints);
-			}else{
-				$("#pointsHolder").addClass("hide");
-			}
-
-			$("#voucherCode").html(voucherCode);
-			if(isOnline){
-				$("#connectionStatus").html("Connected");
-				$("#connectionStatus").attr("class", "blinking2");
-
-				var time = timeRemaining;
-				$("#remainTime").html(secondsToDhms(time));
-				remainingTimer = setInterval(function(){
-					time--;
-					$("#remainTime").html(secondsToDhms(time));
-					if(time <= 0){
-						$.toast({
-							title: 'Success',
-							content: 'Time limit exceeded, Thank you for the purchase, will be logout shortly',
-							type: 'success',
-							delay: 5000
-						});
-						clearInterval(remainingTimer);
-						setTimeout(function(){
-							document.logout.submit();
-						}, 6000);
-					}
-				}, 1000);
-			}else{
-				if(timeRemaining > 0){
-					$("#connectionStatus").html("Paused");
-					$("#connectionStatus").attr("class", "text-color-yellow");
-					$("#remainTime").html(timeRemainingStr);
-				}else{
-					$("#connectionStatus").html("Disconnected");
-					$("#connectionStatus").attr("class", "blinking1");
-					$("#remainTime").html("00:00:00");
-				}
-			}
-
-			if(!!timeExpiry){
-				let expirationTime = new Date(timeExpiry);
-				$("#expirationTime").html(expirationTime.toLocaleString());
-			}else{
-				$("#expirationTime").html("No expiration");
-			}
-
-			setStorageValue('activeVoucher', voucherCode);
+			var timeExpiry = data.timeExpiry;
+			
+			cb({
+				isOnline,
+				voucherCode,
+				pointsEnabled,
+				totalPoints,
+				timeRemaining,
+				timeExpiry,
+				timeRemainingStr
+			}, null);
 		},
 		error: function(d){
-			fallbackValidity();
+			cb(null, d);
 	   	}
 	});
+}
+
+function fetchPortalConfig(cb){
+	$.ajax({
+		type: "GET",
+		url: `${juanfiExtendedServerUrl}/config`,
+		success: function(data){
+			if(!data) {
+				cb(null);
+				return;
+			}
+			let output = { ...data };
+			let multiVendoAddresses = [];
+			data.multiVendoAddresses.forEach((item) => {
+				multiVendoAddresses.push({
+					vendoName: item.VendoName,
+					vendoIp: item.VendoIp,
+					chargingEnable: item.ChargingEnable,
+					eloadEnable: item.EloadEnable,
+					hotspotAddress: item.HotspotAddress,
+					interfaceName: item.InterfaceName
+				});
+			});
+			output.multiVendoAddresses = multiVendoAddresses;
+			cb(output, null);
+		},
+		error: function(d){
+			cb(null, d);
+	   	}
+	});
+}
+
+function parseRewardPoints(text){
+	try{
+		var n = parseFloat((text||"0").toString());
+		return isNaN(n) ? 0 : n;
+	}catch(e){
+		return 0;
+	}
+}
+
+function updateRedeemRewardPtsUI(from){
+	// from: 'slider' | 'input' | undefined
+    var min = parseInt($('#redeemSlider').attr('min')) || 0;
+    var max = parseInt($('#redeemSlider').attr('max')) || 0;
+    var sliderVal = parseInt($('#redeemSlider').val()) || 0;
+    var inputVal = parseInt($('#selectedPointsInput').val()) || 0;
+    var selected = sliderVal;
+
+    if(from === 'input'){
+        // clamp input
+        if((!inputVal) || isNaN(inputVal)) inputVal = 0;
+        if(inputVal < min) inputVal = min;
+        if(max > 0 && inputVal > max) inputVal = max;
+        selected = inputVal;
+        $('#redeemSlider').val(selected);
+		$('#selectedPointsInput').val(selected);
+    } else {
+        // default behaviour: use slider value and sync input
+        selected = sliderVal;
+        $('#selectedPointsInput').val(selected);
+    }
+
+
+    var value = (selected * redeemRatioValue);
+    $('#estimatedValueDisplay').text('PHP ' + value.toFixed(2));
+
+    // enable/disable confirm button based on range
+    if(selected > min && (max === 0 || selected <= max)){
+        $("#confirmRedeemBtn").removeClass("disabled");
+    } else {
+        $("#confirmRedeemBtn").addClass("disabled");
+    }
+}
+
+function onRedeemRewardPtsEvt(){
+	$('#redeemPtsBtn').on('click', function(e){
+		e.preventDefault();
+		var avail = parseRewardPoints($('#rewardPoints').text());
+		if(avail <= 0){
+			$.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'info', delay: 3000 });
+			return;
+		}
+		var min = parseInt($('#redeemSlider').attr('min')) || 0;
+		$('#availablePointsDisplay').text(avail);
+		$('#redeemSlider').attr('max', parseInt(avail));
+		$('#redeemSlider').val(min);
+		$('#selectedPointsInput').attr('max', avail);
+        $('#selectedPointsInput').val(min);
+		updateRedeemRewardPtsUI('input');
+		$('#redeemModal').modal('show');
+	});
+}
+
+function onRedeemRewardPtsSliderChangeEvt(){
+	$('#redeemSlider').on('input change', function(){
+		updateRedeemRewardPtsUI('slider');
+	});
+	$('#selectedPointsInput').on('input change', function(){
+        // ensure integer
+        var v = $(this).val();
+        var intV = parseInt(v, 10);
+        if(isNaN(intV)) intV = 0;
+        $(this).val(intV);
+        updateRedeemRewardPtsUI('input');
+    });
+}
+
+function onRedeemRewardPtsConfirmBtnEvt(macNoColon){
+	$('#confirmRedeemBtn').on('click', function(){
+		showLoader();
+		var selected = parseInt($('#selectedPointsInput').val(),10) || 0;
+		if(selected <= 0){
+			$.toast({ title: 'Warning', content: 'Please select at least 1 point to redeem.', type: 'warning', delay: 2500 });
+			return;
+		}
+		var estimatedPhp = (selected * redeemRatioValue).toFixed(2);
+
+		try{
+			$.ajax({
+				type: "POST",
+				url: `http://${vendorIpAddress}/redeemPoints?mac=${macNoColon}&points=${selected}`,
+				success: function(result){
+					if(!result) {
+						$.toast({
+							title: 'Failed',
+							content: 'Request failed. Please try again.',
+							type: 'error',
+							delay: 4000
+						});
+						return;
+					}
+
+					if(!result.status){
+						$.toast({
+							title: 'Failed',
+							content: 'Failed to redeem points.',
+							type: 'error',
+							delay: 4000
+						});
+						return;
+					}else{
+						var timeAdded = result.timeAdded;
+						$('#redeemModal').modal('hide');
+						$.toast({
+							title: 'Success',
+							content: 'Redeemed ' + selected + ' points (PHP ' + estimatedPhp + '). Added',
+							content: `Redeemed ${selected} points (PHP ${estimatedPhp}). Added ${secondsToDhms(timeAdded/60)} time to current voucher.`,
+							type: 'success',
+							delay: 4000
+						});
+						setTimeout(function (){
+							newLogin();
+				 		}, 3000);
+					}
+				},
+				error: function(d){
+					$.toast({
+						title: 'Failed',
+						content: 'Failed to connect to server. Try again later.',
+						type: 'error',
+						delay: 4000
+					});
+				},
+				complete: function(){
+					hideLoader();
+				}
+			});
+		}catch(e){
+			hideLoader();
+			$.toast({
+				title: 'Failed',
+				content: 'Runtime error. Contact vendo owner.',
+				type: 'error',
+				delay: 4000
+			});
+		}
+	});
+}
+
+function logoutVoucher(macNoColon){
+	try{
+		$.ajax({
+			type: "POST",
+			url: `${juanfiExtendedServerUrl}/logout`,
+			data: {mac: macNoColon},
+			success: function(result){
+				if(!result) {
+					$.toast({
+						title: 'Failed',
+						content: 'Request failed. Please try again.',
+						type: 'error',
+						delay: 4000
+					});
+					return;
+				}
+
+				if(result.status === "success"){
+					$("#resumeTimeBtn").removeClass("hide");
+					setStorageValue("isPaused", "0");
+					$.toast({
+						title: 'Success',
+						content: 'You have been successfully disconnected to the network. Page will reload shortly.',
+						type: 'success',
+						delay: 4000
+					});
+
+					setTimeout(function (){
+						newLogin();
+					}, 1000);
+				}else{
+					$.toast({
+						title: 'Failed',
+						content: 'Failed to disconnect.',
+						type: 'error',
+						delay: 4000
+					});
+				}
+			},
+			error: function(d){
+				$.toast({
+					title: 'Failed',
+					content: 'Failed to connect to server. Try again later.',
+					type: 'error',
+					delay: 4000
+				});
+			},
+			complete: function(){
+				cb();
+			}
+		});
+	}catch(e){
+		$.toast({
+			title: 'Failed',
+			content: 'Runtime error. Contact vendo owner.',
+			type: 'error',
+			delay: 4000
+		});
+		cb();
+	}
+}
+
+function loginVoucher(macNoColon, cb){
+	try{
+		$.ajax({
+			type: "POST",
+			url: `${juanfiExtendedServerUrl}/login`,
+			data: {mac: macNoColon},
+			success: function(result){
+				if(!result) {
+					$.toast({
+						title: 'Failed',
+						content: 'Request failed. Please try again.',
+						type: 'error',
+						delay: 4000
+					});
+					return;
+				}
+
+				if(result.status === "success"){
+					$.toast({
+						title: 'Success',
+						content: 'You are now connected. Page will reload shortly.',
+						type: 'success',
+						delay: 4000
+					});
+
+					setTimeout(function (){
+						newLogin();
+					}, 1000);
+				}else{
+					$.toast({
+						title: 'Failed',
+						content: 'Failed to connect voucher.',
+						type: 'error',
+						delay: 4000
+					});
+				}
+			},
+			error: function(d){
+				$.toast({
+					title: 'Failed',
+					content: 'Failed to connect to server. Try again later.',
+					type: 'error',
+					delay: 4000
+				});
+			},
+			complete: function(){
+				cb();
+			}
+		});
+	}catch(e){
+		$.toast({
+			title: 'Failed',
+			content: 'Runtime error. Contact vendo owner.',
+			type: 'error',
+			delay: 4000
+		});
+		cb();
+	}
 }

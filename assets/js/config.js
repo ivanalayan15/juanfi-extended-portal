@@ -1,9 +1,10 @@
+var juanfiExtendedServerIP = "10.10.10.252"; //change according to your JuanFI extended server IP address
 //this is to enable multi vendo setup, set to true when multi vendo is supported
 var isMultiVendo = true;
 // 0 = traditional (client choose a vendo) , 1 = auto select vendo base on hotspot address, 2 = interface name ( this will preserve one hotspot server ip only)
 var multiVendoOption = 0;
 
-var juanfiExtendedServerIP = "10.10.10.252"; //change according to your JuanFI extended server IP address
+
 
 //list here all node mcu address for multi vendo setup
 var multiVendoAddresses = [

@@ -6,6 +6,7 @@
 	<link rel="stylesheet" href="assets/css/toast.min.css">
 	<link rel="stylesheet" href="assets/css/core.css">
 	<link rel="stylesheet" href="assets/css/JuanFi.css">
+	<link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
     <title>JuanFi - Status</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
@@ -55,94 +56,282 @@
 
 <div class="container">
 <center>
-		<form action="$(link-logout)" name="logout" >
-		</form>
-
-		<form action="$(link-logout)" name="forcelogout" >
-			<input type="hidden" name="erase-cookie" value="true" />
-		</form>
-		
         <div class="row">
-            <div class="col-sm-5">
-                <div class="row" style="margin-bottom: 20px">
-                    <img src="assets/MainPic.PNG" class="img-fluid" />
-                </div>
-				
-				<div class="info"><center>
-						<div class="info-ip">
-						<img src="assets/img/ip.png" width="20px" height="20px" />
-						<span>$(ip)</span>
+            <div class="col-sm-6">
+				<div class="container-fluid">
+					<div class="row mb-10">
+						<div class="col-sm-12">
+							<img src="assets/MainPic.PNG" class="img-fluid" />
 						</div>
-						<div class="info-mac">
-						<img src="assets/img/mac.png" width="20px" height="20px" />
-						<span>$(mac)</span>
+					</div>
+					<table class="table table-borderless">
+						<tr>
+							<td>
+								<div class="info-ip">
+									<img src="assets/img/ip.png" width="20px" height="20px" />
+									<span class="pl-5">$(ip)</span>
+								</div>
+							</td>
+							<td>
+								<div class="info-mac text-align-right">
+									<img src="assets/img/mac.png" width="20px" height="20px" />
+									<span class="pl-5">$(mac)</span>
+								</div>
+							</td>
+							<!-- <td>
+								<div id="pointsHolder" class="info-rewards">
+									<img src="assets/img/reward.png" width="20px" height="20px" />
+									<span id="rewardPoints" class="status-val pl-5">Loading...</span>
+								</div>
+							</td> -->
+						</tr>
+					</table>
+					<!--<div class="row">
+						<div class="col-sm-12 center-block">			
+							<span class="status-connected text-align-center">Status: <span class="blinking2 text-color-yellow" id="connectionStatus">Loading...</span></span>
 						</div>
-					</center>
+					</div>-->
+					<div class="row">
+						<div class="col-sm-12">
+							<table class="table table-borderless center">
+								<tr>
+									<td class="text-align-right pr-5">
+										<img id="statusImg" src="assets/img/no_wifi.png" class="hide" />
+									</td>
+									<td class="text-align-left pl-0 td-center">
+										<span class="blinking2 text-color-yellow" id="connectionStatus">Loading...</span>
+									</td>
+								</tr>
+							</table>
+						</div>
+					</div>
 				</div>
-				
-				<center>			
-				<span class="status-connected">Status: <span class="blinking2 text-color-yellow" id="connectionStatus">Loading...</span></span>
-                </center>
             </div>
 
-            <div class="col-sm-7">
-                <div class="login">
-				
-				
-				
-				<div class="info-status">
-				<center>
-					<div class="status-holder">
-						<div class="info-title"><img src="assets/img/voucher.png" width="20px" height="20px" /><span> Voucher</span></div>
-						<span id="voucherCode" class="voucher-val">Loading...</span>
+            <div class="col-sm-6">
+                <div class="login borderless mb-10">
+					<div class="info-status">
+						<div id="rewardDtls" class="container-fluid status-holder">
+							<div class="info-title">
+								<img src="assets/img/reward.png" width="20px" height="20px" />
+								<span class="pl-5">Rewards</span>
+							</div>
+							<div class="row mt-10 pr-5">
+								<div id="rewardDtlsWrapper" class="col-sm-6">
+									<img src="assets/img/coin.png" width="20px" height="20px" />
+									<span id="rewardPoints" class="status-val pl-5">Loading...</span>
+									<br/>
+									<span class="text-color-white">Reward Balance</span>
+								</div>
+								<div id="rewardBtnWrapper" class="col-sm-6">
+									<button type="button" id="redeemPtsBtn" onclick="return false" class="btn btn-warning" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">REDEEM</button>
+								</div>
+							</div>
+							<div class="row mt-10 pr-5">
+								<div class="col-12">
+									<small class="text-color-white">Redemption rule: <span class="redeemRatio">1</span> point = PHP 1.00</small>
+								</div>
+							</div>
+						</div>
 					</div>
-					
-					<div class="break2"></div>
-					
-					<div class="status-holder">						
-						<div class="info-title"><img src="assets/img/time.png" width="20px" height="20px" /><span> Remaining Time</span></div>
-						<span class="odometer" id="remainTime" class="status-val">Loading...</span><br>
+					<div class="info-status mb-10">
+						<div id="voucherDtls" class="container-fluid status-holder">
+							<div class="info-title">
+								<img src="assets/img/voucher.png" width="20px" height="20px" />
+								<span class="pl-5">Voucher</span>
+							</div>
+							<span id="voucherCode" class="voucher-val mb-20">Loading...</span>
+							<!-- <div class="row mt-10">
+								<div class="col-sm-6">
+									<img src="assets/img/time.png" width="20px" height="20px" />
+									<span id="remainTime" class="status-val pl-5 text-size-24">Loading...</span>
+									<br/>
+									<span class="text-color-white">Remaining Time</span>
+								</div>
+								<div class="col-sm-6">
+									<img id="expirationTimeImg" src="assets/img/timeexpired.png" width="20px" height="20px" />
+									<span id="expirationTime" class="pl-5 status-val text-size-20">Loading...</span>
+									<br/>
+									<span class="text-color-white">Expiration Time</span>
+								</div>
+							</div> -->
+							<div id="remainingTimeWrapper" class="row mt-10">
+								<div class="col-sm-12">
+									<img src="assets/img/time.png" width="20px" height="20px" />
+									<span id="remainTime" class="status-val pl-5 text-size-24">Loading...</span>
+									<br/>
+									<span class="text-color-white">Remaining Time</span>
+								</div>
+							</div>
+							<div id="expirationTimeWrapper" class="row mt-10">
+								<div class="col-sm-12">
+									<img id="expirationTimeImg" src="assets/img/timeexpired.png" width="20px" height="20px" />
+									<span id="expirationTime" class="pl-5 status-val text-size-20">Loading...</span>
+									<br/>
+									<span class="text-color-white">Expiration Time</span>
+								</div>
+							</div>
+						</div>
+						<div id="dataUsage" class="container-fluid status-holder hide">
+							<div class="info-title">
+								<img src="assets/img/data.png" width="20px" height="20px" />
+								<span class="pl-5">Data Usage</span>
+							</div>
+							<div class="row mt-10">
+								<div class="col-sm-6">
+									<img src="assets/img/upload.png" width="20px" height="20px" />
+									<span id="uploadDataUsage" class="pl-5 status-val">$(bytes-in-nice)</span>
+									<br/>
+									<span class="text-color-white">Upload Data</span>
+								</div>
+								<div class="col-sm-6">
+									<img src="assets/img/download.png" width="20px" height="20px" />
+									<span id="downloadDataUsage" class="pl-5 status-val">$(bytes-out-nice)</span>
+									<br/>
+									<span class="text-color-white">Download Data</span>
+								</div>
+							</div>
+						</div>
 						
+						<!-- <div id="voucherDtls" class="container-fluid status-holder mb-20">
+							<div class="info-title">
+								<img src="assets/img/voucher.png" width="20px" height="20px" />
+								<span> Voucher</span>
+							</div>
+							<span id="voucherCode" class="voucher-val mb-20">Loading...</span>
+							<div class="row mt-10 pl-10 pr-10">
+								<div class="col-sm-4 text-align-right">
+									<span class="text-color-white">Remaining Time</span>
+								</div>
+								<div class="col-sm-8 text-align-right">
+									<img src="assets/img/time.png" width="20px" height="20px" />
+									<span id="remainTime" class="status-val">Loading...</span>
+								</div>
+								
+							</div>
+							<div class="row mt-10 pl-10 pr-10">
+								<div class="col-sm-4 text-align-right">
+									<span class="text-color-white"> Expiration Time</span>
+								</div>
+								<div class="col-sm-8 text-align-right">
+									<img id="expirationTimeImg" src="assets/img/timeexpired.png" width="20px" height="20px" />
+									<span id="expirationTime" class="status-val">Loading...</span>
+								</div>
+							</div>
+							<div class="row mt-10 pl-10 pr-10">
+								<div class="col-sm-4 text-align-right">
+									<span class="text-color-white">Upload Data</span>
+								</div>
+								<div class="col-sm-8 text-align-right">
+									<img src="assets/img/upload.png" width="20px" height="20px" />
+									<span id="uploadDataUsage" class="status-val">$(bytes-in-nice)</span>
+								</div>
+							</div>
+							<div class="row mt-10 pl-10 pr-10 pb-10">
+								<div class="col-sm-4 text-align-right">
+									<span class="text-color-white">Download Data</span>
+								</div>
+								<div class="col-sm-8 text-align-right">
+									<img src="assets/img/download.png" width="20px" height="20px" />
+									<span id="downloadDataUsage" class="status-val">$(bytes-out-nice)</span>
+								</div>
+							</div>
+						</div> -->
 					</div>
-					
-					<div class="break2"></div>
-					
-					<div id="pointsHolder" class="status-holder">						
-						<div class="info-title"><img src="assets/img/time.png" width="20px" height="20px" /><span> Reward Points</span></div>
-						<span id="rewardPoints" class="status-val">Loading...</span><br>
-						
+
+					<div class="mt-20 buy-option-wrapper">
+						<div class="container-fluid">
+							<div class="row mb-10">
+								<div id="vendoSelectDiv" class="col-sm-12">
+									<label for="exampleFormControlSelect2">Select Vendo</label>
+									<select class="form-control fullwidth" name="vendoSelected" id="vendoSelected" >
+									</select>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-12 mb-5">
+									<button type="button" id="resumeTimeBtn" class="btn btn-info btn-block fullwidth text-color-white text-shadow hide">RESUME TIME</button>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-12 mb-5">
+									<button type="button" id="insertBtn" onclick="insertBtnAction(); return false" class="btn btn-success btn-block fullwidth text-color-white text-shadow" data-insert-type="extend" data-toggle="modal">INSERT COIN</button>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-12 mb-5">
+									<button type="button" id="promoRateBtn" onclick="promoBtnAction(); return false" class="btn btn-warning fullwidth text-color-white text-shadow" >PROMO RATES</button>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-12 mb-5">
+									<button type="button" id="pauseTimeBtn" class="btn btn-danger btn-block fullwidth text-color-white text-shadow hide">PAUSE TIME</button>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-12 mb-5">
+									<button type="button" id="chargingBtn" onclick="chargingBtnAction(); return false" class="btn btn-secondary fullwidth text-color-white text-shadow hide">CHARGING STATION</button>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-12">
+									<button type="button" id="eloadBtn" onclick="eloadBtnAction(); return false" class="btn btn-info fullwidth text-color-white text-shadow hide">E-LOAD</button>
+								</div>
+							</div>
+						</div>
 					</div>
-					
-					<div class="break2"></div>
-					
-					<div class="status-holder">					
-						<div class="info-title"><img src="assets/img/timeexpired.png" width="20px" height="20px" /><span> Expiration Time</span></div>
-						<span id="expirationTime" class="status-val">Loading...</span>
-					</div>
-					
-					<div class="break2"></div>
-				</center>
-				</div>
-					
-					<div id="vendoSelectDiv" style="margin-top: 20px">
-						<label for="exampleFormControlSelect2">Select Vendo</label>
-						<select class="form-control" name="vendoSelected" id="vendoSelected" >
-						</select>
-					</div>
-					<br>
-				
-					<button type="button" id="insertBtn" onclick="insertBtnAction(); return false" class="btn btn-success btn-block" data-insert-type="extend" data-toggle="modal" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">INSERT COIN</button>
-					<div style="margin-bottom:-5px"></div>
-					<br>
-					<button type="button" id="promoRateBtn" onclick="promoBtnAction(); return false" class="btn btn-warning" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">PROMO RATES</button>
-					<div style="margin-bottom:-5px"></div>
-					<br>
-					<button type="button" id="pauseTimeBtn" onClick="pause(); return false" class="btn btn-danger btn-block" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">PAUSE TIME</button>
-					<br>
-					<button type="button" id="chargingBtn" onclick="chargingBtnAction(); return false" class="btn btn-secondary" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">CHARGING STATION</button>
-					<br>
-					<button type="button" id="eloadBtn" onclick="eloadBtnAction(); return false" class="btn btn-info" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">E-LOAD</button>
-					<div style="margin-top: 18px"></div>
+
+					<div class="modal fade" id="redeemModal" tabindex="-1" role="dialog" aria-labelledby="redeemModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+                      <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="redeemModalLabel">Redeem Reward Points</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                            </button>
+                          </div>
+                          <div class="modal-body">
+                            <div class="container-fluid">
+                              <div class="row mb-3">
+                                <div class="col-12 text-center">
+                                  <div class="small text-color-white">Available Points</div>
+                                  <div id="availablePointsDisplay" style="font-size:24px; font-weight:bold; color:#ffd700">0</div>
+                                </div>
+                              </div>
+
+                              <div class="row mb-2">
+                                <div class="col-12">
+                                  <label for="redeemSlider" class="text-color-white">Select points to redeem</label>
+                                  <input id="redeemSlider" type="range" class="form-control-range" min="0" value="1" />
+                                </div>
+                              </div>
+
+                              <div class="row mb-3">
+                                <div class="col-6 text-left">
+									<small class="text-color-white">Selected</small>
+									<input id="selectedPointsInput" type="number" min="0" step="1" value="0" class="form-control" style="width:100px; display:inline-block" />
+                                 	
+                                </div>
+                                <div class="col-6 text-right">
+                                  <small class="text-color-white">Estimated Value</small>
+                                  <div id="estimatedValueDisplay" style="font-size:20px; font-weight:bold; color:#28a745">PHP 0.00</div>
+                                </div>
+                              </div>
+
+                              <div class="row">
+                                <div class="col-12">
+                                  <small class="text-color-white">Redemption rule: <span class="redeemRatio" id="redeemRatio">1</span> point = PHP 1.00</small>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+                            <button type="button" id="confirmRedeemBtn" class="btn btn-success">Redeem</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 			
 					<div class="modal fade" id="insertCoinModal" style="z-index: 1500" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="insertCoinModalTitle" aria-hidden="true">
 						<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
@@ -154,49 +343,48 @@
 							  </button>
 							</div>
 							<div class="modal-body">
-								  <div class="progress" style="margin-bottom: 20px">
-									  <div id="progressDiv" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%; height: 30px"></div>
-								  </div>
-  
-								  <div id="noticeDiv" style="display: none">
-									  <center>
-										  <h4 id="noticeText">Coin is reading, please wait</h4>
-									  </center>
-								  </div>
-								  
-								  <div class="inscoin">
-								  <center>
-								  <div class="inscoinholder" style="border: 2px solid #576574; padding: 5px; height: 90px; border-radius: 3px">
-								  <span style="color: #747d8c">Your code is</span><br>
-								  <span id="codeGeneratedBlock">
-									  <span id="codeGenerated" style="font-size: 35px; font-weight: bold; color: #4cd137">*****</span>
-								  </span>
-								  </div>
-  
-								  <div class="inscoinholder convertVoucherBlock" id="convertVoucherBlockDiv">
-									  <span style="color: #747d8c">Convert unsed voucher</span><br>
-								  <input type="text" class="form-control" id="convertVoucherCode" placeholder="Enter voucher" style="width: 140px; text-align: center; ">
-								  <br>
-								  <button type="button" id="convertBtn" class="btn btn-success" onclick="convertVoucherAction(); return false">Convert</button>
-								  </div>
-								  
-								  <div class="inscoinholder">
-								  <span id="totalCoin" style="font-size: 20px; font-weight: bold; color: #fff">0</span><span style="font-size: 20px; font-weight: bold; color: #fff">.00 Php</span><br>
-								  <span style="color: #747d8c">Coin</span>
-								  </div>
-								  
-								  <div class="inscoinholder" id="totalTimeDiv">
-								  <span id="totalTime" style="font-size: 20px; font-weight: bold; color: #fff"></span><br>
-								  <span style="color: #747d8c">Time: </span>
-								  </div>
-								  
-								  <div class="inscoinholder" id="expectedCoinDiv" style="display: none">
-								  <span id="expectedCoin" style="font-size: 20px; font-weight: bold; color: #fff"></span><br>
-								  <span style="color: #747d8c">Expected Coin </span>
-								  </div>
-								  
-								  </center>
-								  </div>
+								<div class="progress" style="margin-bottom: 20px">
+									<div id="progressDiv" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%; height: 30px"></div>
+								</div>
+
+								<div id="noticeDiv" style="display: none">
+									<center>
+										<h4 id="noticeText">Coin is reading, please wait</h4>
+									</center>
+								</div>
+								
+								<div class="inscoin">
+								<center>
+									<div class="inscoinholder" style="border: 2px solid #576574; padding: 5px; height: 90px; border-radius: 3px">
+										<span style="color: #747d8c">Your code is</span><br>
+										<span id="codeGeneratedBlock">
+											<span id="codeGenerated" style="font-size: 35px; font-weight: bold; color: #4cd137">*****</span>
+										</span>
+									</div>
+		
+									<div class="inscoinholder convertVoucherBlock" id="convertVoucherBlockDiv">
+										<span style="color: #747d8c">Convert unsed voucher</span><br>
+										<input type="text" class="form-control" id="convertVoucherCode" placeholder="Enter voucher" style="width: 140px; text-align: center; ">
+										<br>
+										<button type="button" id="convertBtn" class="btn btn-success" onclick="convertVoucherAction(); return false">Convert</button>
+									</div>
+									
+									<div class="inscoinholder">
+										<span id="totalCoin" style="font-size: 20px; font-weight: bold; color: #fff">0</span><span style="font-size: 20px; font-weight: bold; color: #fff">.00 Php</span><br>
+										<span style="color: #747d8c">Coin</span>
+									</div>
+									
+									<div class="inscoinholder" id="totalTimeDiv">
+										<span id="totalTime" style="font-size: 20px; font-weight: bold; color: #fff"></span><br>
+										<span style="color: #747d8c">Time: </span>
+									</div>
+									
+									<div class="inscoinholder" id="expectedCoinDiv" style="display: none">
+										<span id="expectedCoin" style="font-size: 20px; font-weight: bold; color: #fff"></span><br>
+										<span style="color: #747d8c">Expected Coin </span>
+									</div>
+								</center>
+							</div>
 								  
 								  
 								  
@@ -222,7 +410,7 @@
 						  </div>
 						  <div class="modal-body">
 							<center>
-								<div id="rateTypeDiv">
+								<div id="rateTypeDiv" class="hide">
 								<label for="rateType" class="rate-title"><b>Rate Type</b></label>
 								<select name="rateType" class="form-control" id="rateType" onChange="onRateTypeChange(this)">
 								  <option value="1">Internet</option>
@@ -336,6 +524,7 @@
 				window.name="hotspot_status";
 				
 				$(document).ready(function(){
+					$('#redeemModal').modal('show');
 					/*voucher = currentVoucher;
 					$("#expirationTime").html("Loading...");
 					setTimeout(function(){

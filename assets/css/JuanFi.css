@@ -79,21 +79,14 @@ body {
 }
 
 .info-ip {
-	height: 50px;
-	width: auto;
-	display: inline-block;
-	margin-right: 10px
 }
 
-.info-mac {	
-	height: 50px;
-	width: auto;
-	display: inline-block
+.info-mac {
 }
 
 .info-status {
 	width: 100%;
-	border: 2px solid #485460;
+	border: 2px solid #4854604f;
 	border-radius: 5px;
 	border-radius: 3px;
 	padding: 10px;
@@ -105,7 +98,7 @@ body {
 	padding: 5px;
 	margin-bottom: 5px;
 	color: #fd7c5c;
-	border: 2px solid #485460;
+	border: 2px solid #4854604f;
 	border-radius: 5px
 }
 
@@ -137,23 +130,29 @@ body {
 
 .status-holder {
 	display: block;
-	padding: 10px 5px 30px 5px;
+	padding: 10px 5px 10px 5px;
 	font-size: 13px;	
 	width: 100%;
 	color: #fff;
-	box-shadow: 0px 1px 5px #000
+	box-shadow: 0px 1px 5px #000;
 }
 
 
-#vendoSelectDiv {
-	margin-bottom: 20px
+.buy-option-wrapper {
+	margin-bottom: 20px;
+	border: 2px solid #4854604f;
+	border-radius: 5px;
+	padding-left: 1px;
+	padding-right: 1px;
+	padding-top: 5px;
+	padding-bottom: 0;
 }
 
 
 .holder {
 	height: 50px;
 	width: 100%;
-	border: 2px solid: #eee;
+	border: 2px solid #eee;
 	padding: 10px;
 	display: block
 }
@@ -218,12 +217,6 @@ body {
 #vendoSelectDiv label {
 	color: #fff;
 	
-}
-
-#vendoSelectDiv {
-	border: 2px solid #57606f;
-	border-radius: 5px;
-	padding: 10px 0 20px 10px
 }
 
 .col-sm-6 {
@@ -331,6 +324,12 @@ body {
 }
 .status-val{
 	font-size: 16px;
+	font-weight: bold;
+	text-shadow: 1px 1px 3px #000;
+}
+
+.status-val-large{
+	font-size: 20px;
 	font-weight: bold;
 	text-shadow: 1px 1px 3px #000;
 }
