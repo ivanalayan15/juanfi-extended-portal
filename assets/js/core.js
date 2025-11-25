@@ -26,11 +26,75 @@ var chargerTimer = null;
 var rateType = "1";
 var autologin = false;
 var voucherToConvert = "";
-var juanfiExtendedServerIP = "10.10.10.252"; //change according to your JuanFI extended server (Orange PI) IP address
 
 var juanfiExtendedServerUrl = `http://${juanfiExtendedServerIP}:8080/api/portal`; //do not change value of this line
 
 var redeemRatioValue = 1; //do not change value of this line to avoid conflict/misrepresentation of UI to API data
+
+//this is to enable multi vendo setup, set to true when multi vendo is supported
+var isMultiVendo = true;
+// 0 = traditional (client choose a vendo) , 1 = auto select vendo base on hotspot address, 2 = interface name ( this will preserve one hotspot server ip only)
+var multiVendoOption = 0;
+
+//list here all node mcu address for multi vendo setup
+var multiVendoAddresses = [
+	{
+		vendoName: "Vendo 1 - ESP32 Wireless", //change accordingly to your vendo name
+		vendoIp: "10.10.10.252", //change accordingly to your vendo ip
+		chargingEnable: true,  //change true if you want to enable charging station
+		eloadEnable: true, //change true if you want to enable eloading station
+		hotspotAddress: "10.10.10.1", // use for multi vendo option = 1, means your vendo map to this hotspot and autoselect it when client connected to this
+		interfaceName: "vlan11-hotspot1" // hotspot interface name preser
+	},
+	{
+		vendoName: "Vendo 2 - ESP8622 Wireless", //change accordingly to your vendo name
+		vendoIp: "10.10.10.251", //change accordingly to your vendo ip
+		chargingEnable: false,  //change true if you want to enable charging station
+		eloadEnable: true //change true if you want to enable eloading station
+	},
+	{
+		vendoName: "Vendo 3 - ESP8622 LAN", //change accordingly to your vendo name
+		vendoIp: "10.10.10.253", //change accordingly to your vendo ip
+		chargingEnable: false,  //change true if you want to enable charging station
+		eloadEnable: false //change true if you want to enable eloading station
+	},
+	{
+		vendoName: "Vendo 4 - ESP32 LAN", //change accordingly to your vendo name
+		vendoIp: "10.10.10.254", //change accordingly to your vendo ip
+		chargingEnable: true,  //change true if you want to enable charging station
+		eloadEnable: false //change true if you want to enable eloading station
+	}
+];
+
+//0 means its login by username only, 1 = means if login by username + password
+var loginOption = 0; //replace 1 if you want login voucher by username + password
+
+var dataRateOption = false; //replace true if you enable data rates
+//put here the default selected address
+var vendorIpAddress = "10.10.10.252";
+
+var chargingEnable = false; //replace true if you enable charging, this can be override if multivendo setup
+
+var eloadEnable = false; //replace true if you enable eload, this can be override if multivendo setup
+
+//hide pause time / logout true = you want to show pause / logout button
+var showPauseTime = true;
+
+//enable member login, true = if you want to enable member login
+var showMemberLogin = true;
+
+//enable extend time button for customers
+var showExtendTimeButton = true;
+
+//disable voucher input
+var disableVoucherInput = false;
+
+//enable mac address as voucher code
+var macAsVoucherCode = false;
+
+var qrCodeVoucherPurchase = false;
+
+var pointsEnabled = false;
 
 $(document).ready(function(){
 	//$(document).ajaxStart(function(){ $("#loaderDiv").removeClass("hidden"); });
@@ -293,9 +357,14 @@ $(document).ready(function(){
 				$("#statusImg").addClass("blinking1");
 
 				var pausedState = getStorageValue("isPaused")
-				if(autologin && pausedState !== "1"){
+				var isLoggedIn = getStorageValue("isLoggedIn");
+				
+				if((!isLoggedIn) && autologin && pausedState !== "1"){
 					showLoader();
-					loginVoucher(macNoColon, function(){
+					loginVoucher(macNoColon, function(success){
+						if(success){
+							checkIsLoggedIn();
+						}
 						hideLoader();
 					});
 				}
@@ -310,13 +379,13 @@ $(document).ready(function(){
 			}
 			
 			if(showPauseTime && isPaused){
-				setStorageValue(isPaused, "1");
+				setStorageValue("isPaused", "1");
 				$("#pauseRemainTime").html(getStorageValue(voucher+"remain"));
 				$("#resumeTimeBtn").removeClass("hide");
 
 				$('#resumeTimeBtn').on('click', function(){
 					showLoader();
-					loginVoucher(macNoColon, function(){
+					loginVoucher(macNoColon, function(success){
 						hideLoader();
 					});
 				});
@@ -1005,7 +1074,7 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb){
 		url: `${juanfiExtendedServerUrl}/user-info?${params}`,
 		success: function(data){
 			if(!data){
-				cb(null);
+				cb(null, "No data received.");
 				return;
 			}
 
@@ -1278,16 +1347,7 @@ function loginVoucher(macNoColon, cb){
 				}
 
 				if(result.status === "success"){
-					$.toast({
-						title: 'Success',
-						content: 'You are now connected. Page will reload shortly.',
-						type: 'success',
-						delay: 4000
-					});
-
-					setTimeout(function (){
-						newLogin();
-					}, 1000);
+					cb(true);
 				}else{
 					$.toast({
 						title: 'Failed',
@@ -1295,6 +1355,7 @@ function loginVoucher(macNoColon, cb){
 						type: 'error',
 						delay: 4000
 					});
+					cb(false);
 				}
 			},
 			error: function(d){
@@ -1304,9 +1365,9 @@ function loginVoucher(macNoColon, cb){
 					type: 'error',
 					delay: 4000
 				});
+				cb(false);
 			},
 			complete: function(){
-				cb();
 			}
 		});
 	}catch(e){
@@ -1316,11 +1377,35 @@ function loginVoucher(macNoColon, cb){
 			type: 'error',
 			delay: 4000
 		});
-		cb();
+		cb(false);
 	}
 }
 
 function updateDeviceDateTime() {
 	var now = new Date();
 	$("#deviceDate").text(now);
+}
+
+function checkIsLoggedIn(){
+	fetchUserInfo(macNoColon, null, function(userData, error){
+		if(!!error){
+			throw error;
+		}
+		let {isOnline} = userData;
+		if(isOnline){
+			$.toast({
+				title: 'Success',
+				content: 'You are now connected. Page will reload shortly.',
+				type: 'success',
+				delay: 4000
+			});
+
+			setTimeout(function (){
+				newLogin();
+			}, 1000);
+			setStorageValue("isLoggedIn", true);
+		}else{
+			setStorageValue("isLoggedIn", false);
+		}
+	});
 }
