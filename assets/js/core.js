@@ -109,6 +109,7 @@ $(document).ready(function(){
 			});
 		}
 		
+		console.log(multiVendoAddresses)
 		if(isMultiVendo){
 			if(multiVendoOption == 1){
 				$("#vendoSelectDiv").addClass("hide");
@@ -129,6 +130,7 @@ $(document).ready(function(){
 			}else{
 				var selectedVendo = getStorageValue('selectedVendo');
 				if(selectedVendo === "null"){ selectedVendo = null; }
+				console.log(selectedVendo)
 				
 				for(var i=0;i<multiVendoAddresses.length;i++){
 					$("#vendoSelected").append($('<option>', {
@@ -1176,18 +1178,6 @@ function fetchPortalConfig(cb){
 				return;
 			}
 			let output = { ...data };
-			let multiVendoAddresses = [];
-			data.multiVendoAddresses.forEach((item) => {
-				multiVendoAddresses.push({
-					vendoName: item.VendoName,
-					vendoIp: item.VendoIp,
-					chargingEnable: item.ChargingEnable,
-					eloadEnable: item.EloadEnable,
-					hotspotAddress: item.HotspotAddress,
-					interfaceName: item.InterfaceName
-				});
-			});
-			output.multiVendoAddresses = multiVendoAddresses;
 			cb(output, null);
 		},
 		error: function(d){
