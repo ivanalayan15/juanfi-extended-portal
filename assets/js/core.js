@@ -357,13 +357,12 @@ $(document).ready(function(){
 				$("#statusImg").addClass("blinking1");
 
 				var pausedState = getStorageValue("isPaused")
-				var isLoggedIn = getStorageValue("isLoggedIn");
 				
-				if((!isLoggedIn) && autologin && pausedState !== "1"){
+				if(autologin && pausedState !== "1" && timeRemaining > 0){
 					showLoader();
 					loginVoucher(macNoColon, function(success){
 						if(success){
-							checkIsLoggedIn();
+							checkIsLoggedIn(macNoColon);
 						}
 						hideLoader();
 					});
@@ -379,16 +378,8 @@ $(document).ready(function(){
 			}
 			
 			if(showPauseTime && isPaused){
-				setStorageValue("isPaused", "1");
 				$("#pauseRemainTime").html(getStorageValue(voucher+"remain"));
 				$("#resumeTimeBtn").removeClass("hide");
-
-				$('#resumeTimeBtn').on('click', function(){
-					showLoader();
-					loginVoucher(macNoColon, function(success){
-						hideLoader();
-					});
-				});
 			}else{
 				$("#resumeTimeBtn").addClass("hide");
 			}
@@ -397,15 +388,27 @@ $(document).ready(function(){
 
 			if(showPauseTime && isOnline){
 				$("#pauseTimeBtn").removeClass("hide");
-				$("#pauseTimeBtn").on('click', function(){
-					var r = confirm("Are you sure you want to temporarily disconnect from the network?");
-					if(r){
-						pause(macNoColon);
-					}
-				});
 			}else{
 				$("#pauseTimeBtn").addClass("hide");
 			}
+
+			$("#pauseTimeBtn").on('click', function(){
+				var r = confirm("Are you sure you want to temporarily disconnect from the network?");
+				if(r){
+					pause(macNoColon);
+				}
+			});
+
+			$('#resumeTimeBtn').on('click', function(){
+				showLoader();
+				setStorageValue("isPaused", "0");
+				loginVoucher(macNoColon, function(success){
+					if(success){
+						checkIsLoggedIn(macNoColon);
+					}
+					hideLoader();
+				});
+			});
 
 			
 			// Initial call to display immediately
@@ -1386,7 +1389,7 @@ function updateDeviceDateTime() {
 	$("#deviceDate").text(now);
 }
 
-function checkIsLoggedIn(){
+function checkIsLoggedIn(macNoColon){
 	fetchUserInfo(macNoColon, null, function(userData, error){
 		if(!!error){
 			throw error;
@@ -1403,9 +1406,7 @@ function checkIsLoggedIn(){
 			setTimeout(function (){
 				newLogin();
 			}, 1000);
-			setStorageValue("isLoggedIn", true);
 		}else{
-			setStorageValue("isLoggedIn", false);
 		}
 	});
 }
