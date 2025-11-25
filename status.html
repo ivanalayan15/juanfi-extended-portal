@@ -6,6 +6,7 @@
 	<link rel="stylesheet" href="assets/css/toast.min.css">
 	<link rel="stylesheet" href="assets/css/core.css">
 	<link rel="stylesheet" href="assets/css/JuanFi.css">
+	<link rel="icon" type="image/x-icon" href="favicon.ico">
     <title>JuanFi - Status</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
@@ -15,7 +16,9 @@
 	<script>
 		var loginError = "";
 		var mac = "$(mac)";
-		var logoutUrl = "$(link-logout)";
+		var uIp = "$(ip)";
+		//var uIp = "10.10.10.7";
+		//var mac = "20:E2:A8:36:57:C8";
 		var hotspotAddress = "$(server-address)"; 
 		var interfaceName = "$(interface-name)";
 		var remainingTimer = null;
@@ -23,127 +26,214 @@
 
 </head>
 <body id="loginBody">
-
-<!-- Messenger Chat plugin Code -->
-    <div id="fb-root"></div>
-
-    <!-- Your Chat plugin code -->
-    <div id="fb-customer-chat" class="fb-customerchat">
-    </div>
-
-    <script>
-      var chatbox = document.getElementById('fb-customer-chat');
-      chatbox.setAttribute("page_id", "108240834062058");
-      chatbox.setAttribute("attribution", "biz_inbox");
-
-      window.fbAsyncInit = function() {
-        FB.init({
-          xfbml            : true,
-          version          : 'v12.0'
-        });
-      };
-
-      (function(d, s, id) {
-        var js, fjs = d.getElementsByTagName(s)[0];
-        if (d.getElementById(id)) return;
-        js = d.createElement(s); js.id = id;
-        js.src = 'https://connect.facebook.net/en_US/sdk/xfbml.customerchat.js';
-        fjs.parentNode.insertBefore(js, fjs);
-      }(document, 'script', 'facebook-jssdk'));
-    </script>
-
 <div class="container">
 <center>
-		<form action="$(link-logout)" name="logout" >
-		</form>
-
-		<form action="$(link-logout)" name="forcelogout" >
-			<input type="hidden" name="erase-cookie" value="true" />
-		</form>
-		
         <div class="row">
-            <div class="col-sm-5">
-                <div class="row" style="margin-bottom: 20px">
-                    <img src="assets/MainPic.PNG" class="img-fluid" />
-                </div>
-				
-				<div class="info"><center>
-						<div class="info-ip">
-						<img src="assets/img/ip.png" width="20px" height="20px" />
-						<span>$(ip)</span>
+            <div class="col-sm-6">
+				<div class="container-fluid">
+					<div class="row mb-10">
+						<div class="col-sm-12">
+							<img src="assets/MainPic.PNG" class="img-fluid" />
 						</div>
-						<div class="info-mac">
-						<img src="assets/img/mac.png" width="20px" height="20px" />
-						<span>$(mac)</span>
+					</div>
+					<table class="table table-borderless">
+						<tr>
+							<td>
+								<div class="info-ip">
+									<img src="assets/img/ip.png" width="20px" height="20px" />
+									<span class="pl-5" id="ipInfo">Loading</span>
+								</div>
+							</td>
+							<td>
+								<div class="info-mac text-align-right">
+									<img src="assets/img/mac.png" width="20px" height="20px" />
+									<span class="pl-5" id="macInfo" >Loading</span>
+								</div>
+							</td>
+						</tr>
+					</table>
+					<div class="row">
+						<div class="col-sm-12">
+							<table class="table table-borderless center">
+								<tr>
+									<td class="text-align-right pr-5">
+										<img id="statusImg" src="assets/img/no_wifi.png" class="hide" />
+									</td>
+									<td class="text-align-left pl-0 td-center">
+										<span class="blinking2 text-color-yellow" id="connectionStatus">Loading...</span>
+									</td>
+								</tr>
+							</table>
 						</div>
-					</center>
+					</div>
 				</div>
-				
-				<center>			
-				<span class="status-connected">Status: <span class="blinking2" id="connectionStatus" style="color: #4cd137">Connected</span></span>
-                </center>
             </div>
-
-            <div class="col-sm-7">
-                <div class="login">
-				
-				
-				
-				<div class="info-status">
-				<center>
-					<div class="status-holder">
-						<div class="info-title"><img src="assets/img/voucher.png" width="20px" height="20px" /><span> Voucher</span></div>
-						<span style="font-size: 25px; font-weight: bold; text-shadow: 1px 1px 3px #000">$(username)</span>
-					</div>
-					
-					<div class="break2"></div>
-					
-					<div class="status-holder">						
-						<div class="info-title"><img src="assets/img/time.png" width="20px" height="20px" /><span> Remaining Time</span></div>
-						<span class="odometer" id="remainTime" style="font-size: 16px; font-weight: bold; text-shadow: 1px 1px 3px #000"></span><br>
-						
-					</div>
-					
-					<div class="break2"></div>
-					
-					<div class="status-holder">					
-						<div class="info-title"><img src="assets/img/timeexpired.png" width="20px" height="20px" /><span> Expiration Time</span></div>
-						<span id="expirationTime" style="font-size: 16px; font-weight: bold; text-shadow: 1px 1px 3px #000"></span>
-					</div>
-					
-					<div class="break2"></div>
-					
-					<div class="status-holder">
-						<div class="info-title"><img src="assets/img/data.png" width="20px" height="20px" /><span> Data Usage</span></div>
-						<div style="display: inline-block"><img src="assets/img/upload.png" width="20px" height="20px" /><span style="font-size: 16px; font-weight: bold; text-shadow: 1px 1px 3px #000">$(bytes-in-nice)</span></div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-						<div style="display: inline-block"><img src="assets/img/download.png" width="20px" height="20px" /><span style="font-size: 16px; font-weight: bold; text-shadow: 1px 1px 3px #000">$(bytes-out-nice)</span></div>
-						<div class="inscoinholder" id="dataInfoDiv2">
-							<span id="totalDataInfo" style="font-size: 20px; font-weight: bold; color: #ffffff">$(remain-bytes-total-nice)</span><br>
-							<span style="color: #ffffff">Remaining Data</span>
+            <div class="col-sm-6">
+                <div class="login borderless mb-10">
+					<small><span id="deviceDate" class="text-color-white">Loading...</span></small>
+					<div id="rewardDtls" class="info-status">
+						<div class="container-fluid status-holder">
+							<div class="info-title">
+								<img src="assets/img/reward.png" width="20px" height="20px" />
+								<span class="pl-5">Rewards</span>
+							</div>
+							<div class="row mt-10 pr-5">
+								<div id="rewardDtlsWrapper" class="col-sm-6">
+									<img src="assets/img/coin.png" width="20px" height="20px" />
+									<span id="rewardPoints" class="status-val pl-5">Loading...</span>
+									<br/>
+									<span class="text-color-white">Reward Balance</span>
+								</div>
+								<div id="rewardBtnWrapper" class="col-sm-6">
+									<button type="button" id="redeemPtsBtn" onclick="return false" class="btn btn-warning" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">REDEEM</button>
+								</div>
+							</div>
+							<div class="row mt-10 pr-5">
+								<div class="col-12">
+									<small class="text-color-white">Redemption rule: <span class="redeemRatio">1</span> point = PHP 1.00</small>
+								</div>
+							</div>
 						</div>
 					</div>
-				</center>
-				</div>
-					
-					<div id="vendoSelectDiv" style="margin-top: 20px">
-						<label for="exampleFormControlSelect2">Select Vendo</label>
-						<select class="form-control" name="vendoSelected" id="vendoSelected" >
-						</select>
+					<div class="info-status mb-10">
+						<div id="voucherDtls" class="container-fluid status-holder">
+							<div class="info-title">
+								<img src="assets/img/voucher.png" width="20px" height="20px" />
+								<span class="pl-5">Voucher</span>
+							</div>
+							<span id="voucherCode" class="voucher-val mb-20">Loading...</span>
+							<div id="remainingTimeWrapper" class="row mt-10">
+								<div class="col-sm-12">
+									<img src="assets/img/time.png" width="20px" height="20px" />
+									<span id="remainTime" class="status-val pl-5 text-size-24">Loading...</span>
+									<br/>
+									<span class="text-color-white">Remaining Time</span>
+								</div>
+							</div>
+							<div id="expirationTimeWrapper" class="row mt-10">
+								<div class="col-sm-12">
+									<img id="expirationTimeImg" src="assets/img/timeexpired.png" width="20px" height="20px" />
+									<span id="expirationTime" class="pl-5 status-val text-size-20">Loading...</span>
+									<br/>
+									<span class="text-color-white">Expiration Time</span>
+								</div>
+							</div>
+						</div>
+						<div id="dataUsage" class="container-fluid status-holder hide">
+							<div class="info-title">
+								<img src="assets/img/data.png" width="20px" height="20px" />
+								<span class="pl-5">Data Usage</span>
+							</div>
+							<div class="row mt-10">
+								<div class="col-sm-6">
+									<img src="assets/img/upload.png" width="20px" height="20px" />
+									<span id="uploadDataUsage" class="pl-5 status-val">$(bytes-in-nice)</span>
+									<br/>
+									<span class="text-color-white">Upload Data</span>
+								</div>
+								<div class="col-sm-6">
+									<img src="assets/img/download.png" width="20px" height="20px" />
+									<span id="downloadDataUsage" class="pl-5 status-val">$(bytes-out-nice)</span>
+									<br/>
+									<span class="text-color-white">Download Data</span>
+								</div>
+							</div>
+						</div>
 					</div>
-					<br>
-				
-					<button type="button" id="insertBtn" onclick="insertBtnAction(); return false" class="btn btn-success btn-block" data-insert-type="extend" data-toggle="modal" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">EXTEND TIME</button>
-					<div style="margin-bottom:-5px"></div>
-					<br>
-					<button type="button" id="promoRateBtn" onclick="promoBtnAction(); return false" class="btn btn-warning" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">PROMO RATES</button>
-					<div style="margin-bottom:-5px"></div>
-					<br>
-					<button type="button" id="pauseTimeBtn" onClick="pause(); return false" class="btn btn-danger btn-block" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">PAUSE TIME</button>
-					<br>
-					<button type="button" id="chargingBtn" onclick="chargingBtnAction(); return false" class="btn btn-secondary" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">CHARGING STATION</button>
-					<br>
-					<button type="button" id="eloadBtn" onclick="eloadBtnAction(); return false" class="btn btn-info" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">E-LOAD</button>
-					<div style="margin-top: 18px"></div>
+
+					<div class="mt-20 buy-option-wrapper">
+						<div class="container-fluid">
+							<div class="row mb-10">
+								<div id="vendoSelectDiv" class="col-sm-12">
+									<label for="exampleFormControlSelect2">Select Vendo</label>
+									<select class="form-control fullwidth" name="vendoSelected" id="vendoSelected" >
+									</select>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-12 mb-5">
+									<button type="button" id="resumeTimeBtn" class="btn btn-info btn-block fullwidth text-color-white text-shadow hide">RESUME TIME</button>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-12 mb-5">
+									<button type="button" id="insertBtn" onclick="insertBtnAction(); return false" class="btn btn-success btn-block fullwidth text-color-white text-shadow" data-insert-type="extend" data-toggle="modal">INSERT COIN</button>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-12 mb-5">
+									<button type="button" id="promoRateBtn" onclick="promoBtnAction(); return false" class="btn btn-warning fullwidth text-color-white text-shadow" >PROMO RATES</button>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-12 mb-5">
+									<button type="button" id="pauseTimeBtn" class="btn btn-danger btn-block fullwidth text-color-white text-shadow hide">PAUSE TIME</button>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-12 mb-5">
+									<button type="button" id="chargingBtn" onclick="chargingBtnAction(); return false" class="btn btn-secondary fullwidth text-color-white text-shadow hide">CHARGING STATION</button>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-12">
+									<button type="button" id="eloadBtn" onclick="eloadBtnAction(); return false" class="btn btn-info fullwidth text-color-white text-shadow hide">E-LOAD</button>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="modal fade" id="redeemModal" tabindex="-1" role="dialog" aria-labelledby="redeemModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+                      <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="redeemModalLabel">Redeem Reward Points</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                            </button>
+                          </div>
+                          <div class="modal-body">
+                            <div class="container-fluid">
+                              <div class="row mb-3">
+                                <div class="col-12 text-center">
+                                  <div class="small text-color-white">Available Points</div>
+                                  <div id="availablePointsDisplay" style="font-size:24px; font-weight:bold; color:#ffd700">0</div>
+                                </div>
+                              </div>
+
+                              <div class="row mb-2">
+                                <div class="col-12">
+                                  <label for="redeemSlider" class="text-color-white">Select points to redeem</label>
+                                  <input id="redeemSlider" type="range" class="form-control-range" min="0" value="1" />
+                                </div>
+                              </div>
+
+                              <div class="row mb-3">
+                                <div class="col-6 text-left">
+									<small class="text-color-white">Selected</small>
+									<input id="selectedPointsInput" type="number" min="0" step="1" value="0" class="form-control" style="width:100px; display:inline-block" />
+                                 	
+                                </div>
+                                <div class="col-6 text-right">
+                                  <small class="text-color-white">Estimated Value</small>
+                                  <div id="estimatedValueDisplay" style="font-size:20px; font-weight:bold; color:#28a745">PHP 0.00</div>
+                                </div>
+                              </div>
+
+                              <div class="row">
+                                <div class="col-12">
+                                  <small class="text-color-white">Redemption rule: <span class="redeemRatio" id="redeemRatio">1</span> point = PHP 1.00</small>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+                            <button type="button" id="confirmRedeemBtn" class="btn btn-success">Redeem</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 			
 					<div class="modal fade" id="insertCoinModal" style="z-index: 1500" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="insertCoinModalTitle" aria-hidden="true">
 						<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
@@ -155,49 +245,48 @@
 							  </button>
 							</div>
 							<div class="modal-body">
-								  <div class="progress" style="margin-bottom: 20px">
-									  <div id="progressDiv" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%; height: 30px"></div>
-								  </div>
-  
-								  <div id="noticeDiv" style="display: none">
-									  <center>
-										  <h4 id="noticeText">Coin is reading, please wait</h4>
-									  </center>
-								  </div>
-								  
-								  <div class="inscoin">
-								  <center>
-								  <div class="inscoinholder" style="border: 2px solid #576574; padding: 5px; height: 90px; border-radius: 3px">
-								  <span style="color: #747d8c">Your code is</span><br>
-								  <span id="codeGeneratedBlock">
-									  <span id="codeGenerated" style="font-size: 35px; font-weight: bold; color: #4cd137">*****</span>
-								  </span>
-								  </div>
-  
-								  <div class="inscoinholder convertVoucherBlock" id="convertVoucherBlockDiv">
-									  <span style="color: #747d8c">Convert unsed voucher</span><br>
-								  <input type="text" class="form-control" id="convertVoucherCode" placeholder="Enter voucher" style="width: 140px; text-align: center; ">
-								  <br>
-								  <button type="button" id="convertBtn" class="btn btn-success" onclick="convertVoucherAction(); return false">Convert</button>
-								  </div>
-								  
-								  <div class="inscoinholder">
-								  <span id="totalCoin" style="font-size: 20px; font-weight: bold; color: #fff">0</span><span style="font-size: 20px; font-weight: bold; color: #fff">.00 Php</span><br>
-								  <span style="color: #747d8c">Coin</span>
-								  </div>
-								  
-								  <div class="inscoinholder" id="totalTimeDiv">
-								  <span id="totalTime" style="font-size: 20px; font-weight: bold; color: #fff"></span><br>
-								  <span style="color: #747d8c">Time: </span>
-								  </div>
-								  
-								  <div class="inscoinholder" id="expectedCoinDiv" style="display: none">
-								  <span id="expectedCoin" style="font-size: 20px; font-weight: bold; color: #fff"></span><br>
-								  <span style="color: #747d8c">Expected Coin </span>
-								  </div>
-								  
-								  </center>
-								  </div>
+								<div class="progress" style="margin-bottom: 20px">
+									<div id="progressDiv" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%; height: 30px"></div>
+								</div>
+
+								<div id="noticeDiv" style="display: none">
+									<center>
+										<h4 id="noticeText">Coin is reading, please wait</h4>
+									</center>
+								</div>
+								
+								<div class="inscoin">
+								<center>
+									<div class="inscoinholder" style="border: 2px solid #576574; padding: 5px; height: 90px; border-radius: 3px">
+										<span style="color: #747d8c">Your code is</span><br>
+										<span id="codeGeneratedBlock">
+											<span id="codeGenerated" style="font-size: 35px; font-weight: bold; color: #4cd137">*****</span>
+										</span>
+									</div>
+		
+									<div class="inscoinholder convertVoucherBlock" id="convertVoucherBlockDiv">
+										<span style="color: #747d8c">Convert unsed voucher</span><br>
+										<input type="text" class="form-control" id="convertVoucherCode" placeholder="Enter voucher" style="width: 140px; text-align: center; ">
+										<br>
+										<button type="button" id="convertBtn" class="btn btn-success" onclick="convertVoucherAction(); return false">Convert</button>
+									</div>
+									
+									<div class="inscoinholder">
+										<span id="totalCoin" style="font-size: 20px; font-weight: bold; color: #fff">0</span><span style="font-size: 20px; font-weight: bold; color: #fff">.00 Php</span><br>
+										<span style="color: #747d8c">Coin</span>
+									</div>
+									
+									<div class="inscoinholder" id="totalTimeDiv">
+										<span id="totalTime" style="font-size: 20px; font-weight: bold; color: #fff"></span><br>
+										<span style="color: #747d8c">Time: </span>
+									</div>
+									
+									<div class="inscoinholder" id="expectedCoinDiv" style="display: none">
+										<span id="expectedCoin" style="font-size: 20px; font-weight: bold; color: #fff"></span><br>
+										<span style="color: #747d8c">Expected Coin </span>
+									</div>
+								</center>
+							</div>
 								  
 								  
 								  
@@ -223,7 +312,7 @@
 						  </div>
 						  <div class="modal-body">
 							<center>
-								<div id="rateTypeDiv">
+								<div id="rateTypeDiv" class="hide">
 								<label for="rateType" class="rate-title"><b>Rate Type</b></label>
 								<select name="rateType" class="form-control" id="rateType" onChange="onRateTypeChange(this)">
 								  <option value="1">Internet</option>
@@ -315,8 +404,11 @@
 				
 			<div class="footer">
 					<span class="footers">
-					Powered by: <a href="https://www.facebook.com/groups/1172413279934139">JuanFi System v4.0</a> &copy; All rights reserved 2022<br>
-					
+						Owned by: ##add owner here##
+					</span>
+					<br/>
+					<span class="footers"><!--DO NOT REMOVE THIS LINE. JuanFI Extended developers will not answer your questions if you remove this. Use the "Owned by" space if you want to add your details.-->
+						Powered by: &copy;2025 <a href="https://www.facebook.com/groups/1172413279934139">JuanFI Extended</a> v1.0
 					</span>				
 				</div>
             </div>	
@@ -331,109 +423,11 @@
 			
 			
 			<script>
-				var sessiontime = "$(session-time-left-secs)";
-				var uptime = "$(uptime-secs)";
-				var currentVoucher = "$(username)";
 				window.name="hotspot_status";
 				
 				$(document).ready(function(){
-					voucher = currentVoucher;
-					$("#expirationTime").html("Loading...");
-					setTimeout(function(){
-						fetchValidity(1);
-					}, 1000);
-					
-					setStorageValue('activeVoucher', currentVoucher);
-					
-					var time = sessiontime;
-					if(time == "0"){
-						$("#remainTime").html("Unlimited");
-					}else{
-						$("#remainTime").html(secondsToDhms(time));
-						remainingTimer = setInterval(function(){
-							time--;
-							$("#remainTime").html(secondsToDhms(time));
-							if(time <= 0){
-								$.toast({
-									title: 'Success',
-									content: 'Time limit exceeded, Thank you for the purchase, will be logout shortly',
-									type: 'success',
-									delay: 5000
-								});
-								clearInterval(remainingTimer);
-								setTimeout(function(){
-									document.logout.submit();
-								}, 6000);
-							}
-						}, 1000);
-					}
-					
+					$('#redeemModal').modal('show');
 				});
-				
-				function fetchValidity(retryNo){
-					if(retryNo > 5){
-						fallbackValidity();
-						return;
-					}
-					var macNoColon = replaceAll(mac, ":");
-					$.ajax({
-							  type: "GET",
-							  url: "/data/"+macNoColon+".txt?query="+new Date().getTime(),
-							  success: function(data){
-								if(data.length > 50){
-									setTimeout(function(){
-										fetchValidity(retryNo++);
-									}, 1000);
-									return;
-								}
-								var macData = data.split("#");
-								var validityRaw = macData[1];
-								
-								var validityTime = null;
-								if(validityRaw.length > 15){
-									validityTime = new Date(Date.parse(validityRaw));
-								}else if(validityRaw.length > 8){
-									var dt = validityRaw.split(" ");
-									var yr = new Date().getFullYear();
-									validityTime = new Date(Date.parse(dt[0]+"/"+yr+" "+dt[1]));
-								}else if(validityRaw.length == 0){
-									validityTime = null;
-								} else{
-									var curDate = new Date();
-									var m = curDate.getMonth()+1;
-									var d = curDate.getDate();
-									var yr = curDate.getFullYear();
-									validityTime = new Date(Date.parse(m+"/"+d+"/"+yr+" "+validityRaw));
-								}
-								if(validityTime != null){
-									$("#expirationTime").html(validityTime.toLocaleString());
-								}else{
-									$("#expirationTime").html("No Expiration");
-								}
-							  },
-							  error: function(d){
-									fallbackValidity();
-							 }
-					});			
-				}
-				
-				function fallbackValidity(){
-					var validity = getStorageValue(voucher+"validity");
-					if(validity != null){
-						var curDate = new Date();
-						var validityTime = new Date(parseInt(validity));
-						if(validityTime.getTime() < curDate.getTime()){
-							removeStorageValue(voucher+"validity");
-							removeStorageValue(voucher+"tempValidity");
-							$("#expirationTime").html("Not Available");
-						}else{
-							$("#expirationTime").html(validityTime.toLocaleString());
-						}
-					}else{
-						$("#expirationTime").html("Not Available");
-					}
-				}
-				
 				$(if refresh-timeout)
 					setInterval(function(){
 						if(!insertingCoin){

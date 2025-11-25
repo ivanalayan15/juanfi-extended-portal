@@ -64,3 +64,5 @@ var disableVoucherInput = false;
 var macAsVoucherCode = false;
 
 var qrCodeVoucherPurchase = false;
+
+var pointsEnabled = false;

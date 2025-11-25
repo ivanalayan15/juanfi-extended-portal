@@ -16,8 +16,9 @@
 	<script>
 		var loginError = "";
 		//var mac = "$(mac)";
-		var mac = "BE:47:12:02:81:E5";
-		var logoutUrl = "$(link-logout)";
+		//var uIp = "$(ip)";
+		var uIp = "10.10.10.7";
+		var mac = "20:E2:A8:36:57:C8";
 		var hotspotAddress = "$(server-address)"; 
 		var interfaceName = "$(interface-name)";
 		var remainingTimer = null;
@@ -25,35 +26,6 @@
 
 </head>
 <body id="loginBody">
-
-<!-- Messenger Chat plugin Code -->
-    <div id="fb-root"></div>
-
-    <!-- Your Chat plugin code -->
-    <div id="fb-customer-chat" class="fb-customerchat">
-    </div>
-
-    <script>
-      var chatbox = document.getElementById('fb-customer-chat');
-      chatbox.setAttribute("page_id", "108240834062058");
-      chatbox.setAttribute("attribution", "biz_inbox");
-
-      window.fbAsyncInit = function() {
-        FB.init({
-          xfbml            : true,
-          version          : 'v12.0'
-        });
-      };
-
-      (function(d, s, id) {
-        var js, fjs = d.getElementsByTagName(s)[0];
-        if (d.getElementById(id)) return;
-        js = d.createElement(s); js.id = id;
-        js.src = 'https://connect.facebook.net/en_US/sdk/xfbml.customerchat.js';
-        fjs.parentNode.insertBefore(js, fjs);
-      }(document, 'script', 'facebook-jssdk'));
-    </script>
-
 <div class="container">
 <center>
         <div class="row">
@@ -69,13 +41,13 @@
 							<td>
 								<div class="info-ip">
 									<img src="assets/img/ip.png" width="20px" height="20px" />
-									<span class="pl-5">$(ip)</span>
+									<span class="pl-5" id="ipInfo">Loading</span>
 								</div>
 							</td>
 							<td>
 								<div class="info-mac text-align-right">
 									<img src="assets/img/mac.png" width="20px" height="20px" />
-									<span class="pl-5">$(mac)</span>
+									<span class="pl-5" id="macInfo" >Loading</span>
 								</div>
 							</td>
 						</tr>
@@ -451,110 +423,11 @@
 			
 			
 			<script>
-				var sessiontime = "$(session-time-left-secs)";
-				var uptime = "$(uptime-secs)";
-				var currentVoucher = "$(username)";
 				window.name="hotspot_status";
 				
 				$(document).ready(function(){
 					$('#redeemModal').modal('show');
-					/*voucher = currentVoucher;
-					$("#expirationTime").html("Loading...");
-					setTimeout(function(){
-						fetchValidity(1);
-					}, 1000);
-					
-					setStorageValue('activeVoucher', currentVoucher);
-					
-					var time = sessiontime;
-					if(time == "0"){
-						$("#remainTime").html("Unlimited");
-					}else{
-						$("#remainTime").html(secondsToDhms(time));
-						remainingTimer = setInterval(function(){
-							time--;
-							$("#remainTime").html(secondsToDhms(time));
-							if(time <= 0){
-								$.toast({
-									title: 'Success',
-									content: 'Time limit exceeded, Thank you for the purchase, will be logout shortly',
-									type: 'success',
-									delay: 5000
-								});
-								clearInterval(remainingTimer);
-								setTimeout(function(){
-									document.logout.submit();
-								}, 6000);
-							}
-						}, 1000);
-					}*/
-					
 				});
-				
-				function fetchValidity(retryNo){
-					if(retryNo > 5){
-						fallbackValidity();
-						return;
-					}
-					var macNoColon = replaceAll(mac, ":");
-					$.ajax({
-							  type: "GET",
-							  url: "/data/"+macNoColon+".txt?query="+new Date().getTime(),
-							  success: function(data){
-								if(data.length > 50){
-									setTimeout(function(){
-										fetchValidity(retryNo++);
-									}, 1000);
-									return;
-								}
-								var macData = data.split("#");
-								var validityRaw = macData[1];
-								
-								var validityTime = null;
-								if(validityRaw.length > 15){
-									validityTime = new Date(Date.parse(validityRaw));
-								}else if(validityRaw.length > 8){
-									var dt = validityRaw.split(" ");
-									var yr = new Date().getFullYear();
-									validityTime = new Date(Date.parse(dt[0]+"/"+yr+" "+dt[1]));
-								}else if(validityRaw.length == 0){
-									validityTime = null;
-								} else{
-									var curDate = new Date();
-									var m = curDate.getMonth()+1;
-									var d = curDate.getDate();
-									var yr = curDate.getFullYear();
-									validityTime = new Date(Date.parse(m+"/"+d+"/"+yr+" "+validityRaw));
-								}
-								if(validityTime != null){
-									$("#expirationTime").html(validityTime.toLocaleString());
-								}else{
-									$("#expirationTime").html("No Expiration");
-								}
-							  },
-							  error: function(d){
-									fallbackValidity();
-							 }
-					});		
-				}
-				
-				function fallbackValidity(){
-					var validity = getStorageValue(voucher+"validity");
-					if(validity != null){
-						var curDate = new Date();
-						var validityTime = new Date(parseInt(validity));
-						if(validityTime.getTime() < curDate.getTime()){
-							removeStorageValue(voucher+"validity");
-							removeStorageValue(voucher+"tempValidity");
-							$("#expirationTime").html("Not Available");
-						}else{
-							$("#expirationTime").html(validityTime.toLocaleString());
-						}
-					}else{
-						$("#expirationTime").html("Not Available");
-					}
-				}
-				
 				$(if refresh-timeout)
 					setInterval(function(){
 						if(!insertingCoin){

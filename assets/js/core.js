@@ -24,6 +24,7 @@ var TOPUP_ELOAD = "ELOAD";
 var topupMode = TOPUP_INTERNET;
 var chargerTimer = null;
 var rateType = "1";
+var autologin = false;
 var voucherToConvert = "";
 var juanfiExtendedServerIP = "10.10.10.252"; //change according to your JuanFI extended server (Orange PI) IP address
 
@@ -34,6 +35,9 @@ var redeemRatioValue = 1; //do not change value of this line to avoid conflict/m
 $(document).ready(function(){
 	//$(document).ajaxStart(function(){ $("#loaderDiv").removeClass("hidden"); });
     //$(document).ajaxStop(function(){ $("#loaderDiv").addClass("hidden"); });
+
+	$("#ipInfo").html(uIp)
+	$("#macInfo").html(mac)
 
 	showLoader();
 
@@ -63,6 +67,9 @@ $(document).ready(function(){
 		macAsVoucherCode = data.macAsVoucherCode;
 		qrCodeVoucherPurchase = data.qrCodeVoucherPurchase;
 		disableVoucherInput = data.disableVoucherInput;
+		pointsEnabled = data.pointsPercentage > 0;
+		autologin = data.autoLoginHotspot;
+
 
 		// handle the data if needed
 		$( "#saveVoucherButton" ).prop('disabled', true);	
@@ -96,20 +103,6 @@ $(document).ready(function(){
 			insertingCoin = false;
 		});
 
-		if(loginError != "" && ((voucher != null && voucher != ""))){
-			voucherError = true;
-			removeStorageValue("isPaused");
-			removeStorageValue("activeVoucher");
-			voucher = "";
-			$.toast({
-				title: 'Error',
-				content: "Invalid voucher, please make sure voucher is valid",
-				type: 'error',
-				delay: 5000
-			});
-		}
-		
-		console.log(multiVendoAddresses)
 		if(isMultiVendo){
 			if(multiVendoOption == 1){
 				$("#vendoSelectDiv").addClass("hide");
@@ -130,7 +123,6 @@ $(document).ready(function(){
 			}else{
 				var selectedVendo = getStorageValue('selectedVendo');
 				if(selectedVendo === "null"){ selectedVendo = null; }
-				console.log(selectedVendo)
 				
 				for(var i=0;i<multiVendoAddresses.length;i++){
 					$("#vendoSelected").append($('<option>', {
@@ -154,7 +146,6 @@ $(document).ready(function(){
 				});
 			}
 			
-			
 			$("#vendoSelected").trigger("change");
 
 		}else{
@@ -175,12 +166,6 @@ $(document).ready(function(){
 			if(inserType == "extend"){
 					$("#insertBtn").addClass("hide");
 			}
-		}
-
-		if(macAsVoucherCode){
-			var macNoColon = replaceAll(mac, ":");
-			voucher = macNoColon;
-			$("#voucherInput").val(macNoColon);
 		}
 		
 		if( qrCodeVoucherPurchase ){
@@ -211,40 +196,18 @@ $(document).ready(function(){
 			return;
 		}
 
-		var forceLogout = getStorageValue("forceLogout");
-		if(forceLogout == "1"){
-				removeStorageValue("forceLogout");
-				setStorageValue("redirectLogin", "1");
-				setStorageValue("ignoreSaveCode", "1");
-				document.forcelogout.submit();
-				return;
-		}
-		
-		var insertCoinTrigger = getStorageValue("insertCoinRefreshed");
-		
 		var macNoColon = replaceAll(mac, ":");
+
+		voucher = macNoColon;
 		
 		var ignoreSaveCode = getStorageValue("ignoreSaveCode");
 		if(ignoreSaveCode == null || ignoreSaveCode == "0"){
 			ignoreSaveCode = "0";
 		}
 		
-		if(ignoreSaveCode != "1" && insertCoinTrigger != "1" && (!voucherError) && $("#voucherInput").length > 0){
-			$.ajax({
-				type: "GET",
-				url: "/data/"+macNoColon+".txt?query="+new Date().getTime(),
-				success: function(data){
-					var macData = data.split("#");
-					voucher = macData[0];
-					$('#voucherInput').val(voucher);
-					$("#connectBtn").click();
-				}
-			});
-		}
-
 		$('#resumeTimeBtn').addClass("hide");
 
-		fetchUserInfo(macNoColon, function(userData, error){
+		fetchUserInfo(macNoColon, pointsEnabled, function(userData, error){
 			if(!!error){
 				hideLoader();
 				$.toast({
@@ -328,6 +291,14 @@ $(document).ready(function(){
 				$("#statusImg").attr("src", "assets/img/off_wifi.png");
 				$("#statusImg").removeClass("hide");
 				$("#statusImg").addClass("blinking1");
+
+				var pausedState = getStorageValue("isPaused")
+				if(autologin && pausedState !== "1"){
+					showLoader();
+					loginVoucher(macNoColon, function(){
+						hideLoader();
+					});
+				}
 			}
 
 			if(!!timeExpiry){
@@ -424,6 +395,7 @@ function cancelPause(){
 	if(r){
 		removeStorageValue("isPaused");
 		removeStorageValue("activeVoucher");
+		setStorageValue('isPaused', "1");
 		setStorageValue('forceLogout', "1");
 		document.logout.submit();
 	}
@@ -458,54 +430,13 @@ function insertBtnAction(){
 	$('#totalCoin').html("0");
 	$('#totalTime').html(secondsToDhms(parseInt(0)));
 	
-	var type = $( "#saveVoucherButton" ).attr('data-save-type');
-	if( type != "extend" ){
-		$.ajax({
-		  type: "GET",
-		  url: "/status",
-           success: function(data, textStatus, request){
-              if ( data.indexOf("IAMNOTLOGINSTRINGPLEASEDONTREMOVE") < 0 ){
-				  location.reload();
-			  }else {
-				  callTopupAPI(0);
-			  }
-           }
-		});
-	}else{
-		callTopupAPI(0);
-	}
+	callTopupAPI(0);
+	
 	return false;
 }
 
 $('#promoRatesModal').on('shown.bs.modal', function (e) {
 	populatePromoRates(0);
-})
-
-$('#scanQrModal').on('shown.bs.modal', function (e) {
-	
-	qrCodeTimer = setInterval(function() {
-		var macNoColon = replaceAll(mac, ":");
-		$.ajax({
-			  type: "GET",
-			  url: "/data/"+macNoColon+".txt?query="+new Date().getTime(),
-			  success: function(data){
-				  clearInterval(qrCodeTimer);
-				  $.toast({
-					  title: 'Success',
-					  content: 'Thank you for the purchase!, will do auto login shortly',
-					  type: 'success',
-					  delay: 3000
-				  });
-				  $('#scanQrModal').modal('hide');
-				  setTimeout(function (){
-							newLogin();
-				 }, 3000);
-			  },
-			  error: function (jqXHR, exception) {
-				  
-			  }
-		});
-	}, 1000);
 })
 
 function populatePromoRates(retryCount){
@@ -671,16 +602,7 @@ function callTopupAPI(retryCount){
 	$('#cncl').html("Cancel");
 	$("#vcCodeDiv").attr('style', 'display: block');
 	var type = $( "#saveVoucherButton" ).attr('data-save-type');
-	if(type != "extend" && totalCoinReceived == 0 && (!macAsVoucherCode) ){
-		var storedVoucher = getStorageValue('activeVoucher');
-		if(storedVoucher != null){
-			voucher = "";
-			$("#voucherInput").val('');
-			removeStorageValue("activeVoucher");
-		}
-		
-	}
-	
+
 	var ipAddCriteria = "";
 	if( typeof uIp !== 'undefined' ){
 		ipAddCriteria = "&ipAddress="+uIp;
@@ -1009,7 +931,6 @@ function pause(macNoColon){
 
 function resume(){
 	removeStorageValue("isPaused");
-	removeStorageValue("isPaused");
 	removeStorageValue("activeVoucher");
 	removeStorageValue("ignoreSaveCode");
 	location.reload();
@@ -1046,72 +967,8 @@ function eraseCookie(name) {
     document.cookie = name+'=; Max-Age=-99999999;';  
 }
 
-function fetchValidity(retryNo){
-	if(retryNo > 5){
-		fallbackValidity();
-		return;
-	}
-	var macNoColon = replaceAll(mac, ":");
-	$.ajax({
-			  type: "GET",
-			  url: "/data/"+macNoColon+".txt?query="+new Date().getTime(),
-			  success: function(data){
-				if(data.length > 50){
-					setTimeout(function(){
-						fetchValidity(retryNo++);
-					}, 1000);
-					return;
-				}
-				var macData = data.split("#");
-				var validityRaw = macData[1];
-				
-				var validityTime = null;
-				if(validityRaw.length > 15){
-					validityTime = new Date(Date.parse(validityRaw));
-				}else if(validityRaw.length > 8){
-					var dt = validityRaw.split(" ");
-					var yr = new Date().getFullYear();
-					validityTime = new Date(Date.parse(dt[0]+"/"+yr+" "+dt[1]));
-				}else if(validityRaw.length == 0){
-					validityTime = null;
-				} else{
-					var curDate = new Date();
-					var m = curDate.getMonth()+1;
-					var d = curDate.getDate();
-					var yr = curDate.getFullYear();
-					validityTime = new Date(Date.parse(m+"/"+d+"/"+yr+" "+validityRaw));
-				}
-				if(validityTime != null){
-					$("#expirationTime").html(validityTime.toLocaleString());
-				}else{
-					$("#expirationTime").html("No Expiration");
-				}
-			  },
-			  error: function(d){
-					fallbackValidity();
-			 }
-	});			
-}
-
 function newLogin(){
 	location.reload();
-}
-
-function fallbackValidity(){
-	var validity = getStorageValue(voucher+"validity");
-	if(validity != null){
-		var curDate = new Date();
-		var validityTime = new Date(parseInt(validity));
-		if(validityTime.getTime() < curDate.getTime()){
-			removeStorageValue(voucher+"validity");
-			removeStorageValue(voucher+"tempValidity");
-			$("#expirationTime").html("Not Available");
-		}else{
-			$("#expirationTime").html(validityTime.toLocaleString());
-		}
-	}else{
-		$("#expirationTime").html("Not Available");
-	}
 }
 
 function parseTime(str){
@@ -1134,10 +991,18 @@ function parseTime(str){
 	}
 }
 
-function fetchUserInfo(macNoColon, cb){
+function fetchUserInfo(macNoColon, pointsEnabled, cb){
+
+	var params = `mac=${macNoColon}`
+	var activeMac = getStorageValue('activeVoucher')
+
+	if(activeMac && activeMac !== ""){
+		params += `&oldMac=${activeMac}`
+	}
+
 	$.ajax({
 		type: "GET",
-		url: `${juanfiExtendedServerUrl}/user-info?mac=${macNoColon}`,
+		url: `${juanfiExtendedServerUrl}/user-info?${params}`,
 		success: function(data){
 			if(!data){
 				cb(null);
@@ -1146,7 +1011,6 @@ function fetchUserInfo(macNoColon, cb){
 
 			var isOnline = data.isOnline;
 			var voucherCode = data.code;
-			var pointsEnabled = data.pointsEnabled;
 			var totalPoints = data.totalPoints;
 			var timeRemainingStr = data.timeRemaining;
 			var timeRemaining = data.timeRemainingInSeconds;
@@ -1296,18 +1160,18 @@ function onRedeemRewardPtsConfirmBtnEvt(macNoColon){
 						});
 						return;
 					}else{
-						var timeAdded = result.timeAdded;
+						var timeAdded = parseInt(result.timeAdded);
 						$('#redeemModal').modal('hide');
 						$.toast({
 							title: 'Success',
 							content: 'Redeemed ' + selected + ' points (PHP ' + estimatedPhp + '). Added',
-							content: `Redeemed ${selected} points (PHP ${estimatedPhp}). Added ${secondsToDhms(timeAdded/60)} time to current voucher.`,
+							content: `Redeemed ${selected} points (PHP ${estimatedPhp}). Added ${secondsToDhms(timeAdded*60)} time to current voucher.`,
 							type: 'success',
 							delay: 4000
 						});
-						/* setTimeout(function (){
+						setTimeout(function (){
 							newLogin();
-				 		}, 1000); */
+				 		}, 1000); 
 					}
 				},
 				error: function(d){
@@ -1353,7 +1217,6 @@ function logoutVoucher(macNoColon){
 
 				if(result.status === "success"){
 					$("#resumeTimeBtn").removeClass("hide");
-					setStorageValue("isPaused", "0");
 					
 					$.toast({
 						title: 'Success',
