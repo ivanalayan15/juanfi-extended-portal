@@ -1,3 +1,9 @@
+@media screen and (min-width: 70px) and (max-width: 410px) {
+  /* Styles applied when the screen width is 768px or wider */
+  body {
+	width: 410px !important;
+  }
+}
 .spinner { 
     position: fixed; 
     z-index: 9999; 
@@ -133,4 +139,13 @@
 }
 .td-center{
   	vertical-align: middle !important;
+}
+.float-left{
+	float: left !important;
+}
+.float-right{
+	float: right !important;
+}
+.clear-left{
+	clear: left !important;
 }
