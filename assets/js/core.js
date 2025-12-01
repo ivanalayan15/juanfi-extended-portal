@@ -1067,8 +1067,8 @@ function eraseCookie(name) {
 }
 
 function newLogin(){
-	//location.reload();
-	initializeData();
+	location.reload();
+	//initializeData();
 }
 
 function parseTime(str){
@@ -1224,7 +1224,6 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig){
 			$('#redeemBySpinModal').modal('show');
 			
 			const colors = ["#FFD6E8","#E0F7FA","#FFF7C0","#E8F6E9","#FDEFEF","#E8EAF6","#FBE9E7","#E6F0FF"];
-			//let prizes = ["3 days","5 hours","2 hours","1 day","12 hours","", "", "132312321312321", "2333333333333333333333333333", ""];
 			drawSpinWheel(macNoColon, wheelConfig, colors);
 		});
 	}
@@ -1458,10 +1457,6 @@ function checkIsLoggedIn(macNoColon){
 }
 
 function fetchSpinWheelReward(mac, cb){
-	/* return Promise.resolve({
-			"promoName": "5 hour",
-			"rewardValue": 10
-		}) */
 	$.ajax({
 		type: "POST",
 		url: `${juanfiExtendedServerUrl}/promo/spin-wheel`,
@@ -1479,31 +1474,6 @@ function fetchSpinWheelReward(mac, cb){
 			cb(null, d);
 	   	}
 	});
-
-  /* return fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      playerName: playerName,
-      totalPrizes: prizes.length
-    })
-  })
-  .then(response => {
-    if(!response.ok) throw new Error('API response not ok');
-    return response.json();
-  })
-  .then(data => {
-    // API should return prizeIndex and optionally prize details
-    const displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
-    const prizeIndex = parseInt(data.prizeIndex);
-    if(isNaN(prizeIndex) || prizeIndex < 0 || prizeIndex >= displayPrizes.length){
-      throw new Error('Invalid prizeIndex from API');
-    }
-    const prize = (data.prize && typeof data.prize === 'object') ? data.prize : null;
-    return { prizeIndex, prize };
-  }); */
 }
 
 function drawSpinWheel(mac, prizes, colors){
