@@ -1,7 +1,7 @@
 @media screen and (min-width: 70px) and (max-width: 410px) {
   /* Styles applied when the screen width is 768px or wider */
   body {
-	width: 410px !important;
+	width: 375px !important;
   }
 }
 .spinner { 
@@ -41,7 +41,7 @@
     color: red !important;
 }
 .text-color-yellow {
-    color: yellow !important;
+    color: #ffd700 !important;
 }
 .text-color-white {
     color: white !important;

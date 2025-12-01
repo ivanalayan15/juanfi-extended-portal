@@ -95,45 +95,61 @@ var macAsVoucherCode = false;
 var qrCodeVoucherPurchase = false;
 
 var pointsEnabled = false;
+var wheelConfig = [];
 
 $(document).ready(function(){
 	//$(document).ajaxStart(function(){ $("#loaderDiv").removeClass("hidden"); });
     //$(document).ajaxStop(function(){ $("#loaderDiv").addClass("hidden"); });
+	initializeData();
+});
 
-	$("#ipInfo").html(uIp)
-	$("#macInfo").html(mac)
-
+function initializeData(){
 	showLoader();
-
+	$('.modal').modal('hide');
+	$("#ipInfo").html(uIp);
+	$("#macInfo").html(mac);
+	wheelConfig = [];
+	multiVendoAddresses = [];
 	fetchPortalConfig(function(data, error){
 		if(!!error){
 			hideLoader();
 			$.toast({
 				title: 'Failed',
-				content: 'Failed to connect to server. Try again later.',
+				content: 'Failed to connect to server. Try again later. Data shown are locally stored dummy/test values only.',
 				type: 'error',
 				delay: 4000
 			});
-			return;
 		}
 
-		isMultiVendo = data.isMultiVendo;
-		multiVendoOption = data.multiVendoOption;
-		multiVendoAddresses = data.multiVendoAddresses;
-		loginOption = data.loginOption;
-		dataRateOption = data.dataRateOption;
-		vendorIpAddress = data.vendorIpAddress;
-		chargingEnable = data.chargingEnable;
-		eloadEnable = data.eloadEnable;
-		showPauseTime = data.showPauseTime;
-		showMemberLogin = data.showMemberLogin;
-		showExtendTimeButton = data.showExtendTimeButton;
-		macAsVoucherCode = data.macAsVoucherCode;
-		qrCodeVoucherPurchase = data.qrCodeVoucherPurchase;
-		disableVoucherInput = data.disableVoucherInput;
-		pointsEnabled = data.pointsPercentage > 0;
-		autologin = data.autoLoginHotspot;
+		if(!!data){
+			isMultiVendo = data.isMultiVendo;
+			multiVendoOption = data.multiVendoOption;
+			multiVendoAddresses = data.multiVendoAddresses;
+			loginOption = data.loginOption;
+			dataRateOption = data.dataRateOption;
+			vendorIpAddress = data.vendorIpAddress;
+			chargingEnable = data.chargingEnable;
+			eloadEnable = data.eloadEnable;
+			showPauseTime = data.showPauseTime;
+			showMemberLogin = data.showMemberLogin;
+			showExtendTimeButton = data.showExtendTimeButton;
+			macAsVoucherCode = data.macAsVoucherCode;
+			qrCodeVoucherPurchase = data.qrCodeVoucherPurchase;
+			disableVoucherInput = data.disableVoucherInput;
+			pointsEnabled = data.pointsPercentage > 0;
+			autologin = data.autoLoginHotspot;
+			wheelConfig = data.wheelConfig;
+		}
 
+		if(wheelConfig?.length > 0){
+				$("#spinWrapper").removeClass("hide");
+				$("#spinWrapper").removeClass("col-sm-12");
+				$("#spinWrapper").addClass("col-sm-6");
+			}else{
+				$("#spinWrapper").addClass("hide");
+				$("#spinWrapper").removeClass("col-sm-6");
+				$("#spinWrapper").addClass("col-sm-12");
+			}
 
 		// handle the data if needed
 		$( "#saveVoucherButton" ).prop('disabled', true);	
@@ -143,13 +159,13 @@ $(document).ready(function(){
 		var voucherError = false;
 		
 		$('#insertCoinModal').on('hidden.bs.modal', function () {
-				clearInterval(timer);
-				timer = null;
-				insertingCoin = false;
-				insertcoinbg.pause();
-				insertcoinbg.currentTime = 0.0;
-				if(totalCoinReceived == 0){
-					$.ajax({
+			clearInterval(timer);
+			timer = null;
+			insertingCoin = false;
+			insertcoinbg.pause();
+			insertcoinbg.currentTime = 0.0;
+			if(totalCoinReceived == 0){
+				$.ajax({
 					type: "POST",
 					url: "http://"+vendorIpAddress+"/cancelTopUp",
 					data: "voucher="+voucher+"&mac="+mac,
@@ -158,10 +174,9 @@ $(document).ready(function(){
 					},error: function (jqXHR, exception) {
 						hideLoader();
 					}
-					});
-				}
-				
-			});
+				});
+			}
+		});
 
 		$('#eloadModal').on('hidden.bs.modal', function () {
 			insertingCoin = false;
@@ -205,6 +220,22 @@ $(document).ready(function(){
 				$("#vendoSelected").change(function(){
 					vendorIpAddress = $("#vendoSelected").val();
 					setStorageValue('selectedVendo', vendorIpAddress);
+
+					let selectedVendoDtls = multiVendoAddresses.find(x => x.vendoIp === vendorIpAddress);
+					if(!!selectedVendoDtls){
+						wheelConfig = selectedVendoDtls.wheelConfig;
+						pointsEnabled = selectedVendoDtls.pointsPercentage > 0;
+						if(wheelConfig?.length > 0){
+							$("#spinWrapper").removeClass("hide");
+							$("#spinWrapper").removeClass("col-sm-12");
+							$("#spinWrapper").addClass("col-sm-6");
+						}else{
+							$("#spinWrapper").addClass("hide");
+							$("#spinWrapper").removeClass("col-sm-6");
+							$("#spinWrapper").addClass("col-sm-12");
+						}
+					}
+			
 					evaluateChargingButton();
 					evaluateEloadButton();
 				});
@@ -228,7 +259,7 @@ $(document).ready(function(){
 		if(!showExtendTimeButton){
 			var inserType = $( "#insertBtn" ).attr('data-insert-type');
 			if(inserType == "extend"){
-					$("#insertBtn").addClass("hide");
+				$("#insertBtn").addClass("hide");
 			}
 		}
 		
@@ -272,7 +303,7 @@ $(document).ready(function(){
 		$('#resumeTimeBtn').addClass("hide");
 
 		fetchUserInfo(macNoColon, pointsEnabled, function(userData, error){
-			if(!!error){
+			/* if(!!error){
 				hideLoader();
 				$.toast({
 					title: 'Failed',
@@ -281,30 +312,34 @@ $(document).ready(function(){
 					delay: 4000
 				});
 				return;
+			} */
+
+			let isOnline = false, pointsEnabled = false;
+			let voucherCode = macNoColon, timeRemainingStr;
+			let totalPoints = 0, timeRemaining, timeExpiry;
+
+			if(!!userData){
+				isOnline = userData?.isOnline;
+				voucherCode = userData?.voucherCode;
+				pointsEnabled = userData?.pointsEnabled;
+				totalPoints = userData?.totalPoints;
+				timeRemaining = userData?.timeRemaining;
+				timeRemainingStr = userData?.timeRemainingStr;
+				timeExpiry = userData?.timeExpiry;
 			}
-			let {isOnline,
-				voucherCode,
-				pointsEnabled,
-				totalPoints,
-				timeRemaining,
-				timeExpiry,
-				timeRemainingStr} = userData;
 				
 			if(pointsEnabled === true){
 				var min = parseInt($('#redeemSlider').attr('min'),10) || 0;
-	
+				
 				$("#rewardPoints").html((!!totalPoints) ? totalPoints.toFixed(2) : "0");
 				$(".redeemRatio").text(redeemRatioValue);
 				$("#rewardDtls").removeClass("hide");
 				if(totalPoints > min){
-					$("#rewardDtlsWrapper").removeClass("col-sm-12").addClass("col-sm-6");
 					$("#rewardBtnWrapper").removeClass("hide");
-					
-					onRedeemRewardPtsEvt();
+					onRedeemRewardPtsEvt(macNoColon, wheelConfig);
 					onRedeemRewardPtsConfirmBtnEvt(macNoColon);
 					onRedeemRewardPtsSliderChangeEvt();
 				}else{
-					$("#rewardDtlsWrapper").removeClass("col-sm-6").addClass("col-sm-12");
 					$("#rewardBtnWrapper").addClass("hide");
 				}
 			}else{
@@ -420,14 +455,6 @@ $(document).ready(function(){
 			hideLoader();
 		});
 	});
-});
-
-function showLoader(){
-	$("#loaderDiv").removeClass("hidden");
-}
-
-function hideLoader(){
-	$("#loaderDiv").addClass("hidden");
 }
 
 function replaceAll(str, rep){
@@ -1040,7 +1067,8 @@ function eraseCookie(name) {
 }
 
 function newLogin(){
-	location.reload();
+	//location.reload();
+	initializeData();
 }
 
 function parseTime(str){
@@ -1064,7 +1092,6 @@ function parseTime(str){
 }
 
 function fetchUserInfo(macNoColon, pointsEnabled, cb){
-
 	var params = `mac=${macNoColon}`
 	var activeMac = getStorageValue('activeVoucher')
 
@@ -1110,7 +1137,7 @@ function fetchPortalConfig(cb){
 		url: `${juanfiExtendedServerUrl}/config`,
 		success: function(data){
 			if(!data) {
-				cb(null);
+				cb(null, null);
 				return;
 			}
 			let output = { ...data };
@@ -1165,7 +1192,7 @@ function updateRedeemRewardPtsUI(from){
     }
 }
 
-function onRedeemRewardPtsEvt(){
+function onRedeemRewardPtsEvt(macNoColon, wheelConfig){
 	$('#redeemPtsBtn').on('click', function(e){
 		e.preventDefault();
 		var avail = parseRewardPoints($('#rewardPoints').text());
@@ -1174,7 +1201,7 @@ function onRedeemRewardPtsEvt(){
 			return;
 		}
 		var min = parseInt($('#redeemSlider').attr('min')) || 0;
-		$('#availablePointsDisplay').text(avail);
+		$(".availablePointsDisplay").html((!!avail) ? avail.toFixed(2) : "0");
 		$('#redeemSlider').attr('max', parseInt(avail));
 		$('#redeemSlider').val(min);
 		$('#selectedPointsInput').attr('max', avail);
@@ -1182,6 +1209,25 @@ function onRedeemRewardPtsEvt(){
 		updateRedeemRewardPtsUI('input');
 		$('#redeemModal').modal('show');
 	});
+
+	if(!!wheelConfig){
+		$('#spinRedeemBtn').on('click', function(e){
+			e.preventDefault();
+			var avail = parseRewardPoints($('#rewardPoints').text());
+			if(avail <= 0){
+				$.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'info', delay: 3000 });
+				return;
+			}
+
+			$(".availablePointsDisplay").html((!!avail) ? avail.toFixed(2) : "0");
+			$("#spinBtn").text("Spin");
+			$('#redeemBySpinModal').modal('show');
+			
+			const colors = ["#FFD6E8","#E0F7FA","#FFF7C0","#E8F6E9","#FDEFEF","#E8EAF6","#FBE9E7","#E6F0FF"];
+			//let prizes = ["3 days","5 hours","2 hours","1 day","12 hours","", "", "132312321312321", "2333333333333333333333333333", ""];
+			drawSpinWheel(macNoColon, wheelConfig, colors);
+		});
+	}
 }
 
 function onRedeemRewardPtsSliderChangeEvt(){
@@ -1409,4 +1455,410 @@ function checkIsLoggedIn(macNoColon){
 		}else{
 		}
 	});
+}
+
+function fetchSpinWheelReward(mac, cb){
+	/* return Promise.resolve({
+			"promoName": "5 hour",
+			"rewardValue": 10
+		}) */
+	$.ajax({
+		type: "POST",
+		url: `${juanfiExtendedServerUrl}/promo/spin-wheel`,
+		contentType: 'application/json; charset=utf-8',
+		dataType: "json",
+		data: JSON.stringify({mac}),
+		success: function(data){
+			if(!data) {
+				cb(null, "Failed to fetch.");
+				return;
+			}
+			cb (data, null);
+		},
+		error: function(d){
+			cb(null, d);
+	   	}
+	});
+
+  /* return fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      playerName: playerName,
+      totalPrizes: prizes.length
+    })
+  })
+  .then(response => {
+    if(!response.ok) throw new Error('API response not ok');
+    return response.json();
+  })
+  .then(data => {
+    // API should return prizeIndex and optionally prize details
+    const displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
+    const prizeIndex = parseInt(data.prizeIndex);
+    if(isNaN(prizeIndex) || prizeIndex < 0 || prizeIndex >= displayPrizes.length){
+      throw new Error('Invalid prizeIndex from API');
+    }
+    const prize = (data.prize && typeof data.prize === 'object') ? data.prize : null;
+    return { prizeIndex, prize };
+  }); */
+}
+
+function drawSpinWheel(mac, prizes, colors){
+	/* ===== Elements & state ===== */
+	const wheelCanvas = document.getElementById('wheelCanvas');
+	const wheelCtx = wheelCanvas.getContext('2d');
+
+	const spinBtn = document.getElementById('spinBtn');
+	spinBtn.textContent = "SPIN";
+
+	const clickSound = new Audio('https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg');
+
+	// Expanded prizes array based on winning percentages (max 10 slices)
+	let expandedPrizes = [];
+
+	// Function to generate expanded prizes based on winning percentages
+	function generateExpandedPrizes(){
+		expandedPrizes = [];
+		const maxSlices = 10;
+		
+		// Calculate total winning percentage
+		let totalPercentage = 0;
+		prizes.forEach(p => {
+			if(p){
+				let winPercent = Math.floor(p.percentage);
+				if(winPercent > 0){
+					totalPercentage += winPercent;
+				}
+			}
+		});
+		
+		// If no percentages set, just use original prizes
+		if(totalPercentage === 0){
+			expandedPrizes = prizes.slice();
+			return;
+		}
+		
+		const maxPercentage = 100;
+		
+		// Distribute prizes proportionally to fill max 10 slices
+		prizes.forEach(p => {
+			if(p && p.percentage > 0){
+				// Calculate how many slices this prize should occupy
+				const proportion = p.percentage / maxPercentage;
+				const sliceCount = Math.max(1, Math.round(proportion * maxSlices));
+				// Add this prize multiple times
+				for(let i = 0; i < sliceCount; i++){
+					expandedPrizes.push(p);
+				}
+			}
+		});
+		
+		// Trim to exactly 10 slices if needed (remaining slots become blank)
+		if(expandedPrizes.length > maxSlices){
+			expandedPrizes = expandedPrizes.slice(0, maxSlices);
+		}
+		
+		// Pad remaining slices with undefined (blank)
+		while(expandedPrizes.length < maxSlices){
+			expandedPrizes.push({
+				"promoName": "Try again!",
+				"percentage": null,
+				"rewardValue": 0
+			});
+		}
+	}
+
+	let displaySize = 460;
+	let dpr = Math.max(window.devicePixelRatio || 1, 1);
+	let center = {x:0,y:0};
+	let radius = 0;
+	let currentRotation = 0; // radians
+	let spinning = false;
+	let lastSliceSound = -1;
+
+	/* ===== Resize (set CSS size + backing store for DPR) ===== */
+	function resizeAll(){
+		dpr = Math.max(window.devicePixelRatio || 1, 1);
+		const shown = Math.min(window.innerWidth * 0.9, 520);
+		displaySize = Math.round(shown);
+
+		// wheel canvas (use CSS px coordinates)
+		wheelCanvas.style.width = displaySize + 'px';
+		wheelCanvas.style.height = displaySize + 'px';
+		wheelCanvas.width = displaySize * dpr;
+		wheelCanvas.height = displaySize * dpr;
+		wheelCtx.setTransform(dpr,0,0,dpr,0,0);
+
+		center.x = displaySize / 2;
+		center.y = displaySize / 2;
+		radius = (displaySize / 2) - 18;
+
+		// redraw
+		drawWheel(currentRotation);
+	}
+	window.addEventListener('resize', resizeAll);
+	resizeAll();
+
+	/* ===== draw wheel (rotation in radians) and optional highlighted slice ===== */
+	function drawWheel(rotationRad = 0, highlightIndex = null, highlightAlpha = 0){
+		const ctx = wheelCtx;
+		ctx.clearRect(0,0,displaySize,displaySize);
+
+		const displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
+		const slice = (2 * Math.PI) / displayPrizes.length;
+
+		// draw wheel rotated
+		ctx.save();
+		ctx.translate(center.x, center.y);
+		ctx.rotate(rotationRad);
+		ctx.translate(-center.x, -center.y);
+
+		for(let i=0;i<displayPrizes.length;i++){
+			const start = i * slice;
+			ctx.beginPath();
+			ctx.fillStyle = colors[i % colors.length];
+			ctx.moveTo(center.x, center.y);
+			ctx.arc(center.x, center.y, radius, start, start + slice);
+			ctx.closePath();
+			ctx.fill();
+
+			// label (only if prize is defined)
+			if(displayPrizes[i] && displayPrizes[i].promoName){
+				ctx.save();
+				ctx.translate(center.x, center.y);
+				ctx.rotate(start + slice/2);
+				ctx.fillStyle = "#2b2b2b";
+				ctx.font = `${Math.max(12, displaySize/24)}px Arial`;
+				ctx.textAlign = 'right';
+				ctx.fillText(displayPrizes[i].promoName, radius - 12, 6);
+				ctx.restore();
+			}
+		}
+
+		// highlight overlay in wheel's rotated coordinate system
+		if(highlightIndex !== null && highlightAlpha > 0){
+			const start = highlightIndex * slice;
+			ctx.beginPath();
+			ctx.moveTo(center.x, center.y);
+			ctx.arc(center.x, center.y, radius, start, start + slice);
+			ctx.closePath();
+			ctx.fillStyle = `rgba(255,230,100,${Math.min(1, highlightAlpha)})`;
+			ctx.fill();
+		}
+
+		ctx.restore();
+
+		// fixed pointer on top
+		drawPointer();
+	}
+
+	function drawPointer(){
+		const ctx = wheelCtx;
+		ctx.save();
+		const pointerHalf = Math.max(8, displaySize * 0.03);
+		const y = center.y - radius - 4;
+		ctx.beginPath();
+		ctx.moveTo(center.x - pointerHalf, y);
+		ctx.lineTo(center.x + pointerHalf, y);
+		ctx.lineTo(center.x, y + Math.max(18, displaySize * 0.06));
+		ctx.closePath();
+		ctx.fillStyle = "#666";
+		ctx.fill();
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = "#fff";
+		ctx.stroke();
+		ctx.restore();
+	}
+
+	/* ===== convert rotation -> index (slice under top pointer) ===== */
+	function rotationToIndex(rotationRad){
+		const displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
+		const rotDeg = ((rotationRad * 180 / Math.PI) % 360 + 360) % 360;
+		const pointerDeg = (270 - rotDeg + 360) % 360; // top = 270 deg
+		const sliceDeg = 360 / displayPrizes.length;
+		let idx = Math.floor(pointerDeg / sliceDeg);
+		idx = ((idx % displayPrizes.length) + displayPrizes.length) % displayPrizes.length;
+		return idx;
+	}
+
+	/* ===== spin logic (choose target index via API) ===== */
+	function spinWheel(){
+		if(spinning) return;
+
+		spinning = true;
+		spinBtn.disabled = true;
+
+		// fetch prize index from API
+		fetchSpinWheelReward(mac, (result, error) => {
+			let prizeIndex = expandedPrizes.findIndex(x => x.promoName === result.promoName);
+			executeSpin(prizeIndex, result, error);
+		});
+	}
+
+	/* ===== execute spin animation with chosen index ===== */
+	function executeSpin(chosenIndex, apiPrize, error){
+		if(!!error) chosenIndex = -1;
+		// compute target rotation so chosenIndex center ends under top pointer
+		const sliceDeg = 360 / expandedPrizes.length;
+		const desiredPointerDeg = (chosenIndex + 0.5) * sliceDeg;
+		const desiredWheelDegNormalized = (270 - desiredPointerDeg + 360) % 360;
+
+		const currentDeg = ((currentRotation * 180 / Math.PI) % 360 + 360) % 360;
+		let deltaDeg = (desiredWheelDegNormalized - currentDeg + 360) % 360;
+
+		const extraSpins = 4 + Math.floor(Math.random() * 3); // 4..6
+		const totalDeg = deltaDeg + extraSpins * 360;
+		const targetRotation = currentRotation + (totalDeg * Math.PI / 180);
+
+		const duration = 4200 + Math.floor(Math.random() * 800);
+		const startRot = currentRotation;
+		let startTime = null;
+		lastSliceSound = -1;
+
+		function step(ts){
+			if(!startTime) startTime = ts;
+			const elapsed = ts - startTime;
+			const t = Math.min(1, elapsed / duration);
+			const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
+			const nowRot = startRot + (targetRotation - startRot) * ease;
+
+			drawWheel(nowRot);
+
+			// click sound when we move across slices
+			const idx = rotationToIndex(nowRot);
+			if(idx !== lastSliceSound){
+				lastSliceSound = idx;
+				//try{ clickSound.currentTime = 0; clickSound.play().catch(()=>{}); }catch(e){}
+			}
+
+			if(t < 1){
+				requestAnimationFrame(step);
+				return;
+			}
+
+			// finished spinning
+			currentRotation = targetRotation % (2 * Math.PI);
+			drawWheel(currentRotation);
+
+			const winningIndex = rotationToIndex(currentRotation);
+
+			// pulse the winning slice then show modal
+			pulseHighlight(winningIndex, 3, 700, () => {
+				// prefer API-provided prize data if available, otherwise fall back to expanded/local prizes array
+				const displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
+				const prizeToShow = (apiPrize && apiPrize.promoName) ? apiPrize : displayPrizes[winningIndex];
+				// Handle undefined or empty prizes
+				$("#redeemedValueWrapper").removeClass("hide");
+				if((!prizeToShow) || (!prizeToShow.promoName) || (prizeToShow.rewardValue <= 0)){
+					$("#selectedReward").text(`🥺 Sorry! Better luck next time.`);
+				} else {
+					var msg = `🎁 Nice! You redeemed, ${prizeToShow.promoName}`;
+					$("#selectedReward").text(msg);
+					$.toast({
+						title: 'Success',
+						content: `${msg}. Will do auto login shortly.`,
+						type: 'success',
+						delay: 5000
+					});
+					setTimeout(function(){
+						newLogin();
+					}, 4000);
+					
+				}
+				
+				spinBtn.disabled = false;
+				spinning = false;
+				spinBtn.textContent = "SPIN AGAIN";
+			});
+		}
+
+		requestAnimationFrame(step);
+	}
+
+	/* ===== smooth pulse highlight (alpha rises/falls) ===== */
+	function pulseHighlight(index, pulses = 3, pulseDuration = 700, callback){
+		const total = pulses * pulseDuration;
+		const start = performance.now();
+		function frame(now){
+			const elapsed = now - start;
+			if(elapsed >= total){
+				drawWheel(currentRotation, null, 0);
+				callback && callback();
+				return;
+			}
+			const pulseProgress = (elapsed % pulseDuration) / pulseDuration; // 0..1
+			const alpha = Math.sin(pulseProgress * Math.PI); // smooth 0..1..0
+			drawWheel(currentRotation, index, alpha * 0.95);
+			requestAnimationFrame(frame);
+		}
+		requestAnimationFrame(frame);
+	}
+
+	/* ===== shuffle prizes (randomize displayed positions) ===== */
+	function shufflePrizes(){
+		// Fisher-Yates shuffle algorithm
+		const target = (expandedPrizes && expandedPrizes.length > 0) ? expandedPrizes : prizes;
+		for(let i = target.length - 1; i > 0; i--){
+			const j = Math.floor(Math.random() * (i + 1));
+			[target[i], target[j]] = [target[j], target[i]];
+		}
+	}
+
+	window.addEventListener('resize', ()=>{
+		resizeAll();
+	});
+
+	/* ===== events & init ===== */
+	spinBtn.addEventListener('click', ()=> {
+		shufflePrizes();
+		spinWheel()
+	});
+	generateExpandedPrizes(); // generate expanded prizes based on winning percentages
+	shufflePrizes(); // shuffle slices on initial load
+	drawWheel(currentRotation);
+
+	/* Provide a sane resizeAll in case called above */
+	function resizeAll(){
+		resizeAll = null; // prevent recursion
+		resizeAll = function(){ resizeAll = function(){}; }; // dummy replacement
+		// Call the real function body:
+		dpr = Math.max(window.devicePixelRatio || 1, 1);
+		const shown = Math.min(window.innerWidth * 0.9, 520);
+		displaySize = Math.round(shown);
+		wheelCanvas.style.width = displaySize + 'px';
+		wheelCanvas.style.height = displaySize + 'px';
+		wheelCanvas.width = displaySize * dpr;
+		wheelCanvas.height = displaySize * dpr;
+		wheelCtx.setTransform(dpr,0,0,dpr,0,0);
+		center.x = displaySize/2; center.y = displaySize/2; radius = (displaySize/2)-18;
+		drawWheel(currentRotation);
+	}
+	/* replace placeholder with proper function */
+	resizeAll = function(){
+		dpr = Math.max(window.devicePixelRatio || 1, 1);
+		const shown = Math.min(window.innerWidth * 0.9, 520);
+		displaySize = Math.round(shown);
+		wheelCanvas.style.width = displaySize + 'px';
+		wheelCanvas.style.height = displaySize + 'px';
+		wheelCanvas.width = displaySize * dpr;
+		wheelCanvas.height = displaySize * dpr;
+		wheelCtx.setTransform(dpr,0,0,dpr,0,0);
+		center.x = displaySize/2; center.y = displaySize/2; radius = (displaySize/2)-18;
+		drawWheel(currentRotation);
+	};
+	window.addEventListener('resize', resizeAll);
+
+	// ensure initial sizes are correct:
+	resizeAll();
+}
+
+function showLoader(){
+	$("#loaderDiv").removeClass("hidden");
+}
+
+function hideLoader(){
+	$("#loaderDiv").addClass("hidden");
 }

@@ -171,12 +171,10 @@ function loadTypeChanged(){
 			text: eloadRatesData[selectedLoadType][k][1]
 		}));
 	}
-	console.log("load type change");
 	$("#productTypeSelected").change();
 }
 
 function productTypeChanged(evt){
-	console.log("product type change");
 	var selectedLoadType = $("#loadTypeSelected").val();
 	var price = eloadRatesData[selectedLoadType][evt.selectedIndex][2];
 	$("#price").val(price+".00");

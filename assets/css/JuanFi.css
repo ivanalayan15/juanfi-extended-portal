@@ -1,3 +1,7 @@
+@media screen and (min-width: 70px) and (max-width: 410px) {
+  /* Styles applied when the screen width is 768px or wider */
+}
+
 body {
 	padding: 10px;
 	background-color: #3d4044
@@ -347,4 +351,42 @@ body {
 	font-size: 20px;
 	font-weight: bold;
 	text-shadow: 1px 1px 3px #000;
+}
+
+#spinBtn{
+	text-transform: uppercase;
+}
+
+/** spin to redeem styles **/
+/* wheel canvas */
+#wheelCanvas {
+  width: min(520px, 92vw);
+  height: auto;
+  border-radius:50%;
+  border:10px solid rgba(0,0,0,0.08);
+  box-shadow:0 10px 30px rgba(0,0,0,0.12);
+  background:#fff;
+  display:block;
+}
+/* controls */
+.controls { display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap; }
+#playerName { padding:10px 12px; border-radius:8px; border:1px solid rgba(0,0,0,.12); font-size:15px; min-width:200px; }
+/* #spinBtn {
+  padding:14px 28px; border-radius:10px; border:0;
+  background:#ff6b6b; color:#fff; font-weight:800; font-size:18px;
+  cursor:pointer;
+} */
+#spinBtn:disabled { opacity:.6; cursor:not-allowed; }
+.spinner-wrapper{
+	display:flex; flex-direction:column; align-items:center; gap:12px; padding:14px; z-index:10;
+}
+.blinking-white{
+    animation:blinkingTextWhite 1.2s infinite;
+}
+@keyframes blinkingTextWhite{
+    0%{     color: white;    }
+    49%{    color: white; }
+    60%{    color: transparent; }
+    99%{    color:transparent;  }
+    100%{   color: white;    }
 }

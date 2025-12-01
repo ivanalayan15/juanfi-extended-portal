@@ -17,8 +17,6 @@
 		var loginError = "";
 		var mac = "$(mac)";
 		var uIp = "$(ip)";
-		//var uIp = "10.10.10.7";
-		//var mac = "20:E2:A8:36:57:C8";
 		var hotspotAddress = "$(server-address)"; 
 		var interfaceName = "$(interface-name)";
 		var remainingTimer = null;
@@ -36,22 +34,31 @@
 							<img src="assets/MainPic.PNG" class="img-fluid" />
 						</div>
 					</div>
-					<table class="table table-borderless">
-						<tr>
-							<td>
-								<div class="info-ip">
+					<div class="row text-color-white">
+						<div class="col-6">
+							<div class="info-ip">
+								<div class="float-left">
 									<img src="assets/img/ip.png" width="20px" height="20px" />
+								</div>
+								<div class="float-right">
 									<span class="pl-5" id="ipInfo">Loading</span>
 								</div>
-							</td>
-							<td>
-								<div class="info-mac text-align-right">
+								<div class="clear-left"></div>
+							</div>
+						</div>
+						<div class="col-6">
+							<div class="info-mac text-align-right">
+								<div class="float-left">
 									<img src="assets/img/mac.png" width="20px" height="20px" />
+								</div>
+								<div class="float-right">
 									<span class="pl-5" id="macInfo" >Loading</span>
 								</div>
-							</td>
-						</tr>
-					</table>
+								<div class="clear-left"></div>
+							</div>
+						</div>
+						
+					</div>
 					<div class="row">
 						<div class="col-sm-12">
 							<table class="table table-borderless center">
@@ -78,19 +85,23 @@
 								<span class="pl-5">Rewards</span>
 							</div>
 							<div class="row mt-10 pr-5">
-								<div id="rewardDtlsWrapper" class="col-sm-6">
+								<div id="rewardDtlsWrapper" class="col-sm-12 mb-5">
 									<img src="assets/img/coin.png" width="20px" height="20px" />
-									<span id="rewardPoints" class="status-val pl-5">Loading...</span>
+									<span id="rewardPoints" class="status-val pl-5 text-color-yellow">Loading...</span>
 									<br/>
 									<span class="text-color-white">Reward Balance</span>
 								</div>
-								<div id="rewardBtnWrapper" class="col-sm-6">
-									<button type="button" id="redeemPtsBtn" onclick="return false" class="btn btn-warning" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">REDEEM</button>
-								</div>
-							</div>
-							<div class="row mt-10 pr-5">
-								<div class="col-12">
-									<small class="text-color-white">Redemption rule: <span class="redeemRatio">1</span> point = PHP 1.00</small>
+								<div id="rewardBtnWrapper" class="col-sm-12">
+									<div class="container-fluid">
+										<div class="row">
+											<div id="spinWrapper" class="col-sm-6">
+												<button type="button" id="spinRedeemBtn" onclick="return false" class="btn btn-success" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">SPIN TO REDEEM</button>
+											</div>
+											<div id="redeemWrapper" class="col-sm-6">
+												<button type="button" id="redeemPtsBtn" onclick="return false" class="btn btn-warning" style="display: block; width: 100%; color: #fff; text-shadow: 0px 1px 2px #000;">REDEEM</button>
+											</div>
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -183,6 +194,51 @@
 						</div>
 					</div>
 
+					<div class="modal fade" id="redeemBySpinModal" tabindex="-1" role="dialog" aria-labelledby="redeemBySpinModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+                      <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="redeemBySpinModalLabel">Spin to Redeem</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                            </button>
+                          </div>
+                          <div class="modal-body">
+                            <div class="container-fluid">
+                              <div class="row mb-3">
+                                <div class="col-12 text-center">
+                                  <div class="small text-color-white">Reward Point Balance</div>
+								  <div>
+									<img src="assets/img/coin.png" width="20px" height="20px" />
+                                  	<span class="availablePointsDisplay text-color-yellow">0.00</span>
+								  </div>
+                                </div>
+                              </div>
+							  <div class="row">
+                                <div class="col-12">
+                                  <small class="text-color-white">Redemption rule: <span class="redeemRatio" id="redeemRatio2">1</span> point = 1 spin</small>
+                                </div>
+                              </div>
+							  <div class="row mb-3">
+								<div class="col-12 spinner-wrapper">
+									<canvas id="wheelCanvas" aria-label="Prize wheel"></canvas>
+								</div>
+							  </div>
+								<div id="redeemedValueWrapper" class="row mb-3 hide">
+									<div class="col-12">
+										<span id="selectedReward" type="number" min="0" step="1" value="0"/>
+									</div>
+								</div>
+                            </div>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                            <button type="button" id="spinBtn" class="btn btn-success">Spin</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
 					<div class="modal fade" id="redeemModal" tabindex="-1" role="dialog" aria-labelledby="redeemModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
                       <div class="modal-dialog modal-dialog-centered" role="document">
                         <div class="modal-content">
@@ -197,7 +253,10 @@
                               <div class="row mb-3">
                                 <div class="col-12 text-center">
                                   <div class="small text-color-white">Available Points</div>
-                                  <div id="availablePointsDisplay" style="font-size:24px; font-weight:bold; color:#ffd700">0</div>
+                                  <div>
+									<img src="assets/img/coin.png" width="20px" height="20px" />
+                                  	<span class="availablePointsDisplay text-color-yellow">0.00</span>
+								  </div>
                                 </div>
                               </div>
 
