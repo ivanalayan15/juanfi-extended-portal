@@ -1902,13 +1902,22 @@ function useVoucherBtnEvt(){
 	$('#connectBtn').on('click', function(e){
 		e.preventDefault();
 		showLoader();
+		if(!macNoColon){
+			$.toast({ title: 'Failed', content: "Unable to read device MAC Address.", type: 'error', delay: 3000 });
+			return;
+		}
+		if(!vendorIpAddress){
+			$.toast({ title: 'Failed', content: "Vendo not fully setup.", type: 'error', delay: 3000 });
+			return;
+		}
+		
 		var voucherCode = $("#voucherInput").val();
 		if(!voucherCode){
 			$.toast({ title: 'Failed', content: 'Voucher code is required.', type: 'error', delay: 3000 });
 			hideLoader();
 			return;
 		}
-		fetchUseVoucher(macNoColon, voucherCode, function(result, error){
+		fetchUseVoucher(macNoColon, vendorIpAddress, voucherCode, function(result, error){
 			if(!!error){
 				$.toast({ title: 'Failed', content: error ?? "Server request failed.", type: 'error', delay: 3000 });
 				
@@ -1929,12 +1938,12 @@ function useVoucherBtnEvt(){
 	});
 }
 
-function fetchUseVoucher(macNoColon, voucherCode, cb){
+function fetchUseVoucher(macNoColon, vendorIpAddress, voucherCode, cb){
 	$.ajax({
 		type: "POST",
 		url: `${juanfiExtendedServerUrl}/use-voucher`,
 		dataType: "json",
-		data: {Mac: macNoColon, Code: voucherCode},
+		data: {mac: macNoColon, code: voucherCode, nodeIp: vendorIpAddress},
 		success: function(data){
 			if(!data) {
 				cb(null, "Failed to fetch.");
