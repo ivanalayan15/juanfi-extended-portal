@@ -12,99 +12,134 @@ errorCodeMap['convertVoucher.invalid'] = 'Invalid voucher code';
 errorCodeMap['load.not.enough'] = 'Machine has insufficient load to cater your request';
 errorCodeMap['eload.failed'] = 'Sorry, Eload processing is failed';
 
-var totalCoinReceived = 0;
+//DO NOT UPDATE - START
+var initLoad = false;
 var insertcoinbg = new Audio('assets/insertcoinbg.mp3');
-insertcoinbg.loop = true;
 var coinCount = new Audio('assets/coin-received.mp3');
-var voucher = getStorageValue('activeVoucher');
-var insertingCoin = false;
 var TOPUP_CHARGER = "CHARGER";
 var TOPUP_INTERNET = "INTERNET";
 var TOPUP_ELOAD = "ELOAD";
-var topupMode = TOPUP_INTERNET;
-var chargerTimer = null;
-var rateType = "1";
-var autologin = false;
-var voucherToConvert = "";
-
 var juanfiExtendedServerUrl = `http://${juanfiExtendedServerIP}:8080/api/portal`; //do not change value of this line
+var totalCoinReceived;
+var voucher;
+var insertingCoin;
+var topupMode;
+var chargerTimer = null;
+var rateType;
+var autologin;
+var voucherToConvert = "";
+var redeemRatioValue;
+var selectedVendoDtls = {};
+var spinEventsCreated = false;
+var rewardPointsBalance = 0;
+//DO NOT UPDATE - END
 
-var redeemRatioValue = 1; //do not change value of this line to avoid conflict/misrepresentation of UI to API data
+var isMultiVendo;
+var multiVendoOption;
+var multiVendoAddresses = [];
+var loginOption;
+var dataRateOption;
+var vendorIpAddress;
+var chargingEnable, eloadEnable, showPauseTime, showMemberLogin, showExtendTimeButton, disableVoucherInput, macAsVoucherCode, qrCodeVoucherPurchase, pointsEnabled;
 
-//this is to enable multi vendo setup, set to true when multi vendo is supported
-var isMultiVendo = true;
-// 0 = traditional (client choose a vendo) , 1 = auto select vendo base on hotspot address, 2 = interface name ( this will preserve one hotspot server ip only)
-var multiVendoOption = 0;
-
-//list here all node mcu address for multi vendo setup
-var multiVendoAddresses = [
-	{
-		vendoName: "Vendo 1 - ESP32 Wireless", //change accordingly to your vendo name
-		vendoIp: "10.10.10.252", //change accordingly to your vendo ip
-		chargingEnable: true,  //change true if you want to enable charging station
-		eloadEnable: true, //change true if you want to enable eloading station
-		hotspotAddress: "10.10.10.1", // use for multi vendo option = 1, means your vendo map to this hotspot and autoselect it when client connected to this
-		interfaceName: "vlan11-hotspot1" // hotspot interface name preser
-	},
-	{
-		vendoName: "Vendo 2 - ESP8622 Wireless", //change accordingly to your vendo name
-		vendoIp: "10.10.10.251", //change accordingly to your vendo ip
-		chargingEnable: false,  //change true if you want to enable charging station
-		eloadEnable: true //change true if you want to enable eloading station
-	},
-	{
-		vendoName: "Vendo 3 - ESP8622 LAN", //change accordingly to your vendo name
-		vendoIp: "10.10.10.253", //change accordingly to your vendo ip
-		chargingEnable: false,  //change true if you want to enable charging station
-		eloadEnable: false //change true if you want to enable eloading station
-	},
-	{
-		vendoName: "Vendo 4 - ESP32 LAN", //change accordingly to your vendo name
-		vendoIp: "10.10.10.254", //change accordingly to your vendo ip
-		chargingEnable: true,  //change true if you want to enable charging station
-		eloadEnable: false //change true if you want to enable eloading station
-	}
-];
-
-//0 means its login by username only, 1 = means if login by username + password
-var loginOption = 0; //replace 1 if you want login voucher by username + password
-
-var dataRateOption = false; //replace true if you enable data rates
-//put here the default selected address
-var vendorIpAddress = "10.10.10.252";
-
-var chargingEnable = false; //replace true if you enable charging, this can be override if multivendo setup
-
-var eloadEnable = false; //replace true if you enable eload, this can be override if multivendo setup
-
-//hide pause time / logout true = you want to show pause / logout button
-var showPauseTime = true;
-
-//enable member login, true = if you want to enable member login
-var showMemberLogin = true;
-
-//enable extend time button for customers
-var showExtendTimeButton = true;
-
-//disable voucher input
-var disableVoucherInput = false;
-
-//enable mac address as voucher code
-var macAsVoucherCode = false;
-
-var qrCodeVoucherPurchase = false;
-
-var pointsEnabled = false;
 var wheelConfig = [];
+var macNoColon;
+
+function initValues(){
+	//DO NOT UPDATE - START
+	macNoColon = replaceAll(mac, ":");
+	totalCoinReceived = 0;
+	insertcoinbg.loop = true;
+	voucher = getStorageValue('activeVoucher');
+	insertingCoin = false;
+	topupMode = TOPUP_INTERNET;
+	chargerTimer = null;
+	rateType = "1";
+	autologin = false;
+	voucherToConvert = "";
+	redeemRatioValue = 1; //do not change value of this line to avoid conflict/misrepresentation of UI to API data
+	pointsEnabled = false;//enable reward points by checking if points percentage is configured in admin
+	wheelConfig = [];//values displayed on spin the wheel
+	selectedVendoDtls = {};
+	rewardPointsBalance = 0;
+	//DO NOT UPDATE - END
+
+	//DEFAULT VALUES (WILL BE USED IF CONFIG API DOES NOT WORK) - START
+	//this is to enable multi vendo setup, set to true when multi vendo is supported
+	isMultiVendo = true;
+	// 0 = traditional (client choose a vendo) , 1 = auto select vendo base on hotspot address, 2 = interface name ( this will preserve one hotspot server ip only)
+	multiVendoOption = 0;
+
+	//list here all node mcu address for multi vendo setup
+	multiVendoAddresses = [
+		{
+			vendoName: "Vendo 1 - ESP32 Wireless", //change accordingly to your vendo name
+			vendoIp: "10.10.10.252", //change accordingly to your vendo ip
+			chargingEnable: true,  //change true if you want to enable charging station
+			eloadEnable: true, //change true if you want to enable eloading station
+			hotspotAddress: "10.10.10.1", // use for multi vendo option = 1, means your vendo map to this hotspot and autoselect it when client connected to this
+			interfaceName: "vlan11-hotspot1" // hotspot interface name preser
+		},
+		{
+			vendoName: "Vendo 2 - ESP8622 Wireless", //change accordingly to your vendo name
+			vendoIp: "10.10.10.251", //change accordingly to your vendo ip
+			chargingEnable: false,  //change true if you want to enable charging station
+			eloadEnable: true //change true if you want to enable eloading station
+		},
+		{
+			vendoName: "Vendo 3 - ESP8622 LAN", //change accordingly to your vendo name
+			vendoIp: "10.10.10.253", //change accordingly to your vendo ip
+			chargingEnable: false,  //change true if you want to enable charging station
+			eloadEnable: false //change true if you want to enable eloading station
+		},
+		{
+			vendoName: "Vendo 4 - ESP32 LAN", //change accordingly to your vendo name
+			vendoIp: "10.10.10.254", //change accordingly to your vendo ip
+			chargingEnable: true,  //change true if you want to enable charging station
+			eloadEnable: false //change true if you want to enable eloading station
+		}
+	];
+
+	//0 means its login by username only, 1 = means if login by username + password
+	loginOption = 0; //replace 1 if you want login voucher by username + password
+
+	dataRateOption = false; //replace true if you enable data rates
+	//put here the default selected address
+	vendorIpAddress = "10.10.10.252";
+
+	chargingEnable = false; //replace true if you enable charging, this can be override if multivendo setup
+
+	eloadEnable = false; //replace true if you enable eload, this can be override if multivendo setup
+
+	showPauseTime = true; //hide pause time / logout true = you want to show pause / logout button
+
+	showMemberLogin = true; //enable member login, true = if you want to enable member login
+
+	showExtendTimeButton = true; //enable extend time button for customers
+
+	disableVoucherInput = false; //disable voucher input
+
+	macAsVoucherCode = false; //enable mac address as voucher code
+	
+	qrCodeVoucherPurchase = false; //enable voucher purchase via QR Code (epayment)
+	//DEFAULT VALUES (WILL BE USED IF CONFIG API DOES NOT WORK) - END
+}
 
 $(document).ready(function(){
-	//$(document).ajaxStart(function(){ $("#loaderDiv").removeClass("hidden"); });
-    //$(document).ajaxStop(function(){ $("#loaderDiv").addClass("hidden"); });
-	initializeData();
+	if(!initLoad){
+		initValues();
+		renderView();
+	}
 });
 
-function initializeData(){
+function newLogin(){
+	initValues();
+	renderView();
+}
+
+function renderView(){
 	showLoader();
+	$("#voucherInput").val("");
 	$('.modal').modal('hide');
 	$("#ipInfo").html(uIp);
 	$("#macInfo").html(mac);
@@ -115,7 +150,7 @@ function initializeData(){
 			hideLoader();
 			$.toast({
 				title: 'Failed',
-				content: 'Failed to connect to server. Try again later. Data shown are locally stored dummy/test values only.',
+				content: error ?? 'Server request failed. Try again later. Data shown are locally stored dummy/test values only.',
 				type: 'error',
 				delay: 4000
 			});
@@ -141,7 +176,76 @@ function initializeData(){
 			wheelConfig = data.wheelConfig;
 		}
 
-		if(wheelConfig?.length > 0){
+		if(isMultiVendo){
+			if(multiVendoOption == 1){
+				$("#vendoSelectDiv").addClass("hide");
+				var currentHotspot = hotspotAddress.split(":")[0];
+				var dtls = multiVendoAddresses.find(x => x.hotspotAddress === currentHotspot);
+				if(!!dtls){
+					selectedVendoDtls = dtls;
+					vendorIpAddress = dtls.vendoIp;
+				} 
+			}else if(multiVendoOption == 2){
+				$("#vendoSelectDiv").addClass("hide");
+				var dtls = multiVendoAddresses.find(x => x.interfaceName === interfaceName);
+				if(!!dtls){
+					selectedVendoDtls = dtls;
+					vendorIpAddress = dtls.vendoIp;
+				}
+			}else{
+				var selectedVendo = getStorageValue('selectedVendo');
+				if(selectedVendo === "null"){ selectedVendo = null; }
+				for(var i=0;i<multiVendoAddresses.length;i++){
+					$("#vendoSelected").append($('<option>', {
+						value: multiVendoAddresses[i].vendoIp,
+						text: multiVendoAddresses[i].vendoName
+					}));
+					if(i === 0 && (!selectedVendo)){
+						setStorageValue('selectedVendo', multiVendoAddresses[i].vendoIp);
+						selectedVendo = multiVendoAddresses[i].vendoIp;
+						selectedVendoDtls = multiVendoAddresses[i];
+					}
+					if(selectedVendo === multiVendoAddresses[i].vendoIp){
+						selectedVendoDtls = multiVendoAddresses[i];
+					}
+				}  
+				if(selectedVendo != null){
+					vendorIpAddress = selectedVendo;
+				}
+
+				$("#vendoSelected").val(vendorIpAddress);
+				$("#vendoSelected").change(function(){
+					vendorIpAddress = $("#vendoSelected").val();
+					setStorageValue('selectedVendo', vendorIpAddress);
+					let dtls = multiVendoAddresses.find(x => x.vendoIp === vendorIpAddress);
+					
+					if(!!dtls){
+						selectedVendoDtls = dtls;
+						wheelConfig = selectedVendoDtls.wheelConfig;
+						pointsEnabled = selectedVendoDtls.pointsPercentage > 0;
+						if(wheelConfig?.length > 0){
+							$("#spinWrapper").removeClass("hide");
+							$("#spinWrapper").removeClass("col-sm-12");
+							$("#spinWrapper").addClass("col-sm-6");
+						}else{
+							$("#spinWrapper").addClass("hide");
+							$("#spinWrapper").removeClass("col-sm-6");
+							$("#spinWrapper").addClass("col-sm-12");
+						}
+					}
+			
+					evaluateChargingButton(selectedVendoDtls);
+					evaluateEloadButton(selectedVendoDtls);
+				});
+			}
+			
+			$("#vendoSelected").trigger("change");
+
+		}else{
+			$("#vendoSelectDiv").addClass("hide");
+		}
+
+		if((!!wheelConfig) && wheelConfig.length > 0){
 				$("#spinWrapper").removeClass("hide");
 				$("#spinWrapper").removeClass("col-sm-12");
 				$("#spinWrapper").addClass("col-sm-6");
@@ -156,96 +260,6 @@ function initializeData(){
 		$( "#cncl" ).prop('disabled', false);
 		$('#coinToast').toast({delay: 1000, animation: true});
 		$('#coinSlotError').toast({delay: 5000, animation: true});
-		var voucherError = false;
-		
-		$('#insertCoinModal').on('hidden.bs.modal', function () {
-			clearInterval(timer);
-			timer = null;
-			insertingCoin = false;
-			insertcoinbg.pause();
-			insertcoinbg.currentTime = 0.0;
-			if(totalCoinReceived == 0){
-				$.ajax({
-					type: "POST",
-					url: "http://"+vendorIpAddress+"/cancelTopUp",
-					data: "voucher="+voucher+"&mac="+mac,
-					success: function(data){
-						hideLoader();
-					},error: function (jqXHR, exception) {
-						hideLoader();
-					}
-				});
-			}
-		});
-
-		$('#eloadModal').on('hidden.bs.modal', function () {
-			insertingCoin = false;
-		});
-
-		if(isMultiVendo){
-			if(multiVendoOption == 1){
-				$("#vendoSelectDiv").addClass("hide");
-				for(var i=0;i<multiVendoAddresses.length;i++){
-					var currentHotspot = hotspotAddress.split(":")[0];
-					if(multiVendoAddresses[i].hotspotAddress == currentHotspot){
-						vendorIpAddress = multiVendoAddresses[i].vendoIp;
-					}
-				}  
-			}else if(multiVendoOption == 2){
-				$("#vendoSelectDiv").addClass("hide");
-				for(var i=0;i<multiVendoAddresses.length;i++){
-					var currentInterfaceName = interfaceName;
-					if(multiVendoAddresses[i].interfaceName == currentInterfaceName){
-						vendorIpAddress = multiVendoAddresses[i].vendoIp;
-					}
-				}  
-			}else{
-				var selectedVendo = getStorageValue('selectedVendo');
-				if(selectedVendo === "null"){ selectedVendo = null; }
-				
-				for(var i=0;i<multiVendoAddresses.length;i++){
-					$("#vendoSelected").append($('<option>', {
-						value: multiVendoAddresses[i].vendoIp,
-						text: multiVendoAddresses[i].vendoName
-					}));
-					if(i === 0 && (!selectedVendo)){
-						setStorageValue('selectedVendo', multiVendoAddresses[i].vendoIp);
-						selectedVendo = multiVendoAddresses[i].vendoIp;
-					}
-				}  
-				if(selectedVendo != null){
-					vendorIpAddress = selectedVendo;
-				}
-				$("#vendoSelected").val(vendorIpAddress);
-				$("#vendoSelected").change(function(){
-					vendorIpAddress = $("#vendoSelected").val();
-					setStorageValue('selectedVendo', vendorIpAddress);
-
-					let selectedVendoDtls = multiVendoAddresses.find(x => x.vendoIp === vendorIpAddress);
-					if(!!selectedVendoDtls){
-						wheelConfig = selectedVendoDtls.wheelConfig;
-						pointsEnabled = selectedVendoDtls.pointsPercentage > 0;
-						if(wheelConfig?.length > 0){
-							$("#spinWrapper").removeClass("hide");
-							$("#spinWrapper").removeClass("col-sm-12");
-							$("#spinWrapper").addClass("col-sm-6");
-						}else{
-							$("#spinWrapper").addClass("hide");
-							$("#spinWrapper").removeClass("col-sm-6");
-							$("#spinWrapper").addClass("col-sm-12");
-						}
-					}
-			
-					evaluateChargingButton();
-					evaluateEloadButton();
-				});
-			}
-			
-			$("#vendoSelected").trigger("change");
-
-		}else{
-			$("#vendoSelectDiv").addClass("hide");
-		}
 		
 		if(!dataRateOption){
 			$("#dataInfoDiv").addClass("hide");
@@ -269,7 +283,7 @@ function initializeData(){
 			
 		if(!chargingEnable){
 			if(isMultiVendo){
-				evaluateChargingButton();
+				evaluateChargingButton(selectedVendoDtls);
 			}else{
 				$("#chargingBtn").addClass("hide");
 				$("#rateTypeDiv").addClass("hide");
@@ -278,20 +292,11 @@ function initializeData(){
 
 		if(!eloadEnable){
 			if(isMultiVendo){
-			evaluateEloadButton();
+				evaluateEloadButton(selectedVendoDtls);
 			}else{
-			$("#eloadBtn").addClass("hide");
+				$("#eloadBtn").addClass("hide");
 			}
 		}
-		
-		var redirectLogin = getStorageValue("redirectLogin");
-		if(redirectLogin == "1"){
-			removeStorageValue("redirectLogin");
-			location.reload();
-			return;
-		}
-
-		var macNoColon = replaceAll(mac, ":");
 
 		voucher = macNoColon;
 		
@@ -299,20 +304,21 @@ function initializeData(){
 		if(ignoreSaveCode == null || ignoreSaveCode == "0"){
 			ignoreSaveCode = "0";
 		}
+		useVoucherBtnEvt();
 		
 		$('#resumeTimeBtn').addClass("hide");
 
 		fetchUserInfo(macNoColon, pointsEnabled, function(userData, error){
-			/* if(!!error){
+			if(!!error){
 				hideLoader();
 				$.toast({
 					title: 'Failed',
-					content: 'Failed to retrieve your voucher details. Try again later.',
+					content: error ?? 'Server request failed. Try again later.',
 					type: 'error',
 					delay: 4000
 				});
 				return;
-			} */
+			}
 
 			let isOnline = false, pointsEnabled = false;
 			let voucherCode = macNoColon, timeRemainingStr;
@@ -329,6 +335,7 @@ function initializeData(){
 			}
 				
 			if(pointsEnabled === true){
+				rewardPointsBalance = totalPoints;
 				var min = parseInt($('#redeemSlider').attr('min'),10) || 0;
 				
 				$("#rewardPoints").html((!!totalPoints) ? totalPoints.toFixed(2) : "0");
@@ -348,6 +355,12 @@ function initializeData(){
 
 			$("#voucherCode").html(voucherCode);
 			var isPaused = (!isOnline);
+			var time = timeRemaining;
+			$("#remainTime").html(secondsToDhms(time));
+			if(remainingTimer != null){
+				clearInterval(remainingTimer);
+				remainingTimer = null;
+			}
 			
 			if(isOnline){
 				$("#connectionStatus").html("Connected");
@@ -355,16 +368,15 @@ function initializeData(){
 				$("#statusImg").attr("src", "assets/img/wifi.png");
 				$("#statusImg").removeClass("hide");
 				$("#statusImg").addClass("blinking2");
+				$("#remainingTimeWrapper").removeClass("hide");
 
-				var time = timeRemaining;
-				$("#remainTime").html(secondsToDhms(time));
 				remainingTimer = setInterval(function(){
 					time--;
 					$("#remainTime").html(secondsToDhms(time));
 					if(time <= 0){
 						$.toast({
 							title: 'Success',
-							content: 'Time limit exceeded, Thank you for the purchase, will be logout shortly',
+							content: 'Time limit reached. You will be logged out shortly',
 							type: 'success',
 							delay: 5000
 						});
@@ -375,9 +387,10 @@ function initializeData(){
 					}
 				}, 1000);
 			}else{
-				$("#remainTime").html(timeRemainingStr);
+				//$("#remainTime").html(timeRemainingStr);
 				if(timeRemaining > 0){
 					isPaused = true;
+					$("#remainingTimeWrapper").removeClass("hide");
 				}else{
 					setStorageValue("isPaused", "0");
 					removeStorageValue(macNoColon+"tempValidity");
@@ -390,17 +403,18 @@ function initializeData(){
 				$("#statusImg").attr("src", "assets/img/off_wifi.png");
 				$("#statusImg").removeClass("hide");
 				$("#statusImg").addClass("blinking1");
-
-				var pausedState = getStorageValue("isPaused")
 				
-				if(autologin && pausedState !== "1" && timeRemaining > 0){
-					showLoader();
-					loginVoucher(macNoColon, function(success){
-						if(success){
-							checkIsLoggedIn(macNoColon);
-						}
-						hideLoader();
-					});
+				if(!initLoad){
+					var pausedState = getStorageValue("isPaused")
+					if(autologin && pausedState !== "1" && timeRemaining > 0){
+						showLoader();
+						loginVoucher(macNoColon, function(success){
+							if(success){
+								checkIsLoggedIn(macNoColon);
+							}
+							hideLoader();
+						});
+					}
 				}
 			}
 
@@ -426,25 +440,6 @@ function initializeData(){
 			}else{
 				$("#pauseTimeBtn").addClass("hide");
 			}
-
-			$("#pauseTimeBtn").on('click', function(){
-				var r = confirm("Are you sure you want to temporarily disconnect from the network?");
-				if(r){
-					pause(macNoColon);
-				}
-			});
-
-			$('#resumeTimeBtn').on('click', function(){
-				showLoader();
-				setStorageValue("isPaused", "0");
-				loginVoucher(macNoColon, function(success){
-					if(success){
-						checkIsLoggedIn(macNoColon);
-					}
-					hideLoader();
-				});
-			});
-
 			
 			// Initial call to display immediately
 			updateDeviceDateTime();
@@ -452,10 +447,57 @@ function initializeData(){
 			// Update every second (1000 milliseconds)
 			setInterval(updateDeviceDateTime, 1000);
 
+			initLoad = true;
 			hideLoader();
 		});
 	});
 }
+
+$('#insertCoinModal').on('hidden.bs.modal', function () {
+	clearInterval(timer);
+	timer = null;
+	insertingCoin = false;
+	insertcoinbg.pause();
+	insertcoinbg.currentTime = 0.0;
+	if(totalCoinReceived == 0){
+		$.ajax({
+			type: "POST",
+			url: "http://"+vendorIpAddress+"/cancelTopUp",
+			data: "voucher="+voucher+"&mac="+mac,
+			success: function(data){
+				hideLoader();
+			},error: function (jqXHR, exception) {
+				hideLoader();
+			}
+		});
+	}
+});
+
+$('#eloadModal').on('hidden.bs.modal', function () {
+	insertingCoin = false;
+});
+
+$("#pauseTimeBtn").on('click', function(){
+	var r = confirm("Are you sure you want to temporarily disconnect from the network?");
+	if(r){
+		pause(macNoColon);
+	}
+});
+
+$('#resumeTimeBtn').on('click', function(){
+	showLoader();
+	setStorageValue("isPaused", "0");
+	loginVoucher(macNoColon, function(success){
+		if(success){
+			setTimeout(function (){
+				checkIsLoggedIn(macNoColon);
+			}, 1000);
+		}
+		else{
+			hideLoader();
+		}
+	});
+});
 
 function replaceAll(str, rep){
 	var aa = str;
@@ -468,24 +510,18 @@ function replaceAll(str, rep){
 if(voucher == null){
 	voucher = "";
 }
+
 if(voucher != ""){
 	$('#voucherInput').val(voucher);
 }
 
-function evaluateChargingButton(){
-	//var style = $("#chargingBtn").attr("style");
-	//$("#chargingBtn").attr("style", style+"; display: block"); 
-	$("#chargingBtn").removeClass("hide");
-	//$("#rateTypeDiv").attr("style", "display: block");
-	$("#rateTypeDiv").removeClass("hide");
-	for(var i=0;i<multiVendoAddresses.length;i++){
-	  if(multiVendoAddresses[i].vendoIp == vendorIpAddress && (!multiVendoAddresses[i].chargingEnable)){
-		  //style = $("#chargingBtn").attr("style");
-		  //$("#chargingBtn").attr("style", style+"; display: none");
-		  $("#chargingBtn").addClass("hide");
-		  $("#rateTypeDiv").addClass("hide");
-		  break;
-	  }
+function evaluateChargingButton(vendoDtls){
+	if((!!vendoDtls) && (!vendoDtls.chargingEnable)){
+		$("#chargingBtn").addClass("hide");
+		$("#rateTypeDiv").addClass("hide");
+	}else{
+		$("#chargingBtn").removeClass("hide");
+		$("#rateTypeDiv").removeClass("hide");
 	}
 }
 
@@ -696,7 +732,6 @@ function addChargerTime(port, portName, retryCount){
 	});
 }
 
-
 function callTopupAPI(retryCount){
 	$('#cncl').html("Cancel");
 	$("#vcCodeDiv").attr('style', 'display: block');
@@ -785,12 +820,10 @@ function saveVoucherBtnAction(){
 					
 					$.toast({
 					  title: 'Success',
-					  content: 'Thank you for the purchase!, will do auto login shortly',
+					  content: 'Thank you for the purchase! Page will reload shortly',
 					  type: 'success',
 					  delay: 3000
 					});
-					
-					var type = $( "#saveVoucherButton" ).attr('data-save-type');
 
 					setTimeout(function (){
 						newLogin();
@@ -866,7 +899,7 @@ function checkCoin(){
 						if(topupMode == TOPUP_INTERNET){
 							$.toast({
 								title: 'Success',
-								content: 'Coin slot expired!, but was able to succesfully process the coin '+totalCoinReceived +", will do auto login shortly",
+								content: 'Coin slot expired!, but was able to succesfully process the coin '+totalCoinReceived +". Page will reload shortly",
 								type: 'info',
 								delay: 5000
 							});
@@ -911,18 +944,13 @@ function checkCoin(){
 				}else{
 					 $.toast({
 						title: 'Success',
-						content: 'Coin slot cancelled!, but was able to succesfully process the coin '+totalCoinReceived +", will do auto login shortly",
+						content: 'Coin slot cancelled!, but was able to succesfully process the coin '+totalCoinReceived +". Page will reload shortly",
 						type: 'info',
 						delay: 5000
 					  });
 					  var type = $( "#saveVoucherButton" ).attr('data-save-type');
 					  setTimeout(function (){
-						  if(type == "extend"){
-							  setStorageValue('reLogin', '1');
-							  document.logout.submit();
-						  }else{
-							  newLogin();
-						  }
+						  newLogin();
 					  }, 3000);
 				}
 			}else{
@@ -931,7 +959,6 @@ function checkCoin(){
 			}
 		}
 	  },error: function (jqXHR, exception) {
-			console.log('error!!!');
 	  }
 	});
 }
@@ -1020,6 +1047,10 @@ function removeStorageValue(key){
 	}
 }
 
+function clearStorageValues(){
+	localStorage.clear();
+}
+
 function pause(macNoColon){
 	showLoader();
 	setStorageValue("isPaused", "1");
@@ -1052,6 +1083,7 @@ function setCookie(name,value,days) {
     }
     document.cookie = name + "=" + (value || "")  + expires + "; path=/";
 }
+
 function getCookie(name) {
     var nameEQ = name + "=";
     var ca = document.cookie.split(';');
@@ -1062,13 +1094,9 @@ function getCookie(name) {
     }
     return null;
 }
+
 function eraseCookie(name) {   
     document.cookie = name+'=; Max-Age=-99999999;';  
-}
-
-function newLogin(){
-	location.reload();
-	//initializeData();
 }
 
 function parseTime(str){
@@ -1143,8 +1171,9 @@ function fetchPortalConfig(cb){
 			let output = { ...data };
 			cb(output, null);
 		},
-		error: function(d){
-			cb(null, d);
+		error: function(jqXHR, textStatus, errorThrown){
+			let err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown)
+			cb(null, err?.message);
 	   	}
 	});
 }
@@ -1201,7 +1230,7 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig){
 			return;
 		}
 		var min = parseInt($('#redeemSlider').attr('min')) || 0;
-		$(".availablePointsDisplay").html((!!avail) ? avail.toFixed(2) : "0");
+		$(".availablePointsDisplay").html((!!avail) ? avail.toFixed(2) : "0.00");
 		$('#redeemSlider').attr('max', parseInt(avail));
 		$('#redeemSlider').val(min);
 		$('#selectedPointsInput').attr('max', avail);
@@ -1213,13 +1242,16 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig){
 	if(!!wheelConfig){
 		$('#spinRedeemBtn').on('click', function(e){
 			e.preventDefault();
-			var avail = parseRewardPoints($('#rewardPoints').text());
+			var avail = rewardPointsBalance;
 			if(avail <= 0){
 				$.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'info', delay: 3000 });
 				return;
 			}
+			spinBtn.disabled = false;
+			$("#redeemedValueWrapper").addClass("hide");
+			$("#selectedReward").text("")
 
-			$(".availablePointsDisplay").html((!!avail) ? avail.toFixed(2) : "0");
+			$(".availablePointsDisplay").html((!!avail) ? avail.toFixed(2) : "0.00");
 			$("#spinBtn").text("Spin");
 			$('#redeemBySpinModal').modal('show');
 			
@@ -1337,7 +1369,7 @@ function logoutVoucher(macNoColon){
 					
 					$.toast({
 						title: 'Success',
-						content: 'You have been successfully disconnected to the network. Page will reload shortly.',
+						content: 'You have been successfully disconnected to the network. Page will reload shortly',
 						type: 'success',
 						delay: 4000
 					});
@@ -1363,7 +1395,7 @@ function logoutVoucher(macNoColon){
 				});
 			},
 			complete: function(){
-				cb();
+				
 			}
 		});
 	}catch(e){
@@ -1406,16 +1438,15 @@ function loginVoucher(macNoColon, cb){
 					cb(false);
 				}
 			},
-			error: function(d){
+			error: function(jqXHR, textStatus, errorThrown){
+				let err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown);
 				$.toast({
 					title: 'Failed',
-					content: 'Failed to connect to server. Try again later.',
+					content: err?.message ?? 'Failed to connect to server. Try again later.',
 					type: 'error',
 					delay: 4000
 				});
 				cb(false);
-			},
-			complete: function(){
 			}
 		});
 	}catch(e){
@@ -1437,7 +1468,8 @@ function updateDeviceDateTime() {
 function checkIsLoggedIn(macNoColon){
 	fetchUserInfo(macNoColon, null, function(userData, error){
 		if(!!error){
-			throw error;
+			hideLoader();
+			return;
 		}
 		let {isOnline} = userData;
 		if(isOnline){
@@ -1447,12 +1479,12 @@ function checkIsLoggedIn(macNoColon){
 				type: 'success',
 				delay: 4000
 			});
-
-			setTimeout(function (){
-				newLogin();
-			}, 1000);
-		}else{
 		}
+
+		setTimeout(function (){
+			hideLoader();
+			newLogin();
+		}, 1000);
 	});
 }
 
@@ -1470,8 +1502,9 @@ function fetchSpinWheelReward(mac, cb){
 			}
 			cb (data, null);
 		},
-		error: function(d){
-			cb(null, d);
+		error: function(jqXHR, textStatus, errorThrown){
+			let err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown)
+			cb(null, err?.message);
 	   	}
 	});
 }
@@ -1482,6 +1515,7 @@ function drawSpinWheel(mac, prizes, colors){
 	const wheelCtx = wheelCanvas.getContext('2d');
 
 	const spinBtn = document.getElementById('spinBtn');
+	const spinCancelBtn = document.getElementById('spinCancelBtn');
 	spinBtn.textContent = "SPIN";
 
 	const clickSound = new Audio('https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg');
@@ -1542,6 +1576,7 @@ function drawSpinWheel(mac, prizes, colors){
 	}
 
 	let displaySize = 460;
+	let wheelSize = 520;
 	let dpr = Math.max(window.devicePixelRatio || 1, 1);
 	let center = {x:0,y:0};
 	let radius = 0;
@@ -1552,7 +1587,7 @@ function drawSpinWheel(mac, prizes, colors){
 	/* ===== Resize (set CSS size + backing store for DPR) ===== */
 	function resizeAll(){
 		dpr = Math.max(window.devicePixelRatio || 1, 1);
-		const shown = Math.min(window.innerWidth * 0.9, 520);
+		const shown = Math.min(window.innerWidth * 0.9, wheelSize);
 		displaySize = Math.round(shown);
 
 		// wheel canvas (use CSS px coordinates)
@@ -1569,7 +1604,10 @@ function drawSpinWheel(mac, prizes, colors){
 		// redraw
 		drawWheel(currentRotation);
 	}
-	window.addEventListener('resize', resizeAll);
+	
+	if(!spinEventsCreated){
+		window.addEventListener('resize', resizeAll);
+	}
 	resizeAll();
 
 	/* ===== draw wheel (rotation in radians) and optional highlighted slice ===== */
@@ -1660,12 +1698,31 @@ function drawSpinWheel(mac, prizes, colors){
 
 		spinning = true;
 		spinBtn.disabled = true;
-
-		// fetch prize index from API
-		fetchSpinWheelReward(mac, (result, error) => {
-			let prizeIndex = expandedPrizes.findIndex(x => x.promoName === result.promoName);
-			executeSpin(prizeIndex, result, error);
-		});
+		if(isSpinTriggered){
+			// fetch prize index from API
+			fetchSpinWheelReward(mac, (result, error) => {
+				if(!!error){
+					$.toast({
+						title: 'Failed',
+						content: error ?? 'Server request failed.',
+						type: 'error',
+						delay: 4000
+					});
+					return;
+				}
+				let prizeIndex = expandedPrizes.findIndex(x => x.promoName === result.promoName);
+				rewardPointsBalance = !!result ? result.remainingPoints : 0;
+				
+				$(".availablePointsDisplay").text((!!rewardPointsBalance) ? rewardPointsBalance.toFixed(2) : "0.00");
+				executeSpin(prizeIndex, result, error);
+				if(rewardPointsBalance > 0){
+					spinBtn.disabled = true;
+				}
+				
+				isSpinTriggered = false;
+			});
+		}
+		
 	}
 
 	/* ===== execute spin animation with chosen index ===== */
@@ -1725,21 +1782,19 @@ function drawSpinWheel(mac, prizes, colors){
 				if((!prizeToShow) || (!prizeToShow.promoName) || (prizeToShow.rewardValue <= 0)){
 					$("#selectedReward").text(`🥺 Sorry! Better luck next time.`);
 				} else {
-					var msg = `🎁 Nice! You redeemed, ${prizeToShow.promoName}`;
+					var msg = `🎁 Nice! You redeemed ${prizeToShow.promoName}`;
 					$("#selectedReward").text(msg);
 					$.toast({
 						title: 'Success',
-						content: `${msg}. Will do auto login shortly.`,
+						content: msg,
 						type: 'success',
 						delay: 5000
 					});
-					setTimeout(function(){
-						newLogin();
-					}, 4000);
-					
 				}
 				
-				spinBtn.disabled = false;
+				if(rewardPointsBalance >= redeemRatioValue){
+					spinBtn.disabled = false;
+				}
 				spinning = false;
 				spinBtn.textContent = "SPIN AGAIN";
 			});
@@ -1777,15 +1832,21 @@ function drawSpinWheel(mac, prizes, colors){
 		}
 	}
 
-	window.addEventListener('resize', ()=>{
-		resizeAll();
-	});
+	if(!spinEventsCreated){
+		/* ===== events & init ===== */
+		window.addEventListener('resize', ()=>{
+			resizeAll();
+		});
+		spinBtn.onclick = ()=> {
+			isSpinTriggered = true;
+			shufflePrizes();
+			spinWheel();
+		};
+		spinCancelBtn.onclick = (e) => {
+			newLogin();
+		};
+	}
 
-	/* ===== events & init ===== */
-	spinBtn.addEventListener('click', ()=> {
-		shufflePrizes();
-		spinWheel()
-	});
 	generateExpandedPrizes(); // generate expanded prizes based on winning percentages
 	shufflePrizes(); // shuffle slices on initial load
 	drawWheel(currentRotation);
@@ -1796,7 +1857,7 @@ function drawSpinWheel(mac, prizes, colors){
 		resizeAll = function(){ resizeAll = function(){}; }; // dummy replacement
 		// Call the real function body:
 		dpr = Math.max(window.devicePixelRatio || 1, 1);
-		const shown = Math.min(window.innerWidth * 0.9, 520);
+		const shown = Math.min(window.innerWidth * 0.9, wheelSize);
 		displaySize = Math.round(shown);
 		wheelCanvas.style.width = displaySize + 'px';
 		wheelCanvas.style.height = displaySize + 'px';
@@ -1809,7 +1870,7 @@ function drawSpinWheel(mac, prizes, colors){
 	/* replace placeholder with proper function */
 	resizeAll = function(){
 		dpr = Math.max(window.devicePixelRatio || 1, 1);
-		const shown = Math.min(window.innerWidth * 0.9, 520);
+		const shown = Math.min(window.innerWidth * 0.9, wheelSize);
 		displaySize = Math.round(shown);
 		wheelCanvas.style.width = displaySize + 'px';
 		wheelCanvas.style.height = displaySize + 'px';
@@ -1819,10 +1880,14 @@ function drawSpinWheel(mac, prizes, colors){
 		center.x = displaySize/2; center.y = displaySize/2; radius = (displaySize/2)-18;
 		drawWheel(currentRotation);
 	};
-	window.addEventListener('resize', resizeAll);
+
+	if(!spinEventsCreated){
+		window.addEventListener('resize', resizeAll);
+	}
 
 	// ensure initial sizes are correct:
 	resizeAll();
+	spinEventsCreated = true;
 }
 
 function showLoader(){
@@ -1831,4 +1896,70 @@ function showLoader(){
 
 function hideLoader(){
 	$("#loaderDiv").addClass("hidden");
+}
+
+function useVoucherBtnEvt(){
+	$('#connectBtn').on('click', function(e){
+		e.preventDefault();
+		showLoader();
+		var voucherCode = $("#voucherInput").val();
+		if(!voucherCode){
+			$.toast({ title: 'Failed', content: 'Voucher code is required.', type: 'error', delay: 3000 });
+			hideLoader();
+			return;
+		}
+		fetchUseVoucher(macNoColon, voucherCode, function(result, error){
+			if(!!error){
+				$.toast({ title: 'Failed', content: error ?? "Server request failed.", type: 'error', delay: 3000 });
+				
+				return;
+			}
+			$.toast({
+				title: 'Success',
+				content: 'You have successfully used your voucher! Page will reload shortly',
+				type: 'success',
+				delay: 3000
+			});
+
+			setTimeout(function (){
+				hideLoader();
+				newLogin();
+			}, 3000);
+		});
+	});
+}
+
+function fetchUseVoucher(macNoColon, voucherCode, cb){
+	$.ajax({
+		type: "POST",
+		url: `${juanfiExtendedServerUrl}/use-voucher`,
+		dataType: "json",
+		data: {Mac: macNoColon, Code: voucherCode},
+		success: function(data){
+			if(!data) {
+				cb(null, "Failed to fetch.");
+				return;
+			}
+			cb (data, null);
+		},
+		error: function(jqXHR, textStatus, errorThrown){
+			let err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown)
+			cb(null, err?.message);
+	   	}
+	});
+}
+
+function parseAjaxErrorResponse(jqXHR, textStatus, errorThrown){
+	// Check if responseText exists and is a string
+	if (jqXHR.responseText && typeof jqXHR.responseText === 'string') {
+		try {
+			// Parse the responseText as JSON
+			var errorData = JSON.parse(jqXHR.responseText);
+			return errorData;
+		} catch (e) {
+			return jqXHR.responseText;
+		}
+	} else {
+		return "Error received from server.";
+	}
 }

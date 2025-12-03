@@ -259,7 +259,6 @@ function eloadCheckCoin(){
 			}
 		}
 	  },error: function (jqXHR, exception) {
-			console.log('error!!!');
 	  }
 	});
 }
@@ -342,14 +341,10 @@ function processEloadNow(){
 	});
 }
 
-function evaluateEloadButton(){
-	var style = $("#eloadBtn").attr("style");
-	$("#eloadBtn").attr("style", style+"; display: block"); 
-	for(var i=0;i<multiVendoAddresses.length;i++){
-	  if(multiVendoAddresses[i].vendoIp == vendorIpAddress && (!multiVendoAddresses[i].eloadEnable)){
-		  style = $("#eloadBtn").attr("style");
-		  $("#eloadBtn").attr("style", style+"; display: none");
-		  break;
-	  }
+function evaluateEloadButton(vendoDtls){
+	if((!!vendoDtls) && (!vendoDtls.eloadEnable)){
+		$("#eloadBtn").addClass("hide");
+	}else{
+		$("#eloadBtn").removeClass("hide");
 	}
 }

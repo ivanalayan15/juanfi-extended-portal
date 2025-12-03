@@ -115,9 +115,10 @@
 							<span id="voucherCode" class="voucher-val mb-20">Loading...</span>
 							<div id="remainingTimeWrapper" class="row mt-10">
 								<div class="col-sm-12">
-									<img src="assets/img/time.png" width="20px" height="20px" />
-									<span id="remainTime" class="status-val pl-5 text-size-24">Loading...</span>
-									<br/>
+									<div class="center">
+										<img src="assets/img/time.png" width="20px" height="20px" />
+										<span id="remainTime" class="status-val pl-5 text-size-24">Loading...</span>
+									</div>
 									<span class="text-color-white">Remaining Time</span>
 								</div>
 							</div>
@@ -181,14 +182,36 @@
 									<button type="button" id="pauseTimeBtn" class="btn btn-danger btn-block fullwidth text-color-white text-shadow hide">PAUSE TIME</button>
 								</div>
 							</div>
-							<div class="row">
-								<div class="col-sm-12 mb-5">
+							<div class="row mb-5">
+								<div class="col-sm-12">
 									<button type="button" id="chargingBtn" onclick="chargingBtnAction(); return false" class="btn btn-secondary fullwidth text-color-white text-shadow hide">CHARGING STATION</button>
 								</div>
 							</div>
-							<div class="row">
+							<div class="row mb-5">
 								<div class="col-sm-12">
 									<button type="button" id="eloadBtn" onclick="eloadBtnAction(); return false" class="btn btn-info fullwidth text-color-white text-shadow hide">E-LOAD</button>
+								</div>
+							</div>
+							<div id="useVoucherContainer" class="row mb-20 shadow-border">
+								<div>
+									<div class="container-fluid">
+										<div class="row">
+											<div class="col-sm-12">
+												<span class="form-text text-muted text-color-white"">VOUCHER</span>
+												<small id="voucherHelp" class="form-text text-muted" style="padding: 5px">Type your generated voucher code</small>
+											</div>
+										</div>
+										<div class="row mb-2">
+											<div class="col-sm-12">
+												<input type="voucher" class="form-control" id="voucherInput" aria-describedby="voucherHelp" placeholder="Voucher code here..">
+											</div>
+										</div>
+										<div class="row mb-5">
+											<div class="col-sm-12">
+											<button type="button" id="connectBtn" class="btn btn-info fullwidth text-color-white text-shadow">USE VOUCHER</button>
+										</div>
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -232,7 +255,7 @@
                             </div>
                           </div>
                           <div class="modal-footer">
-                            <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal" id="spinCancelBtn">Close</button>
                             <button type="button" id="spinBtn" class="btn btn-success">Spin</button>
                           </div>
                         </div>
@@ -321,13 +344,6 @@
 										<span id="codeGeneratedBlock">
 											<span id="codeGenerated" style="font-size: 35px; font-weight: bold; color: #4cd137">*****</span>
 										</span>
-									</div>
-		
-									<div class="inscoinholder convertVoucherBlock" id="convertVoucherBlockDiv">
-										<span style="color: #747d8c">Convert unsed voucher</span><br>
-										<input type="text" class="form-control" id="convertVoucherCode" placeholder="Enter voucher" style="width: 140px; text-align: center; ">
-										<br>
-										<button type="button" id="convertBtn" class="btn btn-success" onclick="convertVoucherAction(); return false">Convert</button>
 									</div>
 									
 									<div class="inscoinholder">

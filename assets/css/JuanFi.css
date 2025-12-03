@@ -1,5 +1,16 @@
 @media screen and (min-width: 70px) and (max-width: 410px) {
   /* Styles applied when the screen width is 768px or wider */
+	#redeemBySpinModal {
+		width: 410px !important;
+	}
+	#redeemBySpinModal .modal-body{
+		max-width: 100% !important;
+   		overflow-x: scroll !important;
+	}
+	#wheelCanvas {
+		/* width: 227px !important;
+		height: 227px !important; */
+	}
 }
 
 body {
@@ -389,4 +400,20 @@ body {
     60%{    color: transparent; }
     99%{    color:transparent;  }
     100%{   color: white;    }
+}
+.border {
+	width: 100%;
+	border: 2px solid #4854604f !important;
+	border-radius: 5px;
+	border-radius: 3px;
+	padding: 10px;
+	margin-top: 15px;
+	display: inline-block;
+}
+.shadow-border{
+	display: block;
+	padding: 10px 5px 10px 5px;
+	width: 100%;
+	color: #fff;
+	box-shadow: 0px 1px 5px #000;
 }
