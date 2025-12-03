@@ -129,6 +129,7 @@ $(document).ready(function(){
 	if(!initLoad){
 		initValues();
 		renderView();
+		useVoucherBtnEvt();
 	}
 });
 
@@ -175,85 +176,6 @@ function renderView(){
 			autologin = data.autoLoginHotspot;
 			wheelConfig = data.wheelConfig;
 		}
-
-		if(isMultiVendo){
-			if(multiVendoOption == 1){
-				$("#vendoSelectDiv").addClass("hide");
-				var currentHotspot = hotspotAddress.split(":")[0];
-				var dtls = multiVendoAddresses.find(x => x.hotspotAddress === currentHotspot);
-				if(!!dtls){
-					selectedVendoDtls = dtls;
-					vendorIpAddress = dtls.vendoIp;
-				} 
-			}else if(multiVendoOption == 2){
-				$("#vendoSelectDiv").addClass("hide");
-				var dtls = multiVendoAddresses.find(x => x.interfaceName === interfaceName);
-				if(!!dtls){
-					selectedVendoDtls = dtls;
-					vendorIpAddress = dtls.vendoIp;
-				}
-			}else{
-				var selectedVendo = getStorageValue('selectedVendo');
-				if(selectedVendo === "null"){ selectedVendo = null; }
-				for(var i=0;i<multiVendoAddresses.length;i++){
-					$("#vendoSelected").append($('<option>', {
-						value: multiVendoAddresses[i].vendoIp,
-						text: multiVendoAddresses[i].vendoName
-					}));
-					if(i === 0 && (!selectedVendo)){
-						setStorageValue('selectedVendo', multiVendoAddresses[i].vendoIp);
-						selectedVendo = multiVendoAddresses[i].vendoIp;
-						selectedVendoDtls = multiVendoAddresses[i];
-					}
-					if(selectedVendo === multiVendoAddresses[i].vendoIp){
-						selectedVendoDtls = multiVendoAddresses[i];
-					}
-				}  
-				if(selectedVendo != null){
-					vendorIpAddress = selectedVendo;
-				}
-
-				$("#vendoSelected").val(vendorIpAddress);
-				$("#vendoSelected").change(function(){
-					vendorIpAddress = $("#vendoSelected").val();
-					setStorageValue('selectedVendo', vendorIpAddress);
-					let dtls = multiVendoAddresses.find(x => x.vendoIp === vendorIpAddress);
-					
-					if(!!dtls){
-						selectedVendoDtls = dtls;
-						wheelConfig = selectedVendoDtls.wheelConfig;
-						pointsEnabled = selectedVendoDtls.pointsPercentage > 0;
-						if(wheelConfig?.length > 0){
-							$("#spinWrapper").removeClass("hide");
-							$("#spinWrapper").removeClass("col-sm-12");
-							$("#spinWrapper").addClass("col-sm-6");
-						}else{
-							$("#spinWrapper").addClass("hide");
-							$("#spinWrapper").removeClass("col-sm-6");
-							$("#spinWrapper").addClass("col-sm-12");
-						}
-					}
-			
-					evaluateChargingButton(selectedVendoDtls);
-					evaluateEloadButton(selectedVendoDtls);
-				});
-			}
-			
-			$("#vendoSelected").trigger("change");
-
-		}else{
-			$("#vendoSelectDiv").addClass("hide");
-		}
-
-		if((!!wheelConfig) && wheelConfig.length > 0){
-				$("#spinWrapper").removeClass("hide");
-				$("#spinWrapper").removeClass("col-sm-12");
-				$("#spinWrapper").addClass("col-sm-6");
-			}else{
-				$("#spinWrapper").addClass("hide");
-				$("#spinWrapper").removeClass("col-sm-6");
-				$("#spinWrapper").addClass("col-sm-12");
-			}
 
 		// handle the data if needed
 		$( "#saveVoucherButton" ).prop('disabled', true);	
@@ -304,7 +226,6 @@ function renderView(){
 		if(ignoreSaveCode == null || ignoreSaveCode == "0"){
 			ignoreSaveCode = "0";
 		}
-		useVoucherBtnEvt();
 		
 		$('#resumeTimeBtn').addClass("hide");
 
@@ -333,22 +254,75 @@ function renderView(){
 				timeRemainingStr = userData?.timeRemainingStr;
 				timeExpiry = userData?.timeExpiry;
 			}
+
+			if(isMultiVendo){
+				if(multiVendoOption == 1){
+					$("#vendoSelectDiv").addClass("hide");
+					var currentHotspot = hotspotAddress.split(":")[0];
+					var dtls = multiVendoAddresses.find(x => x.hotspotAddress === currentHotspot);
+					if(!!dtls){
+						selectedVendoDtls = dtls;
+						vendorIpAddress = dtls.vendoIp;
+					} 
+				}else if(multiVendoOption == 2){
+					$("#vendoSelectDiv").addClass("hide");
+					var dtls = multiVendoAddresses.find(x => x.interfaceName === interfaceName);
+					if(!!dtls){
+						selectedVendoDtls = dtls;
+						vendorIpAddress = dtls.vendoIp;
+					}
+				}else{
+					var selectedVendo = getStorageValue('selectedVendo');
+					if(selectedVendo === "null"){ selectedVendo = null; }
+					for(var i=0;i<multiVendoAddresses.length;i++){
+						$("#vendoSelected").append($('<option>', {
+							value: multiVendoAddresses[i].vendoIp,
+							text: multiVendoAddresses[i].vendoName
+						}));
+						if(i === 0 && (!selectedVendo)){
+							setStorageValue('selectedVendo', multiVendoAddresses[i].vendoIp);
+							selectedVendo = multiVendoAddresses[i].vendoIp;
+							selectedVendoDtls = multiVendoAddresses[i];
+						}
+						if(selectedVendo === multiVendoAddresses[i].vendoIp){
+							selectedVendoDtls = multiVendoAddresses[i];
+						}
+					}  
+					if(selectedVendo != null){
+						vendorIpAddress = selectedVendo;
+					}
+
+					$("#vendoSelected").val(vendorIpAddress);
+					var vendoSelectOption = document.getElementById("vendoSelected");
+					vendoSelectOption.onchange = function(){
+						vendorIpAddress = $("#vendoSelected").val();
+						setStorageValue('selectedVendo', vendorIpAddress);
+						let dtls = multiVendoAddresses.find(x => x.vendoIp === vendorIpAddress);
+						
+						if(!!dtls){
+							selectedVendoDtls = dtls;
+							wheelConfig = selectedVendoDtls.wheelConfig;
+							pointsEnabled = selectedVendoDtls.pointsPercentage > 0;
+							showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig);
+						}
 				
-			if(pointsEnabled === true){
+						evaluateChargingButton(selectedVendoDtls);
+						evaluateEloadButton(selectedVendoDtls);
+					}
+				}
+				
+				$("#vendoSelected").trigger("change");
+
+			}else{
+				$("#vendoSelectDiv").addClass("hide");
+			}
+			
+			showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig);
+			if(pointsEnabled){
 				rewardPointsBalance = totalPoints;
-				var min = parseInt($('#redeemSlider').attr('min'),10) || 0;
-				
 				$("#rewardPoints").html((!!totalPoints) ? totalPoints.toFixed(2) : "0");
 				$(".redeemRatio").text(redeemRatioValue);
 				$("#rewardDtls").removeClass("hide");
-				if(totalPoints > min){
-					$("#rewardBtnWrapper").removeClass("hide");
-					onRedeemRewardPtsEvt(macNoColon, wheelConfig);
-					onRedeemRewardPtsConfirmBtnEvt(macNoColon);
-					onRedeemRewardPtsSliderChangeEvt();
-				}else{
-					$("#rewardBtnWrapper").addClass("hide");
-				}
 			}else{
 				$("#rewardDtls").addClass("hide");
 			}
@@ -477,14 +451,16 @@ $('#eloadModal').on('hidden.bs.modal', function () {
 	insertingCoin = false;
 });
 
-$("#pauseTimeBtn").on('click', function(){
+const pauseTimeBtn = document.getElementById('pauseTimeBtn');
+pauseTimeBtn.onclick = function(){
 	var r = confirm("Are you sure you want to temporarily disconnect from the network?");
 	if(r){
 		pause(macNoColon);
 	}
-});
+}
 
-$('#resumeTimeBtn').on('click', function(){
+const resumeTimeBtn = document.getElementById('resumeTimeBtn');
+resumeTimeBtn.onclick = function(){
 	showLoader();
 	setStorageValue("isPaused", "0");
 	loginVoucher(macNoColon, function(success){
@@ -497,7 +473,7 @@ $('#resumeTimeBtn').on('click', function(){
 			hideLoader();
 		}
 	});
-});
+};
 
 function replaceAll(str, rep){
 	var aa = str;
@@ -1127,54 +1103,57 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb){
 		params += `&oldMac=${activeMac}`
 	}
 
-	$.ajax({
-		type: "GET",
-		url: `${juanfiExtendedServerUrl}/user-info?${params}`,
-		success: function(data){
-			if(!data){
-				cb(null, "No data received.");
-				return;
-			}
+	fetchPortalAPI(`/user-info?${params}`, "GET", vendorIpAddress, null)
+	.then(result => {
+		if((!result) || (!result?.success)){
+			cb(null, result?.error ?? "Server request failed.");
+			return;
+		}
+		let data = result?.data;
+		if(!data) {
+			cb(null, null);
+			return;
+		}
 
-			var isOnline = data.isOnline;
-			var voucherCode = data.code;
-			var totalPoints = data.totalPoints;
-			var timeRemainingStr = data.timeRemaining;
-			var timeRemaining = data.timeRemainingInSeconds;
-			var timeExpiry = data.timeExpiry;
-			
-			cb({
-				isOnline,
-				voucherCode,
-				pointsEnabled,
-				totalPoints,
-				timeRemaining,
-				timeExpiry,
-				timeRemainingStr
-			}, null);
-		},
-		error: function(d){
-			cb(null, d);
-	   	}
+		var isOnline = data.isOnline;
+		var voucherCode = data.code;
+		var totalPoints = data.totalPoints;
+		var timeRemainingStr = data.timeRemaining;
+		var timeRemaining = data.timeRemainingInSeconds;
+		var timeExpiry = data.timeExpiry;
+		
+		cb({
+			isOnline,
+			voucherCode,
+			pointsEnabled,
+			totalPoints,
+			timeRemaining,
+			timeExpiry,
+			timeRemainingStr
+		}, null);
+	})
+	.catch(error => {
+		cb(null, error);
 	});
 }
 
 function fetchPortalConfig(cb){
-	$.ajax({
-		type: "GET",
-		url: `${juanfiExtendedServerUrl}/config`,
-		success: function(data){
-			if(!data) {
-				cb(null, null);
-				return;
-			}
-			let output = { ...data };
-			cb(output, null);
-		},
-		error: function(jqXHR, textStatus, errorThrown){
-			let err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown)
-			cb(null, err?.message);
-	   	}
+	fetchPortalAPI("/config", "GET", null, null)
+	.then(result => {
+		if((!result) || (!result?.success)){
+			cb(null, result?.error ?? "Server request failed.");
+			return;
+		}
+		let data = result?.data;
+		if(!data) {
+			cb(null, null);
+			return;
+		}
+		let output = { ...data };
+		cb(output, null);
+	})
+	.catch(error => {
+		cb(null, error);
 	});
 }
 
@@ -1222,7 +1201,8 @@ function updateRedeemRewardPtsUI(from){
 }
 
 function onRedeemRewardPtsEvt(macNoColon, wheelConfig){
-	$('#redeemPtsBtn').on('click', function(e){
+	var redeemPtsBtn = document.getElementById("redeemPtsBtn");
+	redeemPtsBtn.onclick = function(e){
 		e.preventDefault();
 		var avail = parseRewardPoints($('#rewardPoints').text());
 		if(avail <= 0){
@@ -1237,10 +1217,11 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig){
         $('#selectedPointsInput').val(min);
 		updateRedeemRewardPtsUI('input');
 		$('#redeemModal').modal('show');
-	});
+	};
 
 	if(!!wheelConfig){
-		$('#spinRedeemBtn').on('click', function(e){
+		var spinRedeemBtn = document.getElementById("spinRedeemBtn");
+		spinRedeemBtn.onclick = function(e){
 			e.preventDefault();
 			var avail = rewardPointsBalance;
 			if(avail <= 0){
@@ -1257,7 +1238,7 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig){
 			
 			const colors = ["#FFD6E8","#E0F7FA","#FFF7C0","#E8F6E9","#FDEFEF","#E8EAF6","#FBE9E7","#E6F0FF"];
 			drawSpinWheel(macNoColon, wheelConfig, colors);
-		});
+		};
 	}
 }
 
@@ -1276,7 +1257,8 @@ function onRedeemRewardPtsSliderChangeEvt(){
 }
 
 function onRedeemRewardPtsConfirmBtnEvt(macNoColon){
-	$('#confirmRedeemBtn').on('click', function(){
+	var confirmRedeemBtn = document.getElementById("confirmRedeemBtn");
+	confirmRedeemBtn.onclick = function(){
 		showLoader();
 		var selected = parseInt($('#selectedPointsInput').val(),10) || 0;
 		if(selected <= 0){
@@ -1344,120 +1326,91 @@ function onRedeemRewardPtsConfirmBtnEvt(macNoColon){
 				delay: 4000
 			});
 		}
-	});
+	};
 }
 
 function logoutVoucher(macNoColon){
-	try{
-		$.ajax({
-			type: "POST",
-			url: `${juanfiExtendedServerUrl}/logout`,
-			data: {mac: macNoColon},
-			success: function(result){
-				if(!result) {
-					$.toast({
-						title: 'Failed',
-						content: 'Request failed. Please try again.',
-						type: 'error',
-						delay: 4000
-					});
-					return;
-				}
+	fetchPortalAPI(`/logout`, "POST", vendorIpAddress, {mac: macNoColon})
+	.then(result => {
+		if((!result) || (!result?.success)){
+			$.toast({
+				title: 'Failed',
+				content: result?.error ?? 'Request failed. Please try again.',
+				type: 'error',
+				delay: 4000
+			});
+			cb(false);
+			return;
+		}
 
-				if(result.status === "success"){
-					$("#resumeTimeBtn").removeClass("hide");
-					
-					$.toast({
-						title: 'Success',
-						content: 'You have been successfully disconnected to the network. Page will reload shortly',
-						type: 'success',
-						delay: 4000
-					});
+		let data = result?.data;
+		if((!!data) || (data?.status === "success")) {
+			$("#resumeTimeBtn").removeClass("hide");
+			$.toast({
+				title: 'Success',
+				content: 'You have been successfully disconnected to the network. Page will reload shortly',
+				type: 'success',
+				delay: 4000
+			});
 
-					setTimeout(function (){
-						newLogin();
-					}, 1000);
-				}else{
-					$.toast({
-						title: 'Failed',
-						content: 'Failed to disconnect.',
-						type: 'error',
-						delay: 4000
-					});
-				}
-			},
-			error: function(d){
-				$.toast({
-					title: 'Failed',
-					content: 'Failed to connect to server. Try again later.',
-					type: 'error',
-					delay: 4000
-				});
-			},
-			complete: function(){
-				
-			}
-		});
-	}catch(e){
+			setTimeout(function (){
+				newLogin();
+			}, 1000);
+		}else{
+			$.toast({
+				title: 'Failed',
+				content: 'Failed to disconnect device.',
+				type: 'error',
+				delay: 4000
+			});
+		}
+	})
+	.catch(error => {
 		$.toast({
 			title: 'Failed',
-			content: 'Runtime error. Contact vendo owner.',
-			type: 'error',
-			delay: 4000
-		});
-		cb();
-	}
-}
-
-function loginVoucher(macNoColon, cb){
-	try{
-		$.ajax({
-			type: "POST",
-			url: `${juanfiExtendedServerUrl}/login`,
-			data: {mac: macNoColon},
-			success: function(result){
-				if(!result) {
-					$.toast({
-						title: 'Failed',
-						content: 'Request failed. Please try again.',
-						type: 'error',
-						delay: 4000
-					});
-					return;
-				}
-
-				if(result.status === "success"){
-					cb(true);
-				}else{
-					$.toast({
-						title: 'Failed',
-						content: 'Failed to connect voucher.',
-						type: 'error',
-						delay: 4000
-					});
-					cb(false);
-				}
-			},
-			error: function(jqXHR, textStatus, errorThrown){
-				let err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown);
-				$.toast({
-					title: 'Failed',
-					content: err?.message ?? 'Failed to connect to server. Try again later.',
-					type: 'error',
-					delay: 4000
-				});
-				cb(false);
-			}
-		});
-	}catch(e){
-		$.toast({
-			title: 'Failed',
-			content: 'Runtime error. Contact vendo owner.',
+			content: error ?? 'Failed to connect to server. Try again later.',
 			type: 'error',
 			delay: 4000
 		});
 		cb(false);
-	}
+	});
+}
+
+function loginVoucher(macNoColon, cb){
+	fetchPortalAPI(`/login`, "POST", vendorIpAddress, {mac: macNoColon})
+	.then(result => {
+		if((!result) || (!result?.success)){
+			$.toast({
+				title: 'Failed',
+				content: result?.error ?? 'Request failed. Please try again.',
+				type: 'error',
+				delay: 4000
+			});
+			cb(false);
+			return;
+		}
+		let data = result?.data;
+		if((!!data) || (data?.status === "success")) {
+			cb(true);
+		}else{
+			$.toast({
+				title: 'Failed',
+				content: data?.message ?? 'Failed to connect voucher.',
+				type: 'error',
+				delay: 4000
+			});
+			cb(false);
+		}
+	})
+	.catch(error => {
+		$.toast({
+			title: 'Failed',
+			content: error ?? 'Failed to connect to server. Try again later.',
+			type: 'error',
+			delay: 4000
+		});
+		cb(false);
+	});
 }
 
 function updateDeviceDateTime() {
@@ -1489,24 +1442,22 @@ function checkIsLoggedIn(macNoColon){
 }
 
 function fetchSpinWheelReward(mac, cb){
-	$.ajax({
-		type: "POST",
-		url: `${juanfiExtendedServerUrl}/promo/spin-wheel`,
-		contentType: 'application/json; charset=utf-8',
-		dataType: "json",
-		data: JSON.stringify({mac}),
-		success: function(data){
-			if(!data) {
-				cb(null, "Failed to fetch.");
-				return;
-			}
-			cb (data, null);
-		},
-		error: function(jqXHR, textStatus, errorThrown){
-			let err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown)
-			cb(null, err?.message);
-	   	}
-	});
+	fetchPortalAPI("/promo/spin-wheel", "POST", vendorIpAddress, JSON.stringify({mac}), {contentType: 'application/json; charset=utf-8', dataType: "json"})
+	.then(result => {
+		if((!result) || (!result?.success)){
+			cb(null, result?.error ?? "Server request failed.");
+			return;
+		}
+		let data = result?.data;
+		if(!data) {
+			cb(null, null);
+			return;
+		}
+		cb (data, null);
+	})
+	.catch(error => {
+		cb(null, error);
+	})
 }
 
 function drawSpinWheel(mac, prizes, colors){
@@ -1899,7 +1850,8 @@ function hideLoader(){
 }
 
 function useVoucherBtnEvt(){
-	$('#connectBtn').on('click', function(e){
+	const connectBtn = document.getElementById('connectBtn');
+	connectBtn.onclick = function(e){
 		e.preventDefault();
 		showLoader();
 		if(!macNoColon){
@@ -1917,44 +1869,46 @@ function useVoucherBtnEvt(){
 			hideLoader();
 			return;
 		}
-		fetchUseVoucher(macNoColon, vendorIpAddress, voucherCode, function(result, error){
-			if(!!error){
+
+		fetchUseVoucher(macNoColon, vendorIpAddress, voucherCode, function(success, error){
+			if(success){
+				$.toast({
+					title: 'Success',
+					content: 'You have successfully used your voucher! Page will reload shortly',
+					type: 'success',
+					delay: 3000
+				});
+
+				setTimeout(function (){
+					hideLoader();
+					newLogin();
+				}, 3000);
+			}else{
+				hideLoader();
 				$.toast({ title: 'Failed', content: error ?? "Server request failed.", type: 'error', delay: 3000 });
 				
 				return;
 			}
-			$.toast({
-				title: 'Success',
-				content: 'You have successfully used your voucher! Page will reload shortly',
-				type: 'success',
-				delay: 3000
-			});
-
-			setTimeout(function (){
-				hideLoader();
-				newLogin();
-			}, 3000);
 		});
-	});
+	}
 }
 
 function fetchUseVoucher(macNoColon, vendorIpAddress, voucherCode, cb){
-	$.ajax({
-		type: "POST",
-		url: `${juanfiExtendedServerUrl}/use-voucher`,
-		dataType: "json",
-		data: {mac: macNoColon, code: voucherCode, nodeIp: vendorIpAddress},
-		success: function(data){
-			if(!data) {
-				cb(null, "Failed to fetch.");
-				return;
-			}
-			cb (data, null);
-		},
-		error: function(jqXHR, textStatus, errorThrown){
-			let err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown)
-			cb(null, err?.message);
-	   	}
+	fetchPortalAPI(`/use-voucher`, "POST", vendorIpAddress, {mac: macNoColon, code: voucherCode})
+	.then(result => {
+		if((!result) || (!result?.success)){
+			cb(null, result?.error ?? "Server request failed.");
+			return;
+		}
+		let data = result?.data;
+		if((!!data) || (data?.status === "success")) {
+			cb (true, null);
+		}else{
+			cb(false, data?.message ?? "Failed to use voucher.");
+		}
+	})
+	.catch(error => {
+		cb(null, error);
 	});
 }
 
@@ -1970,5 +1924,69 @@ function parseAjaxErrorResponse(jqXHR, textStatus, errorThrown){
 		}
 	} else {
 		return "Error received from server.";
+	}
+}
+
+function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options){
+	return new Promise(function(resolve, reject) {
+		try{
+			let headers = {
+				...(!!vendorIpAddress) ? {'X-IP': vendorIpAddress} : undefined,
+			}
+			return $.ajax({
+					type,
+					url: `${juanfiExtendedServerUrl}${apiUrl}`,
+					headers,
+					data: params,
+					...options,
+					success: function(data){
+						if(!data) {
+							resolve({
+								success: false,
+								error: "Failed to fetch."
+							});
+						}else{
+							resolve({
+								success: true,
+								data
+							});
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrown){
+						let err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown)
+						reject(err?.message ?? "Server request failed!");
+					}
+				});
+		}catch(e){
+			reject("Runtime error!");
+		}
+	});
+}
+
+function showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig){
+	$("#rewardBtnWrapper").addClass("hide");
+	if(pointsEnabled && totalPoints > 0){
+		$("#redeemWrapper").removeClass("hide");
+		if((!!wheelConfig) && wheelConfig?.length > 0){
+			$("#spinWrapper").removeClass("hide");
+			$("#spinWrapper").removeClass("col-sm-12");
+			$("#spinWrapper").addClass("col-sm-6");
+			$("#redeemWrapper").removeClass("col-sm-12");
+			$("#redeemWrapper").addClass("col-sm-6");
+		}else{
+			$("#spinWrapper").addClass("hide");
+			$("#spinWrapper").removeClass("col-sm-6");
+			$("#spinWrapper").addClass("col-sm-12");
+			$("#redeemWrapper").removeClass("col-sm-6");
+			$("#redeemWrapper").addClass("col-sm-12");
+		}
+		$("#rewardBtnWrapper").removeClass("hide");
+		onRedeemRewardPtsEvt(macNoColon, wheelConfig);
+		onRedeemRewardPtsConfirmBtnEvt(macNoColon);
+		onRedeemRewardPtsSliderChangeEvt();
+	}else{
+		$("#redeemWrapper").addClass("hide");
+		$("#spinWrapper").addClass("hide");
+		$("#rewardBtnWrapper").addClass("hide");
 	}
 }
