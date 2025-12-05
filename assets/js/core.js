@@ -1259,14 +1259,13 @@ function onRedeemRewardPtsSliderChangeEvt(){
 function onRedeemRewardPtsConfirmBtnEvt(macNoColon){
 	var confirmRedeemBtn = document.getElementById("confirmRedeemBtn");
 	confirmRedeemBtn.onclick = function(){
-		showLoader();
 		var selected = parseInt($('#selectedPointsInput').val(),10) || 0;
 		if(selected <= 0){
 			$.toast({ title: 'Warning', content: 'Please select at least 1 point to redeem.', type: 'warning', delay: 2500 });
 			return;
 		}
 		var estimatedPhp = (selected * redeemRatioValue).toFixed(2);
-
+		showLoader();
 		try{
 			$.ajax({
 				type: "POST",
