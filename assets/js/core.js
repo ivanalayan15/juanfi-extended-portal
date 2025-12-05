@@ -1925,42 +1925,47 @@ function parseAjaxErrorResponse(jqXHR, textStatus, errorThrown){
 		return "Error received from server.";
 	}
 }
-
 function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options){
 	return new Promise(function(resolve, reject) {
 		try{
+			const timestamp = new Date().getTime();
+			const separator = apiUrl.includes("?") ? "&" : "?";
+			const finalUrl = `${juanfiExtendedServerUrl}${apiUrl}${separator}t=${timestamp}`;
+
 			let headers = {
 				...(!!vendorIpAddress) ? {'X-IP': vendorIpAddress} : undefined,
-			}
+			};
+
 			return $.ajax({
-					type,
-					url: `${juanfiExtendedServerUrl}${apiUrl}`,
-					headers,
-					data: params,
-					...options,
-					success: function(data){
-						if(!data) {
-							resolve({
-								success: false,
-								error: "Failed to fetch."
-							});
-						}else{
-							resolve({
-								success: true,
-								data
-							});
-						}
-					},
-					error: function(jqXHR, textStatus, errorThrown){
-						let err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown)
-						reject(err?.message ?? "Server request failed!");
+				type,
+				url: finalUrl,
+				headers,
+				data: params,
+				...options,
+				success: function(data){
+					if(!data) {
+						resolve({
+							success: false,
+							error: "Failed to fetch."
+						});
+					}else{
+						resolve({
+							success: true,
+							data
+						});
 					}
-				});
+				},
+				error: function(jqXHR, textStatus, errorThrown){
+					let err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown);
+					reject(err?.message ?? "Server request failed!");
+				}
+			});
 		}catch(e){
 			reject("Runtime error!");
 		}
 	});
 }
+
 
 function showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig){
 	$("#rewardBtnWrapper").addClass("hide");
