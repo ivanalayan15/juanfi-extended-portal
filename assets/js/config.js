@@ -1,1 +1,1 @@
-var juanfiExtendedServerIP = "10.10.10.252"; //change according to your JuanFI extended server (Orange PI) IP address
+var juanfiExtendedServerIP = "10.0.0.3"; //change according to your JuanFI extended server (Orange PI) IP address

@@ -1,31 +1,15 @@
-@media screen and (min-width: 70px) and (max-width: 410px) {
-  /* Styles applied when the screen width is 768px or wider */
-	#redeemBySpinModal {
-		width: 410px !important;
-	}
-	#redeemBySpinModal .modal-body{
-		max-width: 100% !important;
-   		overflow-x: scroll !important;
-	}
-	#wheelCanvas {
-		/* width: 227px !important;
-		height: 227px !important; */
-	}
-}
 
 body {
-	padding: 10px;
-	background-color: #3d4044
+	background-color: #000000;
+	color: #b2b2b2;
 }
 
 .container {
-	background-color: #191e2d;
-	padding: 20px;
-	max-width: 900px;
-	margin: auto;
-	margin-top: 20px;
-	border: 2px solid #57606f;
-	border-radius: 5px
+	background-color: #202020;
+	width: 100% !important;
+	border: 1px solid #575757;
+	border-radius: 5px;
+	padding: 10px;
 }
 
 .banner {
@@ -193,7 +177,7 @@ body {
 }
 
 .modal-content {
-	background-color: #191e2d;
+	background-color: #1f1f1f;
 	color: #fff
 }
 
@@ -416,4 +400,110 @@ body {
 	width: 100%;
 	color: #fff;
 	box-shadow: 0px 1px 5px #000;
+}
+
+.juanfi-primary-text{
+	color: #dd5608;
+}
+.juanfi-default-text{
+	color: #aaaaaa;
+}
+.banner{
+	max-height: 63px;;
+}
+.btn{
+	font-size: 14px;
+	font-weight: bolder;
+}
+.btn-primary{
+	background-color: #dd5608 !important;
+	border-color: #a43c00;
+}
+.btn:hover{
+	border-color: #000000;
+}
+
+.btn:disabled{
+	border-color: #000000;
+	cursor: not-allowed !important;
+}
+.small{
+	font-size: small;
+}
+.icon-small{
+	width: 17px;
+}
+.nav-link{
+	font-weight: bolder;
+}
+
+/* Remove hover/focus background and text change */
+.nav-tabs .nav-link {
+  background-color: transparent; /* keep inactive transparent */
+  color: #c6c6c6; /* text color for inactive tab */
+}
+
+.nav-tabs .nav-link:hover,
+.nav-tabs .nav-link:focus {
+  color: #fff;
+  border-color: #575757 #575757 #fff;
+  box-shadow: none; /* remove focus shadow */
+}
+
+/* Active tab */
+.nav-tabs .nav-link.active {
+  background-color: #575757; /* orange */
+  color: #fff;
+  border-color: #575757 #575757 #fff;
+}
+
+/* Icon color in active tab */
+.nav-tabs .nav-link.active i {
+  color: #fff;
+}
+
+.voucher-card {
+	background: #292929;
+	color: #fff;
+	border-radius: 5px;
+	padding: 10px 16px;
+	width: 100%;
+	border: 1px solid rgb(58, 58, 58)
+}
+
+.voucher-top {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.voucher-amount {
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.voucher-btn {
+	border: none;
+	border-radius: 14px;
+	padding: 6px 12px;
+	font-size: 12px;
+	cursor: text !important;
+}
+
+.voucher-btn:active {
+	opacity: 0.85;
+}
+
+.voucher-date {
+	margin-top: 8px;
+	text-align: right;
+	font-size: 12px;
+	color: #d0d0d0;
+}
+.btn-close{
+	color: white !important;
+}
+
+.toast-body{
+	color: #fff !important;
 }
