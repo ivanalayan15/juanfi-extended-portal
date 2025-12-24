@@ -389,18 +389,18 @@ function renderView() {
 				$("#statusImg").removeClass("hide");
 				$("#statusImg").addClass("blinking1");
 
-				if (!initLoad) {
-					var pausedState = getStorageValue("isPaused")
-					if (autologin && pausedState !== "1" && timeRemaining > 0) {
+				// if (!initLoad) {
+				// 	var pausedState = getStorageValue("isPaused")
+				// 	if (autologin && pausedState !== "1" && timeRemaining > 0) {
 
-						loginVoucher(macNoColon, function (success) {
-							if (success) {
-								checkIsLoggedIn(macNoColon);
-							}
+				// 		loginVoucher(macNoColon, function (success) {
+				// 			if (success) {
+				// 				checkIsLoggedIn(macNoColon);
+				// 			}
 
-						});
-					}
-				}
+				// 		});
+				// 	}
+				// }
 			}
 
 			if (!!timeExpiry) {
@@ -431,7 +431,9 @@ function renderView() {
 
 			// Update every second (1000 milliseconds)
 			setInterval(updateDeviceDateTime, 1000);
-
+			if (!initLoad) {
+				populatePromoRates(0);
+			}
 			initLoad = true;
 
 		});
@@ -1133,6 +1135,13 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
 	//var activeMac = getStorageValue('activeVoucher')
 	if (old_mac && old_mac !== "") {
 		params += `&old_mac=${old_mac}`
+
+		var pausedState = getStorageValue("isPaused")
+		if (pausedState === "1"){
+			params += `&isPaused=true`;
+		}else{
+			params += `&isPaused=false`;
+		}
 	}
 	fetchPortalAPI(`/user-info?${params}`, "GET", vendorIpAddress, null)
 		.then(result => {
@@ -1154,12 +1163,6 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
 			var timeExpiry = data.timeExpiry;
 			$("#voucherCode").html(voucherCode);
 
-			var pausedState = getStorageValue("isPaused")
-			if (autologin && pausedState !== "1" && timeRemaining > 0) {
-				loginVoucher(macNoColon, function (success) {});
-			}
-			
-			populatePromoRates(0);
 			renderHistories(data);
 			cb({
 				isOnline,
