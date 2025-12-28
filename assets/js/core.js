@@ -44,7 +44,16 @@ var chargingEnable, eloadEnable, showPauseTime, showMemberLogin, showExtendTimeB
 
 var wheelConfig = [];
 var macNoColon;
-var old_mac = getStorageValue('activeVoucher');
+
+try {
+	const url = new URL(window.location.href);
+	url.pathname = '/';
+	url.search = '';
+	url.hash = '';
+	window.history.replaceState({}, document.title, url.toString());
+} catch (e) {
+	console.error(e);
+}
 
 function initValues() {
 	//DO NOT UPDATE - START
@@ -231,8 +240,6 @@ function renderView() {
 			ignoreSaveCode = "0";
 		}
 
-		$('#resumeTimeBtn').addClass("hide");
-
 		fetchUserInfo(macNoColon, pointsEnabled, function (userData, error) {
 			if (!!error) {
 
@@ -248,12 +255,11 @@ function renderView() {
 			let isOnline = false, pointsEnabled = false;
 			let voucherCode = macNoColon, timeRemainingStr;
 			let totalPoints = 0, timeRemaining, timeExpiry;
-
 			if (!!userData) {
 				isOnline = userData?.isOnline;
 				voucherCode = userData?.voucherCode;
 				pointsEnabled = userData?.pointsEnabled;
-				totalPoints = userData?.totalPoints;
+				totalPoints = Number(userData?.totalPoints) || 0;
 				timeRemaining = userData?.timeRemaining;
 				timeRemainingStr = userData?.timeRemainingStr;
 				timeExpiry = userData?.timeExpiry;
@@ -320,19 +326,18 @@ function renderView() {
 			} else {
 				$("#vendoSelectDiv").addClass("hide");
 			}
-
 			showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig);
 			if (pointsEnabled) {
 				rewardPointsBalance = totalPoints;
-				$("#rewardPoints").html((!!totalPoints) ? totalPoints.toFixed(2) : "0");
+				$("#rewardPoints").html(totalPoints.toFixed(2));
 				$(".redeemRatio").text(redeemRatioValue);
 				$("#rewardDtls").removeClass("hide");
 				$("#rewardDtlsBtn").removeClass("hide");
 
-				if (rewardPointsBalance < 0) {
-					document.getElementById('spinRedeemBtn').disabled = true;
-					document.getElementById('redeemPtsBtn').disabled = true;
-				}
+				// if (parseInt(rewardPointsBalance) < 0) {
+				// 	document.getElementById('spinRedeemBtn').disabled = true;
+				// 	document.getElementById('redeemPtsBtn').disabled = true;
+				// }
 			} else {
 				$("#rewardDtls").addClass("hide");
 				$("#rewardDtlsBtn").addClass("hide");
@@ -357,18 +362,14 @@ function renderView() {
 
 				remainingTimer = setInterval(function () {
 					time--;
-					$("#remainTime").html(secondsToDhms(time));
+					$("#remainTime").html(secondsToDhms(time))
+					showPauseButton();
 					if (time <= 0) {
-						$.toast({
-							title: 'Success',
-							content: 'Time limit reached. You will be logged out shortly',
-							type: 'success',
-							delay: 5000
-						});
 						clearInterval(remainingTimer);
 						setTimeout(function () {
 							newLogin();
-						}, 4000);
+							showResumeButton();
+						}, 1000);
 					}
 				}, 1000);
 			} else {
@@ -388,19 +389,7 @@ function renderView() {
 				$("#statusImg").attr("src", "assets/img/off_wifi.png");
 				$("#statusImg").removeClass("hide");
 				$("#statusImg").addClass("blinking1");
-
-				// if (!initLoad) {
-				// 	var pausedState = getStorageValue("isPaused")
-				// 	if (autologin && pausedState !== "1" && timeRemaining > 0) {
-
-				// 		loginVoucher(macNoColon, function (success) {
-				// 			if (success) {
-				// 				checkIsLoggedIn(macNoColon);
-				// 			}
-
-				// 		});
-				// 	}
-				// }
+				showResumeButton();
 			}
 
 			if (!!timeExpiry) {
@@ -413,17 +402,17 @@ function renderView() {
 
 			if (showPauseTime && isPaused) {
 				$("#pauseRemainTime").html(getStorageValue(voucher + "remain"));
-				$("#resumeTimeBtn").removeClass("hide");
+				showResumeButton();
 			} else {
-				$("#resumeTimeBtn").addClass("hide");
+				showPauseButton();
 			}
 
 			setStorageValue('activeVoucher', voucherCode);
 
 			if (showPauseTime && isOnline) {
-				$("#pauseTimeBtn").removeClass("hide");
+				showPauseButton();
 			} else {
-				$("#pauseTimeBtn").addClass("hide");
+				showResumeButton();
 			}
 
 			// Initial call to display immediately
@@ -433,6 +422,7 @@ function renderView() {
 			setInterval(updateDeviceDateTime, 1000);
 			if (!initLoad) {
 				populatePromoRates(0);
+				$('#loaderDiv').hide();
 			}
 			initLoad = true;
 
@@ -464,6 +454,11 @@ $('#eloadModal').on('hidden.bs.modal', function () {
 	insertingCoin = false;
 });
 
+$('#redeemBySpinModal').on('hidden.bs.modal', function () {
+	renderView();
+});
+$("#pauseTimeBtn").addClass("hide");
+$("#resumeTimeBtn").addClass("hide");
 const pauseTimeBtn = document.getElementById('pauseTimeBtn');
 pauseTimeBtn.onclick = function () {
 	pause(macNoColon);
@@ -850,10 +845,10 @@ function saveVoucherBtnAction() {
 						removeLoader('saveVoucherButton')
 					}, 1000);
 				}
-				if (rewardPointsBalance < 0) {
-					document.getElementById('spinRedeemBtn').disabled = true;
-					document.getElementById('redeemPtsBtn').disabled = true;
-				}
+				// if (parseInt(rewardPointsBalance) < 0) {
+				// 	document.getElementById('spinRedeemBtn').disabled = true;
+				// 	document.getElementById('redeemPtsBtn').disabled = true;
+				// }
 			} else {
 				notifyCoinSlotError(data.errorCode);
 			}
@@ -899,6 +894,7 @@ function checkCoin() {
 				setStorageValue('totalCoinReceived', totalCoinReceived);
 				setStorageValue(voucher + "tempValidity", data.validity);
 				notifyCoinSuccess(data.newCoin);
+				$("#cncl").prop('disabled', true);
 			} else {
 				if (data.errorCode == "coin.is.reading") {
 					$("#noticeDiv").attr('style', 'display: block');
@@ -1132,14 +1128,14 @@ function parseTime(str) {
 
 function fetchUserInfo(macNoColon, pointsEnabled, cb) {
 	var params = `mac=${macNoColon}`
-	//var activeMac = getStorageValue('activeVoucher')
+	var old_mac = getStorageValue('activeVoucher')
 	if (old_mac && old_mac !== "") {
 		params += `&old_mac=${old_mac}`
 
 		var pausedState = getStorageValue("isPaused")
-		if (pausedState === "1"){
+		if (pausedState === "1") {
 			params += `&isPaused=true`;
-		}else{
+		} else {
 			params += `&isPaused=false`;
 		}
 	}
@@ -1183,6 +1179,8 @@ function renderHistories(data, containerId = "historyContainer") {
 	if (!container) return;
 
 	container.innerHTML = "";
+	container.style = "overflow-y:scroll;max-height:60dvh;";
+	container.className = "px-0 d-flex flex-column gap-2 pb-5";
 
 	if (!data || !Array.isArray(data.histories) || data.histories.length === 0) {
 		container.innerHTML = "<div>No history available</div>";
@@ -1198,8 +1196,8 @@ function renderHistories(data, containerId = "historyContainer") {
 		const amount = item.coin ? item.coin.toFixed(2) : "0.00";
 		div.innerHTML = `
 			<div class="d-flex justify-content-between align-items-center">
-				<div class="voucher-amount">₱ ${amount}</div>
-				<small class="voucher-btn" type="button">
+				<div class="voucher-amount fw-bolder">₱ ${amount}</div>
+				<small class="voucher-date">
 					${item.activity}
 				</small>
 			</div>
@@ -1289,14 +1287,14 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig) {
 	var redeemPtsBtn = document.getElementById("redeemPtsBtn");
 	redeemPtsBtn.onclick = function (e) {
 		e.preventDefault();
-		var avail = parseRewardPoints($('#rewardPoints').text());
+		var avail = parseInt(rewardPointsBalance) || 0;
 		if (avail <= 0) {
-			$.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'info', delay: 3000 });
-
+			$.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000 });
 			return;
 		}
+
 		var min = parseInt($('#redeemSlider').attr('min')) || 0;
-		$(".availablePointsDisplay").html((!!avail) ? avail.toFixed(2) : "0.00");
+		$(".availablePointsDisplay").html((!!rewardPointsBalance) ? rewardPointsBalance.toFixed(2) : "0.00");
 		$('#redeemSlider').attr('max', parseInt(avail));
 		$('#redeemSlider').val(min);
 		$('#selectedPointsInput').attr('max', avail);
@@ -1309,16 +1307,16 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig) {
 		var spinRedeemBtn = document.getElementById("spinRedeemBtn");
 		spinRedeemBtn.onclick = function (e) {
 			e.preventDefault();
-			var avail = rewardPointsBalance;
+			var avail = parseInt(rewardPointsBalance) || 0;;
 			if (avail <= 0) {
-				$.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'info', delay: 3000 });
+				$.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000 });
 				return;
 			}
 			spinBtn.disabled = false;
 			$("#redeemedValueWrapper").addClass("hide");
 			$("#selectedReward").text("")
 
-			$(".availablePointsDisplay").html((!!avail) ? avail.toFixed(2) : "0.00");
+			$(".availablePointsDisplay").html((!!rewardPointsBalance) ? rewardPointsBalance.toFixed(2) : "0.00");
 			$("#spinBtn").text("Spin");
 			$('#redeemBySpinModal').modal('show');
 
@@ -1420,6 +1418,15 @@ function onRedeemRewardPtsConfirmBtnEvt(macNoColon) {
 	};
 }
 
+function showPauseButton() {
+	$("#pauseTimeBtn").removeClass("hide");
+	$("#resumeTimeBtn").addClass("hide");
+}
+function showResumeButton() {
+	$("#resumeTimeBtn").removeClass("hide");
+	$("#pauseTimeBtn").addClass("hide");
+}
+
 function logoutVoucher(macNoColon) {
 	fetchPortalAPI(`/logout`, "POST", vendorIpAddress, { mac: macNoColon })
 		.then(result => {
@@ -1440,8 +1447,8 @@ function logoutVoucher(macNoColon) {
 
 
 				setTimeout(function () {
+					showResumeButton();
 					newLogin();
-					$("#resumeTimeBtn").removeClass("hide");
 				}, 1500);
 			} else {
 				$.toast({
@@ -1514,7 +1521,9 @@ function checkIsLoggedIn(macNoColon) {
 		}
 		let { isOnline } = userData;
 		if (isOnline) {
-
+			showPauseButton();
+		} else {
+			showResumeButton();
 		}
 
 		setTimeout(function () {
@@ -1525,7 +1534,7 @@ function checkIsLoggedIn(macNoColon) {
 }
 
 function fetchSpinWheelReward(mac, cb) {
-	if (rewardPointsBalance < 0) {
+	if (parseInt(rewardPointsBalance) < 0) {
 		$.toast({
 			title: 'Failed',
 			content: error ?? 'Not enough points balance.',
@@ -1760,7 +1769,7 @@ function drawSpinWheel(mac, prizes, colors) {
 
 				$(".availablePointsDisplay").text((!!rewardPointsBalance) ? rewardPointsBalance.toFixed(2) : "0.00");
 				executeSpin(prizeIndex, result, error);
-				if (rewardPointsBalance > 0) {
+				if (parseInt(rewardPointsBalance) > 0) {
 					spinBtn.disabled = true;
 				}
 
@@ -1836,13 +1845,15 @@ function drawSpinWheel(mac, prizes, colors) {
 						delay: 5000
 					});
 				}
-
 				if (rewardPointsBalance >= redeemRatioValue) {
 					spinBtn.disabled = false;
 				}
 				spinning = false;
 				spinBtn.textContent = "SPIN AGAIN";
 				removeLoader('spinBtn')
+				if (parseInt(rewardPointsBalance) <= 0) {
+					$('#redeemBySpinModal').modal('hide');
+				}
 			});
 		}
 
@@ -1885,6 +1896,12 @@ function drawSpinWheel(mac, prizes, colors) {
 			resizeAll();
 		});
 		spinBtn.onclick = () => {
+			var avail = parseInt(rewardPointsBalance) || 0;
+			if (avail <= 0) {
+				$.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000 });
+				$('#redeemBySpinModal').modal('hide');
+				return;
+			}
 			addLoader('spinBtn')
 			isSpinTriggered = true;
 			shufflePrizes();
@@ -2120,23 +2137,21 @@ function showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig) {
 			$("#redeemWrapper").addClass("col-sm-12");
 		}
 		$("#rewardBtnWrapper").removeClass("hide");
-		onRedeemRewardPtsEvt(macNoColon, wheelConfig);
-		onRedeemRewardPtsConfirmBtnEvt(macNoColon);
-		onRedeemRewardPtsSliderChangeEvt();
 	} else {
 		$("#redeemWrapper").addClass("hide");
 		$("#spinWrapper").addClass("hide");
 		$("#rewardBtnWrapper").addClass("hide");
 	}
+
+	if(pointsEnabled){
+		onRedeemRewardPtsEvt(macNoColon, wheelConfig);
+		onRedeemRewardPtsConfirmBtnEvt(macNoColon);
+		onRedeemRewardPtsSliderChangeEvt();
+	}
 }
 let lastButtonId = null;
 
-/**
- * Adds a spinner to a button without removing its label
- * @param {string} buttonId - The ID of the button
- */
 function addLoader(buttonId) {
-	// Remove spinner from last button if it is still loading
 	if (lastButtonId && lastButtonId !== buttonId) {
 		removeLoader(lastButtonId);
 	}
@@ -2144,65 +2159,48 @@ function addLoader(buttonId) {
 	const btn = document.getElementById(buttonId);
 	if (!btn) return;
 
-	// Prevent adding spinner multiple times
 	if (btn.dataset.loading === "true") return;
 
-	// Create spinner element (Bootstrap 5 example)
 	const spinner = document.createElement('span');
 	spinner.className = 'spinner-border spinner-border-sm me-2'; // small spinner with margin
 	spinner.role = 'status';
 	spinner.ariaHidden = true;
 	spinner.dataset.spinner = "true"; // mark it for removal later
 
-	// Prepend spinner to button
 	btn.prepend(spinner);
 
-	// Disable button while loading
 	btn.disabled = true;
 	btn.dataset.loading = "true";
 
-	// Save this as last button
 	lastButtonId = buttonId;
 }
 
-/**
- * Removes spinner from the button and enables it
- * @param {string} buttonId - The ID of the button
- */
 function removeLoader(buttonId) {
 	const btn = document.getElementById(buttonId);
 	if (!btn || btn.dataset.loading !== "true") return;
 
-	// Remove spinner element
 	const spinner = btn.querySelector('span[data-spinner="true"]');
 	if (spinner) btn.removeChild(spinner);
 
-	// Enable button
 	btn.disabled = false;
 	btn.dataset.loading = "false";
 
-	// Clear last button if it matches
 	if (lastButtonId === buttonId) lastButtonId = null;
 }
-
-// Recreate $.toast function
 $.toast = function ({ title = '', content = '', type = 'info', delay = 5000 }) {
-	// Ensure toast container exists
 	if (!document.getElementById('toastContainer')) {
 		const container = document.createElement('div');
 		container.id = 'toastContainer';
 		container.className = 'position-fixed bottom-0 end-0 p-3';
-		container.style.zIndex = '1050';
+		container.style.zIndex = '99999';
 		document.body.appendChild(container);
 	}
 
-	// Determine toast background class
 	let bgClass = 'bg-info';
 	if (type === 'error') bgClass = 'bg-danger';
 	else if (type === 'success') bgClass = 'bg-success';
 	else if (type === 'warning') bgClass = 'bg-warning text-dark';
 
-	// Create toast element
 	const toastEl = document.createElement('div');
 	toastEl.className = `toast align-items-center ${bgClass} border-0`;
 	toastEl.role = 'alert';
@@ -2210,32 +2208,28 @@ $.toast = function ({ title = '', content = '', type = 'info', delay = 5000 }) {
 	toastEl.setAttribute('aria-atomic', 'true');
 
 	toastEl.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body"><strong>${title}</strong><br>${content}</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
+		<div class="d-flex mt-1">
+			<div class="toast-body"><strong>${title}</strong><br>${content}</div>
+			<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+		</div>
+	`;
 
-	// Append to container
 	document.getElementById('toastContainer').appendChild(toastEl);
 
-	// Show toast
 	const toast = new bootstrap.Toast(toastEl, { delay });
 	toast.show();
 
-	// Remove from DOM when hidden
 	toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
 };
 
+
 function createToastContainer() {
-	// Check if container already exists
 	if (document.getElementById('toastContainer')) return;
 
 	const container = document.createElement('div');
 	container.id = 'toastContainer';
-	container.className = 'position-fixed top-0 end-0 p-3'; // top-right corner
+	container.className = 'position-fixed top-0 end-0 p-3';
 
-	// Error toast
 	container.innerHTML += `
         <div id="errorToast" class="toast align-items-center bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
@@ -2245,7 +2239,6 @@ function createToastContainer() {
         </div>
     `;
 
-	// Success toast
 	container.innerHTML += `
         <div id="successToast" class="toast align-items-center bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
