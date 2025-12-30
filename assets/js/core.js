@@ -180,7 +180,7 @@ function renderView() {
 			showExtendTimeButton = data.showExtendTimeButton;
 			macAsVoucherCode = data.macAsVoucherCode;
 			qrCodeVoucherPurchase = data.qrCodeVoucherPurchase;
-			disableVoucherInput = data.disableVoucherInput;
+			disableVoucherInput = !data.showPortalInputVoucher;
 			pointsEnabled = data.pointsPercentage > 0;
 			autologin = data.autoLoginHotspot;
 			wheelConfig = data.wheelConfig;
@@ -188,6 +188,7 @@ function renderView() {
 
 		// handle the data if needed
 		$("#saveVoucherButton").prop('disabled', true);
+		hideDoneButton();
 		$("#cncl").prop('disabled', false);
 		$('#coinToast').toast({ delay: 1000, animation: true });
 		$('#coinSlotError').toast({ delay: 5000, animation: true });
@@ -200,17 +201,31 @@ function renderView() {
 		if (!showMemberLogin) {
 			$("#memberLoginBtn").addClass("hide");
 		}
-
-		if (!showExtendTimeButton) {
-			var inserType = $("#insertBtn").attr('data-insert-type');
-			if (inserType == "extend") {
-				$("#insertBtn").addClass("hide");
-			}
+		if (!data.showInsertCoin) {
+			$("#insertBtn").addClass("hide");
+		} else {
+			$("#insertBtn").removeClass("hide");
+		}
+		if (!data.showPauseTime) {
+			$("#pauseBtnContainer").addClass("hide");
 		}
 
 		if (qrCodeVoucherPurchase) {
 			$("#scanQrBtn").attr("style", "display: block");
 		}
+		if (disableVoucherInput) {
+			$("#useVoucherContainer").addClass("hide");
+		}
+		if (!data.showPortalHistory) {
+			$("#historyContainer").addClass("hide");
+			$("#historyTab").addClass("hide");
+			$("#history").addClass("hide");
+		}
+		if (!data.showPortalHeader) {
+			$("#headerContainer").addClass("hide");
+		}
+
+
 
 		if (!chargingEnable) {
 			if (isMultiVendo) {
@@ -352,6 +367,13 @@ function renderView() {
 				remainingTimer = null;
 			}
 
+			if (!showExtendTimeButton && time > 0) {
+				$("#insertBtn").addClass("hide");
+			}
+			if (time > 0) {
+				$("#insertBtn").html("EXTEND TIME");
+			}
+
 			if (isOnline) {
 				$("#connectionStatus").html("Connected");
 				$("#connectionStatus").attr("class", "blinking2");
@@ -367,11 +389,11 @@ function renderView() {
 					if (time <= 0) {
 						clearInterval(remainingTimer);
 						setTimeout(function () {
-							newLogin();
-							showResumeButton();
+							clearAllData();
 						}, 1000);
 					}
 				}, 1000);
+
 			} else {
 				//$("#remainTime").html(timeRemainingStr);
 				if (timeRemaining > 0) {
@@ -504,6 +526,20 @@ function evaluateChargingButton(vendoDtls) {
 	}
 }
 
+function hideInsertButtons() {
+	$("#saveVoucherButton").hide();
+	$("#cncl").hide();
+}
+hideInsertButtons();
+function hideDoneButton() {
+	$("#saveVoucherButton").hide();
+	$("#cncl").show();
+}
+function showDoneButton() {
+	$("#saveVoucherButton").show();
+	$("#cncl").hide();
+}
+
 function cancelPause() {
 	var r = confirm("Are you sure you want to cancel the session?");
 	if (r) {
@@ -533,6 +569,7 @@ function insertBtnAction() {
 	$("#progressDiv").attr('style', 'width: 100%');
 	$("#saveVoucherButton").prop('disabled', true);
 	$("#cncl").prop('disabled', false);
+	hideDoneButton();
 	addLoader('insertBtn');
 	totalCoinReceived = 0;
 
@@ -747,7 +784,7 @@ function addChargerTime(port, portName, retryCount) {
 }
 
 function callTopupAPI(retryCount) {
-	$('#cncl').html("Cancel");
+	$('#cncl').html("CANCEL");
 	$("#vcCodeDiv").attr('style', 'display: block');
 	var type = $("#saveVoucherButton").attr('data-save-type');
 
@@ -909,6 +946,7 @@ function checkCoin() {
 					totalCoinReceived = parseInt(data.totalCoin);
 					if (totalCoinReceived > 0) {
 						$("#saveVoucherButton").prop('disabled', false);
+						showDoneButton();
 						$("#cncl").prop('disabled', true);
 					}
 					if (remainTime == 0) {
@@ -944,6 +982,7 @@ function checkCoin() {
 						totalCoinReceived = parseInt(data.totalCoin);
 						if (totalCoinReceived > 0) {
 							$("#saveVoucherButton").prop('disabled', false);
+							showDoneButton();
 							$("#cncl").prop('disabled', true);
 							$('#codeGeneratedBlock').attr('style', 'display: block');
 						}
@@ -1158,6 +1197,33 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
 			var timeRemaining = data.timeRemainingInSeconds;
 			var timeExpiry = data.timeExpiry;
 			$("#voucherCode").html(voucherCode);
+
+			if (data.hasFreeInternet) {
+				$("#freeInternetContainer").removeClass("hide");
+				document.getElementById('claimFreeInternetBtn').onclick = function () {
+					$('#claimFreeInternetModal').modal('show');
+					claimFreeInternet(voucherCode);
+				}
+				document.getElementById('confirmClaimFreeInternetBtn').onclick = function () {
+					addLoader('confirmClaimFreeInternetBtn')
+					claimFreeInternetFetch(macNoColon, function (success) {
+						if (success) {
+							newLogin();
+							$("#freeInternetContainer").addClass("hide");
+							$.toast({
+								title: 'Success',
+								content: 'Free internet claimed successfully!',
+								type: 'success',
+								delay: 4000
+							});
+						}
+						removeLoader('confirmClaimFreeInternetBtn')
+					});
+				}
+
+				$('#claimFreeInternetModal').modal('show');
+				$('#freeMinutesLabel').html("You are eligible to claim " + parseInt(data.freeMinutes) + " minutes of internet access");
+			}
 
 			renderHistories(data);
 			cb({
@@ -1491,6 +1557,44 @@ function loginVoucher(macNoColon, cb) {
 				$.toast({
 					title: 'Failed',
 					content: data?.message ?? 'Failed to connect voucher.',
+					type: 'error',
+					delay: 4000
+				});
+				cb(false);
+			}
+		})
+		.catch(error => {
+			$.toast({
+				title: 'Failed',
+				content: error ?? 'Failed to connect to server. Try again later.',
+				type: 'error',
+				delay: 4000
+			});
+			cb(false);
+		});
+}
+
+
+function claimFreeInternetFetch(macNoColon, cb) {
+	fetchPortalAPI(`/claim-free-internet`, "POST", vendorIpAddress, { mac: macNoColon })
+		.then(result => {
+			if ((!result) || (!result?.success)) {
+				$.toast({
+					title: 'Failed',
+					content: result?.error ?? 'Request failed. Please try again.',
+					type: 'error',
+					delay: 4000
+				});
+				cb(false);
+				return;
+			}
+			let data = result?.data;
+			if ((!!data) || (data?.status === "success")) {
+				cb(true);
+			} else {
+				$.toast({
+					title: 'Failed',
+					content: data?.message ?? 'Failed to claim free internet.',
 					type: 'error',
 					delay: 4000
 				});
@@ -2143,7 +2247,7 @@ function showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig) {
 		$("#rewardBtnWrapper").addClass("hide");
 	}
 
-	if(pointsEnabled){
+	if (pointsEnabled) {
 		onRedeemRewardPtsEvt(macNoColon, wheelConfig);
 		onRedeemRewardPtsConfirmBtnEvt(macNoColon);
 		onRedeemRewardPtsSliderChangeEvt();

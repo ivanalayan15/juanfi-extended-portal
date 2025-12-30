@@ -41,7 +41,7 @@
 		<img src="assets/loading.svg" />
 	</div>
 	<div class="d-flex flex-column gap-2">
-		<div class="d-flex justify-content-between align-items-center container">
+		<div id="headerContainer" class="d-flex justify-content-between align-items-center container">
 			<div class="d-flex flex-column gap-0 align-items-center">
 				<img src="assets/MainPic.PNG" class="img-fluid banner" />
 			</div>
@@ -79,6 +79,11 @@
 				</button>
 			</div>
 		</div>
+		<div id="freeInternetContainer" class="hide container d-flex justify-content-between align-items-center gap-2">
+			<button type="button" id="claimFreeInternetBtn" class="btn btn-success w-100">
+				CLAIM FREE INTERNET
+			</button>
+		</div>
 		<div class="container d-flex flex-column gap-0">
 			<ul class="nav nav-tabs" id="myTab" role="tablist">
 
@@ -98,7 +103,7 @@
 					</button>
 				</li>
 
-				<li class="nav-item" role="presentation">
+				<li class="nav-item" role="presentation" id="historyTab">
 					<button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history"
 						type="button" role="tab">
 						<i class="bi bi-clock-history me-1 juanfi-primary-text"></i>
@@ -122,9 +127,12 @@
 						<button type="button" id="resumeTimeBtn" class="btn btn-success w-100">
 							RESUME TIME
 						</button>
-						<button type="button" id="pauseTimeBtn" class="btn btn-danger w-100">
-							PAUSE TIME
-						</button>
+						<div id="pauseBtnContainer" class="d-flex w-100">
+							<button type="button" id="pauseTimeBtn" class="btn btn-danger w-100">
+								PAUSE TIME
+							</button>
+						</div>
+
 						<table border="1" cellpadding="5" cellspacing="0" id="rateTable"
 							style="font-size: 11px !important;">
 							<thead>
@@ -229,7 +237,6 @@
 				</div>
 			</div>
 		</div>
-
 		<div class="modal fade" id="redeemModal" tabindex="-1" role="dialog" aria-labelledby="redeemModalLabel"
 			aria-hidden="true" data-backdrop="static" data-keyboard="false">
 			<div class="modal-dialog modal-dialog-centered" role="document">
@@ -293,6 +300,28 @@
 			</div>
 		</div>
 
+		<div class="modal fade" id="claimFreeInternetModal" tabindex="-1" role="dialog" aria-labelledby="claimFreeInternetModalLabel"
+			aria-hidden="true" data-backdrop="static" data-keyboard="false">
+			<div class="modal-dialog modal-dialog-centered" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="claimFreeInternetModalLabel">Claim Free Internet</h5>
+						<button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<div class="modal-body">
+						<div class="container-fluid">
+							<p id="freeMinutesLabel"></p>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" id="confirmClaimFreeInternetBtn" class="btn btn-success w-100">CLAIM NOW</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<div class="modal fade" id="insertCoinModal" style="z-index: 1500" data-bs-backdrop="static"
 			data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="insertCoinModalTitle"
 			aria-hidden="true">
@@ -351,11 +380,11 @@
 					</div>
 					<div class="modal-footer">
 						<button type="button" id="saveVoucherButton" data-save-type="extend"
-							onclick="saveVoucherBtnAction(); return false" class="btn btn-primary">
-							Done
+							onclick="saveVoucherBtnAction(); return false" class="btn btn-success w-100">
+							DONE PAYING
 						</button>
-						<button type="button" id="cncl" class="btn btn-danger" data-bs-dismiss="modal"
-							aria-label="Close">Cancel</button>
+						<button type="button" id="cncl" class="btn btn-danger w-100" data-bs-dismiss="modal"
+							aria-label="Close">CANCEL</button>
 					</div>
 				</div>
 			</div>
