@@ -19,7 +19,7 @@ var coinCount = new Audio('assets/coin-received.mp3');
 var TOPUP_CHARGER = "CHARGER";
 var TOPUP_INTERNET = "INTERNET";
 var TOPUP_ELOAD = "ELOAD";
-var juanfiExtendedServerUrl = `http://${juanfiExtendedServerIP}:8080/api/portal`; //do not change value of this line
+var juanfiExtendedServerUrl = ""; //do not change value of this line
 var totalCoinReceived;
 var voucher;
 var insertingCoin;
@@ -41,7 +41,6 @@ var loginOption;
 var dataRateOption;
 var vendorIpAddress;
 var chargingEnable, eloadEnable, showPauseTime, showMemberLogin, showExtendTimeButton, disableVoucherInput, macAsVoucherCode, qrCodeVoucherPurchase, pointsEnabled;
-
 var wheelConfig = [];
 var macNoColon;
 
@@ -136,11 +135,14 @@ function initValues() {
 }
 
 $(document).ready(function () {
-	if (!initLoad) {
-		initValues();
-		renderView();
-		useVoucherBtnEvt();
-	}
+	fetchServerData().then(server => {
+		juanfiExtendedServerUrl = `http://${server.ip}:8080/api/portal`;
+		if (!initLoad) {
+			initValues();
+			renderView();
+			useVoucherBtnEvt();
+		}
+	});
 });
 
 function newLogin() {
@@ -1285,6 +1287,27 @@ document.addEventListener('hidden.bs.modal', function () {
 		btn.removeAttribute('data-loading');
 	});
 });
+async function fetchServerData() {
+	try {
+		const response = await fetch('/juanfi-extended.json');
+		if (!response.ok) {
+			$.toast({
+				title: 'Failed',
+				content: 'juanfi-extended.json missing.',
+				type: 'error',
+				delay: 4000
+			});
+			return null;
+		}
+
+		const data = await response.json();
+		console.log('JuanFi Extended Version:', data.version);
+
+		return data;
+	} catch (err) {
+		console.error('Fetch error:', err);
+	}
+}
 
 function fetchPortalConfig(cb) {
 	fetchPortalAPI("/config", "GET", null, null)
@@ -1533,7 +1556,7 @@ function logoutVoucher(macNoColon) {
 				delay: 4000
 			});
 			removeLoader('pauseTimeBtn')
-			cb(false);
+			// cb(false);
 		});
 }
 
