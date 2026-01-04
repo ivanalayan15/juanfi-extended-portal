@@ -176,7 +176,7 @@ function renderView() {
 			dataRateOption = data.dataRateOption;
 			vendorIpAddress = data.vendorIpAddress;
 			chargingEnable = data.chargingEnable;
-			eloadEnable = data.eloadEnable;
+			eloadEnable = data.eLoadEnable;
 			showPauseTime = data.showPauseTime;
 			showMemberLogin = data.showMemberLogin;
 			showExtendTimeButton = data.showExtendTimeButton;
