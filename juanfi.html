@@ -148,6 +148,9 @@
 						<button onclick="clearAllData();" type="button" id="refreshBtn" class="btn btn-info w-100">
 							REFRESH
 						</button>
+						<button type="button" id="memberBtn" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#memberModal">
+							MEMBER LOGIN
+						</button>
 						<div class="d-flex justify-content-between gap-2">
 							<button type="button" id="chargingBtn" onclick="chargingBtnAction(); return false"
 								class="btn btn-primary w-100">
@@ -186,6 +189,30 @@
 
 			</div>
 
+		</div>
+
+		<div class="modal fade" id="memberModal" tabindex="-1" role="dialog" aria-labelledby="memberModalLabel"
+			 aria-hidden="true" data-backdrop="static" data-keyboard="false">
+			<div class="modal-dialog modal-dialog-centered" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="memberModalLabel">Member Login</h5>
+						<button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<div class="modal-body d-flex flex-column gap-3">
+						<input type="text" required class="form-control w-100" id="inputMemberUsername"
+							   placeholder="Username">
+						<input type="password" required class="form-control w-100" id="inputMemberPassword"
+							   placeholder="Password">
+						<div id="errorMsg" class="text-danger mt-2 d-none"></div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" id="memberLoginExecuteBtn" class="btn btn-success w-100">SIGN IN</button>
+					</div>
+				</div>
+			</div>
 		</div>
 
 		<div class="modal fade" id="redeemBySpinModal" tabindex="-1" role="dialog"
