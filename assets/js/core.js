@@ -137,6 +137,8 @@ function initValues() {
 $(document).ready(function () {
     fetchServerData().then(server => {
         juanfiExtendedServerUrl = `http://${server.ip}:8080/api/portal`;
+        $('#displayVersion').html(`v${server.version}`);
+        initializeSignalR(server.ip)
         if (!initLoad) {
             initValues();
             renderView();
@@ -144,6 +146,26 @@ $(document).ready(function () {
         }
     });
 });
+
+function initializeSignalR(server) {
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl(`http://${server}:8080/notificationhub`)
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on("RemoveHotspotActive", function (payload) {
+        if (!payload) return;
+
+        if(payload.userName === macNoColon){
+            newLogin();
+        }
+    });
+
+    connection.start()
+        .then(() => console.log("Connected"))
+        .catch(err => console.error(err));
+
+}
 
 function newLogin() {
     initValues();
@@ -393,7 +415,7 @@ function renderView() {
                     if (time <= 0 && !isMember) {
                         clearInterval(remainingTimer);
                         setTimeout(function () {
-                            clearAllData();
+                            renderView();
                         }, 1000);
                     }
                 }, 1000);
@@ -448,10 +470,13 @@ function renderView() {
             setInterval(updateDeviceDateTime, 1000);
             if (!initLoad) {
                 populatePromoRates(0);
-                $('#loaderDiv').hide();
+                $('#loaderDiv').addClass("hide");
+                var containerDiv = $('#containerDiv');
+                containerDiv.removeClass("hide");
+                containerDiv.show();
             }
 
-            if(isOnline && isMember){
+            if (isOnline && isMember) {
                 $("#insertBtn").addClass("hide");
                 $("#vendoSelectDiv").addClass("hide");
                 $("#historyTab").addClass("hide");
@@ -1388,7 +1413,7 @@ document.addEventListener('hidden.bs.modal', function () {
 
 async function fetchServerData() {
     try {
-        const response = await fetch('/juanfi-extended.json');
+        const response = await fetch('/juanfi-extended.json?t=' + new Date());
         if (!response.ok) {
             $.toast({
                 title: 'Failed',

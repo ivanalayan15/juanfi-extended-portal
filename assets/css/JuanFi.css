@@ -506,3 +506,10 @@ body {
 .toast-body{
 	color: #fff !important;
 }
+
+#displayVersion{
+	font-size: 8px !important;
+}
+#loaderDiv{
+	margin-top: 45dvh;
+}
