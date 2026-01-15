@@ -21,6 +21,7 @@
         var loginError = "";
         var mac = "$(mac)";
         var uIp = "$(ip)";
+        var appendUrl = "$(ip)-$(mac)";
         var hotspotAddress = "$(server-address)";
         var interfaceName = "$(interface-name)";
         var remainingTimer = null;
@@ -46,7 +47,7 @@
 
     <div id="headerContainer" class="d-flex justify-content-between align-items-center container">
         <div class="d-flex flex-column gap-0 align-items-center">
-            <img src="assets/MainPic.PNG" class="img-fluid banner"/>
+            <img src="assets/MainPic.PNG?v=$(ip)-$(mac)" class="img-fluid banner"/>
         </div>
         <div class="d-flex flex-column gap-3 text-end">
             <small id="ipInfo" class="juanfi-default-text small">Loading</small>
@@ -566,8 +567,9 @@
         if refresh - timeout)
             setInterval(function () {
                 if (!insertingCoin) {
-                    location.reload();
+                    newLogin();
                 }
+                console.log(Date.now());
             }, $(refresh - timeout - secs) * 1000);
         $(endif)
     </script>

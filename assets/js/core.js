@@ -14,8 +14,8 @@ errorCodeMap['eload.failed'] = 'Sorry, Eload processing is failed';
 
 //DO NOT UPDATE - START
 var initLoad = false;
-var insertcoinbg = new Audio('assets/insertcoinbg.mp3');
-var coinCount = new Audio('assets/coin-received.mp3');
+var insertcoinbg = new Audio('assets/insertcoinbg.mp3?v=' + appendUrl);
+var coinCount = new Audio('assets/coin-received.mp3?v=' + appendUrl);
 var TOPUP_CHARGER = "CHARGER";
 var TOPUP_INTERNET = "INTERNET";
 var TOPUP_ELOAD = "ELOAD";
@@ -138,7 +138,6 @@ $(document).ready(function () {
     fetchServerData().then(server => {
         juanfiExtendedServerUrl = `http://${server.ip}:8080/api/portal`;
         $('#displayVersion').html(`v${server.version}`);
-        initializeSignalR(server.ip)
         if (!initLoad) {
             initValues();
             renderView();
@@ -146,26 +145,6 @@ $(document).ready(function () {
         }
     });
 });
-
-function initializeSignalR(server) {
-    const connection = new signalR.HubConnectionBuilder()
-        .withUrl(`http://${server}:8080/notificationhub`)
-        .withAutomaticReconnect()
-        .build();
-
-    connection.on("RemoveHotspotActive", function (payload) {
-        if (!payload) return;
-
-        if(payload.userName === macNoColon){
-            newLogin();
-        }
-    });
-
-    connection.start()
-        .then(() => console.log("Connected"))
-        .catch(err => console.error(err));
-
-}
 
 function newLogin() {
     initValues();
@@ -1195,6 +1174,7 @@ function notifyCoinSuccess(coin, delay = 5000) {
 
     const toast = new bootstrap.Toast(toastEl, {delay});
     toast.show();
+    coinCount.play();
 }
 
 function secondsToDhms(seconds) {
