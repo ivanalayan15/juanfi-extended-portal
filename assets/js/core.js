@@ -188,7 +188,6 @@ function renderView() {
             autologin = data.autoLoginHotspot;
             wheelConfig = data.wheelConfig;
         }
-
         // handle the data if needed
         $("#saveVoucherButton").prop('disabled', true);
         hideDoneButton();
@@ -202,7 +201,7 @@ function renderView() {
         }
 
         if (!showMemberLogin) {
-            $("#memberLoginBtn").addClass("hide");
+            $("#memberBtn").addClass("hide");
         }
         if (!data.showInsertCoin) {
             $("#insertBtn").addClass("hide");
