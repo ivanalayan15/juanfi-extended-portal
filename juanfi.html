@@ -11,28 +11,28 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <title>JuanFi Extended</title>
 
-    <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-0xe13">
-    <link rel="stylesheet" href="assets/css/core.css?v=$(ip)-$(mac)-0xe13">
-    <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)-0xe13">
-    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)-0xe13">
-    <link rel="stylesheet" href="assets/css/toast.min.css?v=$(ip)-$(mac)-0xe13">
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-qwer13">
+    <link rel="stylesheet" href="assets/css/core.css?v=$(ip)-$(mac)-qwer13">
+    <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)-qwer13">
+    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)-qwer13">
+    <link rel="stylesheet" href="assets/css/toast.min.css?v=$(ip)-$(mac)-qwer13">
 
     <script>
         var loginError = "";
         var mac = "$(mac)";
         var uIp = "$(ip)";
-        var appendUrl = "$(ip)-$(mac)-0xe13";
+        var appendUrl = "$(ip)-$(mac)-qwer13";
         var hotspotAddress = "$(server-address)";
         var interfaceName = "$(interface-name)";
         var remainingTimer = null;
     </script>
-    <script src="assets/js/signalr.min.js?v=$(ip)-$(mac)-0xe13" defer></script>
-    <script src="assets/js/jquery.min.js?v=$(ip)-$(mac)-0xe13" defer></script>
-    <script src="assets/js/eload.js?v=$(ip)-$(mac)-0xe13" defer></script>
-    <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)-0xe13" defer></script>
-    <script src="assets/js/cache.js?v=$(ip)-$(mac)-0xe13" defer></script>
-    <script src="assets/js/core.js?v=$(ip)-$(mac)-0xe13" defer></script>
-    <script src="assets/js/pako.min.js?v=$(ip)-$(mac)-0xe13" defer></script>
+    <script src="assets/js/signalr.min.js?v=$(ip)-$(mac)-qwer13" defer></script>
+    <script src="assets/js/jquery.min.js?v=$(ip)-$(mac)-qwer13" defer></script>
+    <script src="assets/js/eload.js?v=$(ip)-$(mac)-qwer13" defer></script>
+    <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)-qwer13" defer></script>
+    <script src="assets/js/cache.js?v=$(ip)-$(mac)-qwer13" defer></script>
+    <script src="assets/js/core.js?v=$(ip)-$(mac)-qwer13" defer></script>
+    <script src="assets/js/pako.min.js?v=$(ip)-$(mac)-qwer13" defer></script>
 
 </head>
 
@@ -47,7 +47,7 @@
 
     <div id="headerContainer" class="d-flex justify-content-between align-items-center container">
         <div class="d-flex flex-column gap-0 align-items-center">
-            <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-0xe13" class="img-fluid banner"/>
+            <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-qwer13" class="img-fluid banner"/>
         </div>
         <div class="d-flex flex-column gap-3 text-end">
             <small id="ipInfo" class="juanfi-default-text small">Loading</small>
@@ -69,9 +69,10 @@
             <small class="small">$(bytes-out-nice)</small>
         </div>
     </div>
-    <div class="container text-center px-2 py-1">
+    <div class="container text-center px-2 py-1 d-flex flex-column gap-1 align-items-center">
         <h2 style="font-family: 'Courier New', monospace;" id="remainTime"
             class="fw-bolder juanfi-primary-text my-0">Loading...</h2>
+        <small id="expirationTime"></small>
     </div>
     <div id="useVoucherContainer" class="container d-flex justify-content-between align-items-center gap-2">
         <input type="voucher" required class="form-control w-100" id="voucherInput" aria-describedby="voucherHelp"
@@ -116,7 +117,7 @@
         </ul>
         <div class="tab-content mt-3" id="myTabContent">
             <div class="tab-pane fade show active" id="home" role="tabpanel">
-                <div class="d-flex flex-column gap-3 pt-2">
+                <div class="d-flex flex-column pt-2">
                     <div id="vendoSelectDiv" class="col-sm-12">
                         <label for="exampleFormControlSelect2">Select Vendo</label>
                         <select class="form-control fullwidth" name="vendoSelected" id="vendoSelected">
@@ -124,19 +125,22 @@
                     </div>
 
                     <button type="button" id="insertBtn" onclick="insertBtnAction(); return false"
-                            class="btn btn-primary w-100 py-3" data-insert-type="extend" data-toggle="modal">
+                            class="btn btn-primary w-100 py-3 mt-2 w-100" data-insert-type="extend" data-toggle="modal">
                         INSERT COIN
                     </button>
-                    <button type="button" id="resumeTimeBtn" class="btn btn-success w-100">
+                    <button type="button" id="resumeTimeBtn" class="btn btn-success mt-2 w-100">
                         RESUME TIME
                     </button>
                     <div id="pauseBtnContainer" class="d-flex w-100">
-                        <button type="button" id="pauseTimeBtn" class="btn btn-danger w-100">
+                        <button type="button" id="pauseTimeBtn" class="btn btn-danger mt-2 w-100">
                             PAUSE TIME
                         </button>
                     </div>
-
-                    <table border="1" cellpadding="5" cellspacing="0" id="rateTable"
+                    <button type="button" id="wifreeBtn" class="btn btn-info mt-2 w-100" data-bs-toggle="modal"
+                            data-bs-target="#wifreeModal">
+                        E-WALLET
+                    </button>
+                    <table border="1" cellpadding="5" cellspacing="0" id="rateTable" class="mt-2 w-100"
                            style="font-size: 11px !important;">
                         <thead>
                         <tr>
@@ -149,14 +153,14 @@
                         <tbody></tbody>
                     </table>
 
-                    <button onclick="clearAllData();" type="button" id="refreshBtn" class="btn btn-info w-100">
+                    <button onclick="clearAllData();" type="button" id="refreshBtn" class="btn btn-dark mt-2 w-100">
                         REFRESH
                     </button>
-                    <button type="button" id="memberBtn" class="btn btn-warning w-100" data-bs-toggle="modal"
+                    <button type="button" id="memberBtn" class="btn btn-warning mt-2 w-100" data-bs-toggle="modal"
                             data-bs-target="#memberModal">
                         MEMBER LOGIN
                     </button>
-                    <div class="d-flex justify-content-between gap-2">
+                    <div class="d-flex justify-content-between mt-2 gap-2">
                         <button type="button" id="chargingBtn" onclick="chargingBtnAction(); return false"
                                 class="btn btn-primary w-100">
                             CHARGING STATION
@@ -215,6 +219,48 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" id="memberLoginExecuteBtn" class="btn btn-success w-100">SIGN IN</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="wifreeModal" tabindex="-1" role="dialog" aria-labelledby="wifreeModalLabel"
+         aria-hidden="true" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="wifreeModalLabel">E-Wallet Purchase</h5>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div id="wifreeList" class="modal-body d-flex flex-column gap-3">
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="wifreeCheckOutModal" tabindex="-1" role="dialog" aria-labelledby="wifreeModalLabel"
+         aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="wifreeCheckOutModalLabel">Check Out</h5>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body d-flex flex-column gap-2">
+                    <div id="checkout-container"></div>
+                    <input type="text" required class="form-control w-100" id="inputMobileNumber"
+                           placeholder="Mobile Number">
+                    <div id="mobileError" class="invalid-feedback">
+                        Please enter a valid 11-digit mobile number.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="payNowBtn" class="btn btn-success w-100">PAY NOW</button>
                 </div>
             </div>
         </div>

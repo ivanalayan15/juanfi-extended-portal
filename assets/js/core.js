@@ -44,6 +44,7 @@ var chargingEnable, eloadEnable, showPauseTime, showMemberLogin, showExtendTimeB
     macAsVoucherCode, qrCodeVoucherPurchase, pointsEnabled;
 var wheelConfig = [];
 var macNoColon;
+var hasWiFree = false;
 try {
     const url = new URL(window.location.href);
     url.pathname = '/';
@@ -187,6 +188,7 @@ function renderView() {
             pointsEnabled = data.pointsPercentage > 0;
             autologin = data.autoLoginHotspot;
             wheelConfig = data.wheelConfig;
+            hasWiFree = data.hasWiFree;
         }
         // handle the data if needed
         $("#saveVoucherButton").prop('disabled', true);
@@ -255,7 +257,6 @@ function renderView() {
         if (ignoreSaveCode == null || ignoreSaveCode == "0") {
             ignoreSaveCode = "0";
         }
-
         fetchUserInfo(macNoColon, pointsEnabled, function (userData, error) {
             if (!!error) {
 
@@ -421,7 +422,6 @@ function renderView() {
             if (!!timeExpiry) {
                 let expirationTime = new Date(timeExpiry);
                 $("#expirationTime").html(expirationTime.toLocaleString());
-                $("#expirationTimeImg").attr("src", "assets/img/time.png");
             } else {
                 $("#expirationTimeWrapper").addClass("hide");
             }
@@ -439,6 +439,11 @@ function renderView() {
                 showPauseButton();
             } else {
                 showResumeButton();
+            }
+            if(hasWiFree){
+                $("#wifreeBtn").removeClass("hide");
+            }else{
+                $("#wifreeBtn").addClass("hide");
             }
 
             // Initial call to display immediately
@@ -499,6 +504,10 @@ $('#insertCoinModal').on('hidden.bs.modal', function () {
 
 $('#eloadModal').on('hidden.bs.modal', function () {
     insertingCoin = false;
+});
+
+$('#wifreeModal').on('show.bs.modal', function (e) {
+    renderWifreeList();
 });
 
 $('#redeemBySpinModal').on('hidden.bs.modal', function () {
@@ -1381,6 +1390,174 @@ function renderHistories(data, containerId = "historyContainer") {
     });
 }
 
+function onPurchaseClicked(item) {
+    addLoader('wifreeBtn');
+    $('#wifreeCheckOutModal').modal('show');
+    $('#wifreeModal').modal('hide');
+    const container = document.getElementById('checkout-container');
+    container.innerHTML = `
+        <div class="d-flex flex-column gap-2 px-2 py-2 shadow" style="border:1px solid #7e7e7e;border-radius: 5px">
+            <div class="d-flex justify-content-between align-items-center gap-2 w-100">
+                <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="35" height="29.52" viewBox="0 0 135.33 114.13">
+                  <title>GCash</title>
+                  <path d="M301.23,384.14a64.85,64.85,0,0,1-7,29.49,6.56,6.56,0,0,0,2.33,8.54h0a6.53,6.53,0,0,0,9-2q.16-.25.29-.51a78.4,78.4,0,0,0,0-70.9,6.54,6.54,0,0,0-8.81-2.81l-.5.29h0a6.56,6.56,0,0,0-2.33,8.53A64.88,64.88,0,0,1,301.23,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>
+                  <path d="M280.06,384.14a43.85,43.85,0,0,1-4,18.4,6.55,6.55,0,0,0,2.46,8.28h0A6.56,6.56,0,0,0,288,408a57.4,57.4,0,0,0,0-47.68,6.56,6.56,0,0,0-9.45-2.82h0a6.55,6.55,0,0,0-2.46,8.28A43.85,43.85,0,0,1,280.06,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>
+                  <path d="M236.06,428.13a44,44,0,1,1,26.87-78.85,6.54,6.54,0,0,0,8.63-.53h0a6.53,6.53,0,0,0-.63-9.79,57.08,57.08,0,1,0,.09,90.3,6.44,6.44,0,0,0,.61-9.63l-.14-.14A6.45,6.45,0,0,0,263,419,43.82,43.82,0,0,1,236.06,428.13Z" transform="translate(-179 -327.08)" style="fill:#007cff"/>
+                  <path d="M271.15,379.35a6.75,6.75,0,0,0-4.76-2h0l-31.35,0h0a6.77,6.77,0,1,0,0,13.53h23.59a23.52,23.52,0,1,1-10-26.75,6.78,6.78,0,0,0,8.4-1h0a6.75,6.75,0,0,0-1.14-10.45,37.36,37.36,0,0,0-27.8-4.88,36.55,36.55,0,0,0-28.24,28.48,37.08,37.08,0,1,0,73.34,7.78A6.78,6.78,0,0,0,271.15,379.35Z" transform="translate(-179 -327.08)" style="fill:#002cb8"/>
+                </svg>      
+                <h2 class="fw-bolder">₱ ${item.price.toFixed(2)}</h2>
+            </div>
+            
+            <div class="divider-primary"></div>
+            <div class="d-flex justify-content-between gap-0 w-100">
+                <small>
+                    Time: ${item.timeInMinutes} mins
+                </small>
+                <small>
+                    Expiry: ${item.expirationInMinutes} mins
+                </small>
+            </div>
+        </div>
+    `
+    const payNowBtn = document.getElementById('payNowBtn');
+    const inputMobileNumber = document.getElementById('inputMobileNumber');
+    const mobileError = document.getElementById('mobileError');
+
+    payNowBtn.addEventListener('click', (e) => {
+        const mobileValue = inputMobileNumber.value.trim();
+        const onlyNumbers = /^\d+$/;
+
+        inputMobileNumber.classList.remove('is-invalid');
+        inputMobileNumber.classList.remove('is-valid');
+        let errorMessage = "";
+
+        if (mobileValue === "") {
+            errorMessage = "Mobile number is required.";
+        } else if (!onlyNumbers.test(mobileValue)) {
+            errorMessage = "Please enter numbers only (no letters or spaces).";
+        } else if (mobileValue.length !== 11) {
+            errorMessage = "Number must be exactly 11 digits.";
+        }
+
+        if (errorMessage) {
+            mobileError.textContent = errorMessage;
+            inputMobileNumber.classList.add('is-invalid');
+        } else {
+            inputMobileNumber.classList.add('is-valid');
+
+            addLoader('payNowBtn')
+
+            var code = getStorageValue('activeVoucher')
+
+            fetchPortalAPI(`/wifree-vouchers`, "POST", vendorIpAddress, {
+                code: code,
+                purchaseId: item.id,
+                mobile: mobileValue,
+            })
+                .then(result => {
+                    if ((!result) || (!result?.success)) {
+                        $.toast({
+                            title: 'Failed',
+                            content: result?.error ?? 'Request failed. Please try again.',
+                            type: 'error',
+                            delay: 4000
+                        });
+                        removeLoader('payNowBtn')
+                        return;
+                    }
+
+                    let data = result?.data;
+                    if ((!!data) || (data?.status === "success")) {
+                        window.location.href = data.url;
+                    } else {
+                        $.toast({
+                            title: 'Failed',
+                            content: 'Failed to disconnect device.',
+                            type: 'error',
+                            delay: 4000
+                        });
+                    }
+                })
+                .catch(error => {
+                    $.toast({
+                        title: 'Failed',
+                        content: error ?? 'Failed to connect to server. Try again later.',
+                        type: 'error',
+                        delay: 4000
+                    });
+                    removeLoader('payNowBtn')
+                });
+
+
+        }
+    });
+
+    inputMobileNumber.addEventListener('input', () => {
+        inputMobileNumber.classList.remove('is-invalid');
+    });
+
+}
+
+$('#inputMobileNumber').on('input', function () {
+    this.value = this.value.replace(/\D/g, '');
+    if (this.value.length > 11) {
+        this.value = this.value.slice(0, 11);
+    }
+});
+
+function renderWifreeList() {
+    fetchPortalAPI("/wifree-vouchers", "GET", null, null)
+        .then(result => {
+            if ((!result) || (!result?.success)) {
+                return;
+            }
+            let data = result?.data;
+            const container = document.getElementById('wifreeList');
+            container.innerHTML = "";
+            data.forEach(item => {
+                const div = document.createElement("div");
+                div.style.cursor = "pointer";
+                div.innerHTML = `
+                    <div class="d-flex flex-column gap-2 px-2 py-2 shadow" style="border:1px solid #7e7e7e;border-radius: 5px">
+                        <div class="d-flex justify-content-between align-items-center gap-2 w-100">
+                            <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="35" height="29.52" viewBox="0 0 135.33 114.13">
+                              <title>GCash</title>
+                              <path d="M301.23,384.14a64.85,64.85,0,0,1-7,29.49,6.56,6.56,0,0,0,2.33,8.54h0a6.53,6.53,0,0,0,9-2q.16-.25.29-.51a78.4,78.4,0,0,0,0-70.9,6.54,6.54,0,0,0-8.81-2.81l-.5.29h0a6.56,6.56,0,0,0-2.33,8.53A64.88,64.88,0,0,1,301.23,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>
+                              <path d="M280.06,384.14a43.85,43.85,0,0,1-4,18.4,6.55,6.55,0,0,0,2.46,8.28h0A6.56,6.56,0,0,0,288,408a57.4,57.4,0,0,0,0-47.68,6.56,6.56,0,0,0-9.45-2.82h0a6.55,6.55,0,0,0-2.46,8.28A43.85,43.85,0,0,1,280.06,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>
+                              <path d="M236.06,428.13a44,44,0,1,1,26.87-78.85,6.54,6.54,0,0,0,8.63-.53h0a6.53,6.53,0,0,0-.63-9.79,57.08,57.08,0,1,0,.09,90.3,6.44,6.44,0,0,0,.61-9.63l-.14-.14A6.45,6.45,0,0,0,263,419,43.82,43.82,0,0,1,236.06,428.13Z" transform="translate(-179 -327.08)" style="fill:#007cff"/>
+                              <path d="M271.15,379.35a6.75,6.75,0,0,0-4.76-2h0l-31.35,0h0a6.77,6.77,0,1,0,0,13.53h23.59a23.52,23.52,0,1,1-10-26.75,6.78,6.78,0,0,0,8.4-1h0a6.75,6.75,0,0,0-1.14-10.45,37.36,37.36,0,0,0-27.8-4.88,36.55,36.55,0,0,0-28.24,28.48,37.08,37.08,0,1,0,73.34,7.78A6.78,6.78,0,0,0,271.15,379.35Z" transform="translate(-179 -327.08)" style="fill:#002cb8"/>
+                            </svg>      
+                            <h2 class="fw-bolder">₱ ${item.price.toFixed(2)}</h2>
+                        </div>
+                        
+                        <div class="divider-primary"></div>
+                        <div class="d-flex justify-content-between gap-0 w-100">
+                            <small>
+                                Time: ${item.timeInMinutes} mins
+                            </small>
+                            <small>
+                                Expiry: ${item.expirationInMinutes} mins
+                            </small>
+                        </div>
+                    </div>
+                `
+                $(div).on('click', function () {
+                    onPurchaseClicked(item);
+                });
+                container.appendChild(div);
+            })
+
+        })
+        .catch(error => {
+            $.toast({
+                title: 'Failed',
+                content: error ?? 'Failed to connect to server. Try again later.',
+                type: 'error',
+                delay: 4000
+            });
+        });
+}
+
 document.addEventListener('hidden.bs.modal', function () {
     document.querySelectorAll('button[data-loading="true"]').forEach(btn => {
         const spinner = btn.querySelector('[data-spinner="true"]');
@@ -1391,24 +1568,35 @@ document.addEventListener('hidden.bs.modal', function () {
 });
 
 async function fetchServerData() {
-    try {
-        const response = await fetch('/juanfi-extended.json?t=' + new Date());
-        if (!response.ok) {
-            $.toast({
-                title: 'Failed',
-                content: 'juanfi-extended.json missing.',
-                type: 'error',
-                delay: 4000
-            });
-            return null;
+    const maxRetries = 30;
+    const retryDelay = 1000;
+    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const response = await fetch('/juanfi-extended.json?t=' + new Date().getTime());
+            if (response.ok) {
+                const data = await response.json();
+                console.log('JuanFi Extended Version:', data.version);
+                return data;
+            } else {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+        } catch (err) {
+            console.error(`Attempt ${attempt} failed:`, err);
+            if (attempt < maxRetries) {
+                await wait(retryDelay);
+            } else {
+                $.toast({
+                    title: 'Failed',
+                    content: 'juanfi-extended.json missing or unreachable after 30 attempts.',
+                    type: 'error',
+                    delay: 4000
+                });
+                return null;
+            }
         }
-
-        const data = await response.json();
-        console.log('JuanFi Extended Version:', data.version);
-
-        return data;
-    } catch (err) {
-        console.error('Fetch error:', err);
     }
 }
 
@@ -1431,6 +1619,7 @@ function fetchPortalConfig(cb) {
             cb(null, error);
         });
 }
+
 
 function parseRewardPoints(text) {
     try {
@@ -2251,8 +2440,12 @@ function useVoucherBtnEvt() {
 
         fetchUseVoucher(macNoColon, vendorIpAddress, voucherCode, function (success, error) {
             if (success) {
-
-
+                $.toast({
+                    title: 'Success',
+                    content: "Voucher successfully consumed.",
+                    type: 'success',
+                    delay: 3000
+                });
                 setTimeout(function () {
                     newLogin();
                     removeLoader('connectBtn')
@@ -2440,68 +2633,51 @@ function removeLoader(buttonId) {
     if (lastButtonId === buttonId) lastButtonId = null;
 }
 
-$.toast = function ({title = '', content = '', type = 'info', delay = 5000}) {
-    if (!document.getElementById('toastContainer')) {
-        const container = document.createElement('div');
-        container.id = 'toastContainer';
-        container.className = 'position-fixed bottom-0 end-0 p-3';
-        container.style.zIndex = '99999';
-        document.body.appendChild(container);
-    }
+function createToastContainer() {
+    let container = document.getElementById('toastContainer');
+    if (container) return container;
 
-    let bgClass = 'bg-info';
-    if (type === 'error') bgClass = 'bg-danger';
-    else if (type === 'success') bgClass = 'bg-success';
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'position-fixed top-0 end-0 p-3';
+    container.style.zIndex = '99999';
+    container.style.pointerEvents = 'none';
+
+    document.body.appendChild(container);
+    return container;
+}
+
+$.toast = function ({title = '', content = '', type = 'info', delay = 5000}) {
+    const container = createToastContainer();
+
+    let bgClass = 'bg-info text-white';
+    if (type === 'error') bgClass = 'bg-danger text-white';
+    else if (type === 'success') bgClass = 'bg-success text-white';
     else if (type === 'warning') bgClass = 'bg-warning text-dark';
 
     const toastEl = document.createElement('div');
-    toastEl.className = `toast align-items-center ${bgClass} border-0`;
+    toastEl.className = `toast align-items-center ${bgClass} border-0 mb-2`;
+    toastEl.style.pointerEvents = 'auto';
     toastEl.role = 'alert';
     toastEl.setAttribute('aria-live', 'assertive');
     toastEl.setAttribute('aria-atomic', 'true');
 
     toastEl.innerHTML = `
-		<div class="d-flex mt-1">
-			<div class="toast-body"><strong>${title}</strong><br>${content}</div>
-			<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-		</div>
-	`;
+       <div class="d-flex mt-1">
+          <div class="toast-body">
+            ${title ? `<strong>${title}</strong><br>` : ''}
+            ${content}
+          </div>
+          <button type="button" class="btn-close ${type === 'warning' ? '' : 'btn-close-white'} me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+       </div>
+    `;
 
-    document.getElementById('toastContainer').appendChild(toastEl);
+    container.appendChild(toastEl);
 
-    const toast = new bootstrap.Toast(toastEl, {delay});
+    const toast = new bootstrap.Toast(toastEl, {delay, autohide: true});
     toast.show();
 
     toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
 };
-
-
-function createToastContainer() {
-    if (document.getElementById('toastContainer')) return;
-
-    const container = document.createElement('div');
-    container.id = 'toastContainer';
-    container.className = 'position-fixed top-0 end-0 p-3';
-
-    container.innerHTML += `
-        <div id="errorToast" class="toast align-items-center bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body text-white"></div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    `;
-
-    container.innerHTML += `
-        <div id="successToast" class="toast align-items-center bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body text-white"></div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(container);
-}
 
 createToastContainer();

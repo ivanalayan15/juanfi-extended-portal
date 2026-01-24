@@ -1,3 +1,18 @@
+:root {
+	--bs-backdrop-opacity: 0.9; /* Darker backdrop */
+}
+.modal-backdrop.show {
+	opacity: 0.9; /* Keep some darkness */
+	backdrop-filter: blur(15px); /* Add the glass/blur effect */
+}
+.toast-container {
+	/* Ensure it is above everything (Modals are ~1055) */
+	z-index: 9999 !important;
+	position: fixed;
+}
+.modal{
+	z-index: 1055 !important;
+}
 @media screen and (min-width: 70px) and (max-width: 410px) {
   /* Styles applied when the screen width is 768px or wider */
   body {

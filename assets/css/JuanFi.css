@@ -513,3 +513,14 @@ body {
 #loaderDiv{
 	margin-top: 45dvh;
 }
+.divider-primary{
+	background-color: #d95a00 !important;
+	width: 100% !important;
+	height: 1px !important;
+}
+
+.divider-default{
+	background-color: #838383 !important;
+	width: 100% !important;
+	height: 1px !important;
+}
