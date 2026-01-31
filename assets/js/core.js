@@ -44,6 +44,7 @@ var chargingEnable, eloadEnable, showPauseTime, showMemberLogin, showExtendTimeB
     macAsVoucherCode, qrCodeVoucherPurchase, pointsEnabled;
 var wheelConfig = [];
 var macNoColon;
+var isPaused;
 var hasWiFree = false;
 try {
     const url = new URL(window.location.href);
@@ -225,10 +226,18 @@ function renderView() {
             $("#historyTab").addClass("hide");
             $("#history").addClass("hide");
         }
+
         if (!data.showPortalHeader) {
             $("#headerContainer").addClass("hide");
+        }else{
+            $("#headerContainer").removeClass("hide");
         }
 
+        if (data.hideRates) {
+            $("#rateTable").addClass("hide");
+        }else{
+            $("#rateTable").removeClass("hide");
+        }
 
         if (!chargingEnable) {
             if (isMultiVendo) {
@@ -292,6 +301,7 @@ function renderView() {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
                     }
+                    multiVendoConfiguration(dtls, userData);
                 } else if (multiVendoOption == 2) {
                     $("#vendoSelectDiv").addClass("hide");
                     var dtls = multiVendoAddresses.find(x => x.interfaceName === interfaceName);
@@ -299,6 +309,7 @@ function renderView() {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
                     }
+                    multiVendoConfiguration(dtls, userData);
                 } else {
                     var selectedVendo = getStorageValue('selectedVendo');
                     if (selectedVendo === "null") {
@@ -336,6 +347,8 @@ function renderView() {
                             showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig);
                         }
 
+                        multiVendoConfiguration(dtls, userData);
+
                         evaluateChargingButton(selectedVendoDtls);
                         evaluateEloadButton(selectedVendoDtls);
                     }
@@ -364,7 +377,7 @@ function renderView() {
             }
 
             // $("#voucherCode").html(voucherCode);
-            var isPaused = (!isOnline);
+            isPaused = (!isOnline);
             var time = timeRemaining;
             $("#remainTime").html(secondsToDhms(time));
             if (remainingTimer != null) {
@@ -480,6 +493,69 @@ function renderView() {
 
         });
     });
+}
+
+function multiVendoConfiguration(vendo, user){
+    console.log(vendo);
+    console.log(user);
+    if (!vendo.showExtendTimeButton && user.timeRemaining > 0) {
+        $("#insertBtn").addClass("hide");
+    }else{
+        $("#insertBtn").removeClass("hide");
+    }
+    if(user.timeRemaining <= 0){
+        showResumeButton();
+    }else{
+        if (vendo.showPauseTime && isPaused) {
+            showPauseButton();
+        } else {
+            showResumeButton();
+        }
+    }
+
+    if (!vendo.showMemberLogin) {
+        $("#memberBtn").addClass("hide");
+    }else{
+        $("#memberBtn").removeClass("hide");
+    }
+    if (!vendo.showInsertCoin) {
+        $("#insertBtn").addClass("hide");
+    } else {
+        $("#insertBtn").removeClass("hide");
+    }
+    if (!vendo.showPauseTime) {
+        $("#pauseBtnContainer").addClass("hide");
+    }else{
+        $("#pauseBtnContainer").removeClass("hide");
+    }
+
+    if (!vendo.showPortalInputVoucher) {
+        $("#useVoucherContainer").addClass("hide");
+    }else{
+        $("#useVoucherContainer").removeClass("hide");
+    }
+    if (!vendo.showPortalHistory) {
+        $("#historyContainer").addClass("hide");
+        $("#historyTab").addClass("hide");
+        $("#history").addClass("hide");
+    }else{
+        $("#historyContainer").removeClass("hide");
+        $("#historyTab").removeClass("hide");
+        $("#history").removeClass("hide");
+    }
+    if (!vendo.showPortalHeader) {
+        $("#headerContainer").addClass("hide");
+    }else{
+        $("#headerContainer").removeClass("hide");
+    }
+    if (!vendo.wheelConfig) {
+        $("#spinRedeemBtn").addClass("hide");
+    }else{
+        $("#spinRedeemBtn").removeClass("hide");
+    }
+    if(initLoad){
+        populatePromoRates(3);
+    }
 }
 
 $('#insertCoinModal').on('hidden.bs.modal', function () {
@@ -702,17 +778,19 @@ function parseDuration(minutes) {
     const mins = parseInt(minutes, 10);
 
     if (mins < 60) {
-        return `${mins}m`;
+        return `${mins.toFixed(2)}m`;
     }
 
     if (mins < 1440) {
-        return `${mins / 60}h`;
+        return `${(mins / 60).toFixed(2)}h`;
     }
 
-    return `${mins / 1440}d`;
+    return `${(mins / 1440).toFixed(2)}d`;
 }
 
 function populatePromoRates(retryCount) {
+    const tableBody = document.querySelector("#rateTable tbody");
+    tableBody.innerHTML = "";
     $.ajax({
         type: "GET",
         url: "http://" + vendorIpAddress + "/getRates?rateType=" + rateType + "&date=" + (new Date().getTime()),
@@ -720,8 +798,7 @@ function populatePromoRates(retryCount) {
         contentType: 'text/plain',
         success: function (data) {
             const rows = data.split("|").filter(r => r.trim() !== "");
-            const tableBody = document.querySelector("#rateTable tbody");
-            tableBody.innerHTML = "";
+
             rows.forEach(row => {
 
                 const parts = row.split("#").filter(v => v !== "");
@@ -1276,7 +1353,7 @@ function parseTime(str) {
 }
 
 function fetchUserInfo(macNoColon, pointsEnabled, cb) {
-    var params = `mac=${macNoColon}`
+    var params = `mac=${macNoColon}&interfaceName=${interface}`
     var old_mac = getStorageValue('activeVoucher')
     if (old_mac && old_mac !== "") {
         params += `&old_mac=${old_mac}`
