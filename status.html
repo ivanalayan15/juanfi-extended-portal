@@ -1,1 +1,11 @@
-<script>location.replace('/juanfi.html?v=' + Date.now());</script>
+
+<script>
+    var sessionTimeLeft = "$(session-time-left-secs)"
+    var time = parseInt(sessionTimeLeft);
+    if(time > 0){
+        window.location.href = "http://clients3.google.com/generate_204";
+    }
+    setTimeout(function(){
+        location.replace('/juanfi.html?v=' + Date.now());
+    }, 1000)
+</script>

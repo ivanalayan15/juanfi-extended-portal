@@ -1073,6 +1073,7 @@ function saveVoucherBtnAction() {
                 // 	document.getElementById('spinRedeemBtn').disabled = true;
                 // 	document.getElementById('redeemPtsBtn').disabled = true;
                 // }
+                checkInternet()
             } else {
                 notifyCoinSlotError(data.errorCode);
             }
@@ -1351,9 +1352,11 @@ function parseTime(str) {
         return null;
     }
 }
-
+function checkInternet(){
+    window.location.href = "http://clients3.google.com/generate_204";
+}
 function fetchUserInfo(macNoColon, pointsEnabled, cb) {
-    var params = `mac=${macNoColon}&interfaceName=${interface}`
+    var params = `mac=${macNoColon}&interfaceName=${interfaceName}`
     var old_mac = getStorageValue('activeVoucher')
     if (old_mac && old_mac !== "") {
         params += `&old_mac=${old_mac}`
@@ -1378,6 +1381,9 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
             }
 
             var isOnline = data.isOnline;
+            if(isOnline) {
+                checkInternet();
+            }
             var isMember = data.isMember;
             var voucherCode = data.code;
             var totalPoints = data.totalPoints;
