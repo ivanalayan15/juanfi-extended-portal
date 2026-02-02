@@ -465,7 +465,7 @@ function renderView() {
             // Update every second (1000 milliseconds)
             setInterval(updateDeviceDateTime, 1000);
             if (!initLoad) {
-                populatePromoRates(0);
+                populatePromoRates(3);
                 $('#loaderDiv').addClass("hide");
                 var containerDiv = $('#containerDiv');
                 containerDiv.removeClass("hide");
@@ -806,8 +806,8 @@ function populatePromoRates(retryCount) {
                 const plan = parts[0];
                 const price = parts[1];
 
-                const duration = parseDuration(parts[2]);
-                const expiry = parseDuration(parts[3]);
+                const duration = minutesToTime(parts[2]);
+                const expiry = minutesToTime(parts[3]);
 
                 const tr = document.createElement("tr");
 
@@ -856,6 +856,27 @@ function populatePromoRates(retryCount) {
 $('#chargingModal').on('shown.bs.modal', function (e) {
     populateChargingStations(0);
 })
+
+function minutesToTime(totalMinutes) {
+    totalMinutes = parseInt(totalMinutes);
+
+    if (!Number.isInteger(totalMinutes) || totalMinutes < 0) {
+        return "Invalid value";
+    }
+
+    const days = Math.floor(totalMinutes / (24 * 60));
+    const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+    const minutes = totalMinutes % 60;
+
+    const parts = [];
+
+    if (days > 0) parts.push(`${days}day${days > 1 ? "s" : ""}`);
+    if (hours > 0) parts.push(`${hours}hr${hours > 1 ? "s" : ""}`);
+    if (minutes > 0 || parts.length === 0)
+        parts.push(`${minutes}min${minutes > 1 ? "s" : ""}`);
+
+    return parts.join(" ");
+}
 
 function populateChargingStations(retryCount) {
     clearInterval(chargerTimer);
@@ -1073,7 +1094,7 @@ function saveVoucherBtnAction() {
                 // 	document.getElementById('spinRedeemBtn').disabled = true;
                 // 	document.getElementById('redeemPtsBtn').disabled = true;
                 // }
-                checkInternet()
+                setTimeout(checkInternet, 3000)
             } else {
                 notifyCoinSlotError(data.errorCode);
             }
