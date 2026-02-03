@@ -160,6 +160,7 @@ function renderView() {
     $("#macInfo").html(mac);
     wheelConfig = [];
     multiVendoAddresses = [];
+    populatePromoRates(0);
     fetchPortalConfig(function (data, error) {
         if (!!error) {
 
@@ -414,7 +415,7 @@ function renderView() {
 
             } else {
                 //$("#remainTime").html(timeRemainingStr);
-                if (timeRemaining > 0) {
+                if (timeRemaining > 0 && !isMember) {
                     isPaused = true;
                     $("#remainingTimeWrapper").removeClass("hide");
                 } else {
@@ -465,14 +466,16 @@ function renderView() {
             // Update every second (1000 milliseconds)
             setInterval(updateDeviceDateTime, 1000);
             if (!initLoad) {
-                populatePromoRates(3);
+                if(!isMultiVendo){
+                    populatePromoRates(3);
+                }
                 $('#loaderDiv').addClass("hide");
                 var containerDiv = $('#containerDiv');
                 containerDiv.removeClass("hide");
                 containerDiv.show();
             }
 
-            if (isOnline && isMember) {
+            if(isMember){
                 $("#insertBtn").addClass("hide");
                 $("#vendoSelectDiv").addClass("hide");
                 $("#historyTab").addClass("hide");
@@ -484,13 +487,19 @@ function renderView() {
                 $("#chargingBtn").addClass("hide");
                 $("#eloadBtn").addClass("hide");
                 $("#useVoucherContainer").addClass("hide");
-                $("#connectionStatus").html("MEMBER CONNECTED");
-                $("#connectionStatus").attr("class", "blinking2");
-
+                $("#wifreeBtn").addClass("hide");
+                $("#remainingTimeWrapper").removeClass("hide");
             }
 
+            if (isOnline && isMember) {
+                $("#connectionStatus").html("MEMBER CONNECTED");
+                $("#connectionStatus").attr("class", "blinking2");
+            }
             initLoad = true;
 
+            if(isOnline) {
+                checkInternet();
+            }
         });
     });
 }
@@ -512,7 +521,11 @@ function multiVendoConfiguration(vendo, user){
             showResumeButton();
         }
     }
-
+    if (vendo.hideRates) {
+        $("#rateTable").addClass("hide");
+    }else{
+        $("#rateTable").removeClass("hide");
+    }
     if (!vendo.showMemberLogin) {
         $("#memberBtn").addClass("hide");
     }else{
@@ -554,7 +567,7 @@ function multiVendoConfiguration(vendo, user){
         $("#spinRedeemBtn").removeClass("hide");
     }
     if(initLoad){
-        populatePromoRates(3);
+        populatePromoRates(0);
     }
 }
 
@@ -1402,9 +1415,6 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
             }
 
             var isOnline = data.isOnline;
-            if(isOnline) {
-                checkInternet();
-            }
             var isMember = data.isMember;
             var voucherCode = data.code;
             var totalPoints = data.totalPoints;
