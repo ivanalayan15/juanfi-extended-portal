@@ -160,7 +160,6 @@ function renderView() {
     $("#macInfo").html(mac);
     wheelConfig = [];
     multiVendoAddresses = [];
-    populatePromoRates(0);
     fetchPortalConfig(function (data, error) {
         if (!!error) {
 
@@ -230,15 +229,17 @@ function renderView() {
 
         if (!data.showPortalHeader) {
             $("#headerContainer").addClass("hide");
-        }else{
+        } else {
             $("#headerContainer").removeClass("hide");
         }
 
-        if (data.hideRates) {
-            $("#rateTable").addClass("hide");
-        }else{
-            $("#rateTable").removeClass("hide");
-        }
+        // if (data.hideRates) {
+        //     $("#rateTable").addClass("hide");
+        //     $("#btnPromoRates").addClass("hide");
+        // } else {
+        //     $("#rateTable").removeClass("hide");
+        //     $("#btnPromoRates").removeClass("hide");
+        // }
 
         if (!chargingEnable) {
             if (isMultiVendo) {
@@ -390,7 +391,7 @@ function renderView() {
                 $("#insertBtn").addClass("hide");
             }
             if (time > 0) {
-                $("#insertBtn").html("EXTEND TIME");
+                $("#insertBtn").html("EXTEND");
             }
 
             if (isOnline) {
@@ -454,9 +455,9 @@ function renderView() {
             } else {
                 showResumeButton();
             }
-            if(hasWiFree){
+            if (hasWiFree) {
                 $("#wifreeBtn").removeClass("hide");
-            }else{
+            } else {
                 $("#wifreeBtn").addClass("hide");
             }
 
@@ -466,7 +467,7 @@ function renderView() {
             // Update every second (1000 milliseconds)
             setInterval(updateDeviceDateTime, 1000);
             if (!initLoad) {
-                if(!isMultiVendo){
+                if (!isMultiVendo) {
                     populatePromoRates(3);
                 }
                 $('#loaderDiv').addClass("hide");
@@ -475,7 +476,7 @@ function renderView() {
                 containerDiv.show();
             }
 
-            if(isMember){
+            if (isMember) {
                 $("#insertBtn").addClass("hide");
                 $("#vendoSelectDiv").addClass("hide");
                 $("#historyTab").addClass("hide");
@@ -497,24 +498,24 @@ function renderView() {
             }
             initLoad = true;
 
-            if(isOnline) {
+            if (isOnline) {
                 checkInternet();
             }
         });
     });
 }
 
-function multiVendoConfiguration(vendo, user){
+function multiVendoConfiguration(vendo, user) {
     console.log(vendo);
     console.log(user);
     if (!vendo.showExtendTimeButton && user.timeRemaining > 0) {
         $("#insertBtn").addClass("hide");
-    }else{
+    } else {
         $("#insertBtn").removeClass("hide");
     }
-    if(user.timeRemaining <= 0){
+    if (user.timeRemaining <= 0) {
         showResumeButton();
-    }else{
+    } else {
         if (vendo.showPauseTime && isPaused) {
             showPauseButton();
         } else {
@@ -523,12 +524,14 @@ function multiVendoConfiguration(vendo, user){
     }
     if (vendo.hideRates) {
         $("#rateTable").addClass("hide");
-    }else{
+        $("#btnPromoRates").addClass("hide");
+    } else {
         $("#rateTable").removeClass("hide");
+        $("#btnPromoRates").removeClass("hide");
     }
     if (!vendo.showMemberLogin) {
         $("#memberBtn").addClass("hide");
-    }else{
+    } else {
         $("#memberBtn").removeClass("hide");
     }
     if (!vendo.showInsertCoin) {
@@ -538,36 +541,33 @@ function multiVendoConfiguration(vendo, user){
     }
     if (!vendo.showPauseTime) {
         $("#pauseBtnContainer").addClass("hide");
-    }else{
+    } else {
         $("#pauseBtnContainer").removeClass("hide");
     }
 
     if (!vendo.showPortalInputVoucher) {
         $("#useVoucherContainer").addClass("hide");
-    }else{
+    } else {
         $("#useVoucherContainer").removeClass("hide");
     }
     if (!vendo.showPortalHistory) {
         $("#historyContainer").addClass("hide");
         $("#historyTab").addClass("hide");
         $("#history").addClass("hide");
-    }else{
+    } else {
         $("#historyContainer").removeClass("hide");
         $("#historyTab").removeClass("hide");
         $("#history").removeClass("hide");
     }
     if (!vendo.showPortalHeader) {
         $("#headerContainer").addClass("hide");
-    }else{
+    } else {
         $("#headerContainer").removeClass("hide");
     }
     if (!vendo.wheelConfig) {
         $("#spinRedeemBtn").addClass("hide");
-    }else{
+    } else {
         $("#spinRedeemBtn").removeClass("hide");
-    }
-    if(initLoad){
-        populatePromoRates(0);
     }
 }
 
@@ -786,6 +786,10 @@ function insertBtnAction() {
 $('#promoRatesModal').on('shown.bs.modal', function (e) {
     populatePromoRates(0);
 })
+$('#promoRatesModal').on('hidden.bs.modal', function (e) {
+    const tableBody = document.querySelector("#rateTable tbody");
+    tableBody.innerHTML = "";
+});
 
 function parseDuration(minutes) {
     const mins = parseInt(minutes, 10);
@@ -1107,7 +1111,6 @@ function saveVoucherBtnAction() {
                 // 	document.getElementById('spinRedeemBtn').disabled = true;
                 // 	document.getElementById('redeemPtsBtn').disabled = true;
                 // }
-                setTimeout(checkInternet, 3000)
             } else {
                 notifyCoinSlotError(data.errorCode);
             }
@@ -1386,9 +1389,69 @@ function parseTime(str) {
         return null;
     }
 }
-function checkInternet(){
-    window.location.href = "http://clients3.google.com/generate_204";
+
+function checkInternet() {
+    const iframe = document.createElement('iframe');
+    var os = getDeviceOS();
+    switch (os) {
+        case 'Android':
+            iframe.src = "http://connectivitycheck.gstatic.com/generate_204";
+            break;
+        case 'iOS':
+            iframe.src = "http://captive.apple.com/hotspot-detect.html";
+            break;
+        case 'Windows':
+            iframe.src = "http://www.msftconnecttest.com/connecttest.txt";
+            break;
+        default:
+            iframe.src = "https://www.google.com";
+            break;
+    }
+    iframe.style.width = "1px";
+    iframe.style.height = "1px";
+    iframe.style.position = "absolute";
+    iframe.style.display = "none";
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.tabIndex = -1;
+    document.body.appendChild(iframe);
+    iframe.onload = function () {
+        setTimeout(checkInternet, 1000);
+    };
 }
+
+function getDeviceOS() {
+    const userAgent = window.navigator.userAgent;
+
+    // 1. Safety check: handle null/undefined/empty
+    if (!userAgent) return 'Unknown';
+
+    // 2. Detection Logic
+    if (/android/i.test(userAgent)) {
+        return 'Android';
+    }
+    if (/iPad|iPhone|iPod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+        return 'iOS'; // Note: Modern iPads often identify as "MacIntel"
+    }
+    if (/Windows/i.test(userAgent)) {
+        return 'Windows';
+    }
+    if (/Macintosh|Mac OS X/i.test(userAgent)) {
+        return 'macOS';
+    }
+    if (/Linux/i.test(userAgent)) {
+        return 'Linux';
+    }
+    if (/CrOS/i.test(userAgent)) {
+        return 'ChromeOS';
+    }
+
+    return 'Unknown';
+}
+
+// Usage:
+const os = getDeviceOS();
+console.log("Detected OS:", os);
+
 function fetchUserInfo(macNoColon, pointsEnabled, cb) {
     var params = `mac=${macNoColon}&interfaceName=${interfaceName}`
     var old_mac = getStorageValue('activeVoucher')
@@ -1525,10 +1588,10 @@ function onPurchaseClicked(item) {
             <div class="divider-primary"></div>
             <div class="d-flex justify-content-between gap-0 w-100">
                 <small>
-                    Time: ${item.timeInMinutes} mins
+                    Time: ${minutesToTime(item.timeInMinutes)}
                 </small>
-                <small>
-                    Expiry: ${item.expirationInMinutes} mins
+                <small class="text-end">
+                    Expiry: ${minutesToTime(item.expirationInMinutes)}
                 </small>
             </div>
         </div>
@@ -1647,10 +1710,10 @@ function renderWifreeList() {
                         <div class="divider-primary"></div>
                         <div class="d-flex justify-content-between gap-0 w-100">
                             <small>
-                                Time: ${item.timeInMinutes} mins
+                                Time: ${minutesToTime(item.timeInMinutes)}
                             </small>
-                            <small>
-                                Expiry: ${item.expirationInMinutes} mins
+                            <small class="text-end">
+                                Expiry: ${minutesToTime(item.expirationInMinutes)}
                             </small>
                         </div>
                     </div>

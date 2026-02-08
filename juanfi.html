@@ -11,28 +11,28 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <title>JuanFi Extended</title>
 
-    <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-7x312ex1le">
-    <link rel="stylesheet" href="assets/css/core.css?v=$(ip)-$(mac)-7x312ex1le">
-    <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)-7x312ex1le">
-    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)-7x312ex1le">
-    <link rel="stylesheet" href="assets/css/toast.min.css?v=$(ip)-$(mac)-7x312ex1le">
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-jksjdjjdjdjd">
+    <link rel="stylesheet" href="assets/css/core.css?v=$(ip)-$(mac)-jksjdjjdjdjd">
+    <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)-jksjdjjdjdjd">
+    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)-jksjdjjdjdjd">
+    <link rel="stylesheet" href="assets/css/toast.min.css?v=$(ip)-$(mac)-jksjdjjdjdjd">
 
     <script>
         var loginError = "";
         var mac = "$(mac)";
         var uIp = "$(ip)";
-        var appendUrl = "$(ip)-$(mac)-7x312ex1le";
+        var appendUrl = "$(ip)-$(mac)-jksjdjjdjdjd";
         var hotspotAddress = "$(server-address)";
         var interfaceName = "$(interface-name)";
         var remainingTimer = null;
     </script>
-    <script src="assets/js/signalr.min.js?v=$(ip)-$(mac)-7x312ex1le" defer></script>
-    <script src="assets/js/jquery.min.js?v=$(ip)-$(mac)-7x312ex1le" defer></script>
-    <script src="assets/js/eload.js?v=$(ip)-$(mac)-7x312ex1le" defer></script>
-    <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)-7x312ex1le" defer></script>
-    <script src="assets/js/cache.js?v=$(ip)-$(mac)-7x312ex1le" defer></script>
-    <script src="assets/js/core.js?v=$(ip)-$(mac)-7x312ex1le" defer></script>
-    <script src="assets/js/pako.min.js?v=$(ip)-$(mac)-7x312ex1le" defer></script>
+    <script src="assets/js/signalr.min.js?v=$(ip)-$(mac)-jksjdjjdjdjd" defer></script>
+    <script src="assets/js/jquery.min.js?v=$(ip)-$(mac)-jksjdjjdjdjd" defer></script>
+    <script src="assets/js/eload.js?v=$(ip)-$(mac)-jksjdjjdjdjd" defer></script>
+    <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)-jksjdjjdjdjd" defer></script>
+    <script src="assets/js/cache.js?v=$(ip)-$(mac)-jksjdjjdjdjd" defer></script>
+    <script src="assets/js/core.js?v=$(ip)-$(mac)-jksjdjjdjdjd" defer></script>
+    <script src="assets/js/pako.min.js?v=$(ip)-$(mac)-jksjdjjdjdjd" defer></script>
 </head>
 
 <body class="col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2 ">
@@ -48,7 +48,7 @@
 
     <div id="headerContainer" class="d-flex justify-content-between align-items-center container">
         <div class="d-flex flex-column gap-0 align-items-center">
-            <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-7x312ex1le" class="img-fluid banner"/>
+            <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-jksjdjjdjdjd" class="img-fluid banner"/>
         </div>
         <div class="d-flex flex-column gap-3 text-end">
             <small id="ipInfo" class="juanfi-default-text small">Loading</small>
@@ -124,44 +124,41 @@
                         <select class="form-control fullwidth" name="vendoSelected" id="vendoSelected">
                         </select>
                     </div>
-
-                    <button type="button" id="insertBtn" onclick="insertBtnAction(); return false"
-                            class="btn btn-primary w-100 py-3 mt-2 w-100" data-insert-type="extend" data-toggle="modal">
-                        INSERT COIN
-                    </button>
-                    <button type="button" id="resumeTimeBtn" class="btn btn-success mt-2 w-100">
-                        RESUME TIME
-                    </button>
-                    <div id="pauseBtnContainer" class="d-flex w-100">
-                        <button type="button" id="pauseTimeBtn" class="btn btn-danger mt-2 w-100">
-                            PAUSE TIME
-                        </button>
+                    <div class="d-flex justify-content-between align-items-center gap-3">
+                        <div>
+                            <button style="min-height: 120px;min-width: 120px; border-radius: 100%" type="button" id="insertBtn" onclick="insertBtnAction(); return false"
+                                    class="btn btn-primary w-100 w-100" data-insert-type="extend" data-toggle="modal">
+                                INSERT
+                            </button>
+                        </div>
+                        <div class="d-flex flex-column gap-2 w-75">
+                            <button type="button" id="resumeTimeBtn" class="btn btn-success w-100">
+                                RESUME
+                            </button>
+                            <div id="pauseBtnContainer" class="d-flex w-100 mb-3">
+                                <button type="button" id="pauseTimeBtn" class="btn btn-danger w-100">
+                                    PAUSE
+                                </button>
+                            </div>
+                            <button type="button" id="btnPromoRates" onclick="promoBtnAction()" class="btn btn-danger w-100">
+                                RATES
+                            </button>
+                        </div>
                     </div>
-                    <button type="button" id="wifreeBtn" class="btn btn-info mt-2 w-100" data-bs-toggle="modal"
-                            data-bs-target="#wifreeModal">
-                        E-WALLET
-                    </button>
-                    <table border="1" cellpadding="5" cellspacing="0" id="rateTable" class="mt-2 w-100"
-                           style="font-size: 12px !important;">
-                        <thead>
-                        <tr>
-                            <th>Rate</th>
-                            <th>Price</th>
-                            <th>Validity</th>
-                            <th>Expiry</th>
-                        </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
 
-                    <button onclick="clearAllData();" type="button" id="refreshBtn" class="btn btn-dark mt-2 w-100">
+                    <button type="button" id="wifreeBtn" class="btn btn-info mt-3 w-100" data-bs-toggle="modal"
+                            data-bs-target="#wifreeModal">
+                        G-CASH
+                    </button>
+                    <button type="button" id="memberBtn" class="btn btn-warning mt-3 w-100" data-bs-toggle="modal"
+                            data-bs-target="#memberModal">
+                        MEMBER
+                    </button>
+
+                    <button onclick="clearAllData();" type="button" id="refreshBtn" class="btn btn-dark mt-3 w-100">
                         REFRESH
                     </button>
-                    <button type="button" id="memberBtn" class="btn btn-warning mt-2 w-100" data-bs-toggle="modal"
-                            data-bs-target="#memberModal">
-                        MEMBER LOGIN
-                    </button>
-                    <div class="d-flex justify-content-between mt-2 gap-2">
+                    <div class="d-flex justify-content-between mt-3 gap-2">
                         <button type="button" id="chargingBtn" onclick="chargingBtnAction(); return false"
                                 class="btn btn-primary w-100">
                             CHARGING STATION
@@ -480,31 +477,24 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Promo Rates</h5>
+                    <h5 class="modal-title" id="promoRatesModalLabel">Promo Rates</h5>
                     <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <center>
-                        <div id="rateTypeDiv" class="hide">
-                            <label for="rateType" class="rate-title"><b>Rate Type</b></label>
-                            <select name="rateType" class="form-control" id="rateType"
-                                    onChange="onRateTypeChange(this)">
-                                <option value="1">Internet</option>
-                                <option value="2">Charging</option>
-                            </select>
-                        </div>
-                    </center>
-                    <br/>
-                    <center>
-                        <div id="ratesBody">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                        <div id="totalTime"></div>
-                    </center>
+                    <table border="1" cellpadding="5" cellspacing="0" id="rateTable" class="mt-2 w-100"
+                           style="font-size: 12px !important;">
+                        <thead>
+                        <tr>
+                            <th>Rate</th>
+                            <th>Price</th>
+                            <th>Validity</th>
+                            <th>Expiry</th>
+                        </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-danger" data-bs-dismiss="modal"
