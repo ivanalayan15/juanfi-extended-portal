@@ -182,10 +182,7 @@ function renderView() {
             eloadEnable = data.eLoadEnable;
             showPauseTime = data.showPauseTime;
             showMemberLogin = data.showMemberLogin;
-            try {
-                showExtendTimeButton = data.showExtendTimeButton;
-            } catch (e) {
-            }
+            showExtendTimeButton = data.showExtendTimeButton;
             macAsVoucherCode = data.macAsVoucherCode;
             qrCodeVoucherPurchase = data.qrCodeVoucherPurchase;
             disableVoucherInput = !data.showPortalInputVoucher;
@@ -390,14 +387,11 @@ function renderView() {
                 remainingTimer = null;
             }
 
-            try {
-                if (!showExtendTimeButton && time > 0) {
-                    $("#insertBtn").addClass("hide");
-                }
-                if (time > 0) {
-                    $("#insertBtn").html("EXTEND");
-                }
-            } catch (e) {
+            if (!showExtendTimeButton && time > 0) {
+                $("#insertBtn").addClass("hide");
+            }
+            if (time > 0) {
+                $("#insertBtn").html("EXTEND");
             }
 
             if (isOnline) {
@@ -512,71 +506,68 @@ function renderView() {
 }
 
 function multiVendoConfiguration(vendo, user) {
-    if (!!vendo && !!user) {
-        try {
-            if (!vendo.showExtendTimeButton && user.timeRemaining > 0) {
-                $("#insertBtn").addClass("hide");
-            } else {
-                $("#insertBtn").removeClass("hide");
-            }
-        } catch (e) {
-        }
-        if (user.timeRemaining <= 0) {
+    console.log(vendo);
+    console.log(user);
+    if (!vendo.showExtendTimeButton && user.timeRemaining > 0) {
+        $("#insertBtn").addClass("hide");
+    } else {
+        $("#insertBtn").removeClass("hide");
+    }
+    if (user.timeRemaining <= 0) {
+        showResumeButton();
+    } else {
+        if (vendo.showPauseTime && isPaused) {
+            showPauseButton();
+        } else {
             showResumeButton();
-        } else {
-            if (vendo.showPauseTime && isPaused) {
-                showPauseButton();
-            } else {
-                showResumeButton();
-            }
         }
-        if (vendo.hideRates) {
-            $("#rateTable").addClass("hide");
-            $("#btnPromoRates").addClass("hide");
-        } else {
-            $("#rateTable").removeClass("hide");
-            $("#btnPromoRates").removeClass("hide");
-        }
-        if (!vendo.showMemberLogin) {
-            $("#memberBtn").addClass("hide");
-        } else {
-            $("#memberBtn").removeClass("hide");
-        }
-        if (!vendo.showInsertCoin) {
-            $("#insertBtn").addClass("hide");
-        } else {
-            $("#insertBtn").removeClass("hide");
-        }
-        if (!vendo.showPauseTime) {
-            $("#pauseBtnContainer").addClass("hide");
-        } else {
-            $("#pauseBtnContainer").removeClass("hide");
-        }
+    }
+    if (vendo.hideRates) {
+        $("#rateTable").addClass("hide");
+        $("#btnPromoRates").addClass("hide");
+    } else {
+        $("#rateTable").removeClass("hide");
+        $("#btnPromoRates").removeClass("hide");
+    }
+    if (!vendo.showMemberLogin) {
+        $("#memberBtn").addClass("hide");
+    } else {
+        $("#memberBtn").removeClass("hide");
+    }
+    if (!vendo.showInsertCoin) {
+        $("#insertBtn").addClass("hide");
+    } else {
+        $("#insertBtn").removeClass("hide");
+    }
+    if (!vendo.showPauseTime) {
+        $("#pauseBtnContainer").addClass("hide");
+    } else {
+        $("#pauseBtnContainer").removeClass("hide");
+    }
 
-        if (!vendo.showPortalInputVoucher) {
-            $("#useVoucherContainer").addClass("hide");
-        } else {
-            $("#useVoucherContainer").removeClass("hide");
-        }
-        if (!vendo.showPortalHistory) {
-            $("#historyContainer").addClass("hide");
-            $("#historyTab").addClass("hide");
-            $("#history").addClass("hide");
-        } else {
-            $("#historyContainer").removeClass("hide");
-            $("#historyTab").removeClass("hide");
-            $("#history").removeClass("hide");
-        }
-        if (!vendo.showPortalHeader) {
-            $("#headerContainer").addClass("hide");
-        } else {
-            $("#headerContainer").removeClass("hide");
-        }
-        if (!vendo.wheelConfig) {
-            $("#spinRedeemBtn").addClass("hide");
-        } else {
-            $("#spinRedeemBtn").removeClass("hide");
-        }
+    if (!vendo.showPortalInputVoucher) {
+        $("#useVoucherContainer").addClass("hide");
+    } else {
+        $("#useVoucherContainer").removeClass("hide");
+    }
+    if (!vendo.showPortalHistory) {
+        $("#historyContainer").addClass("hide");
+        $("#historyTab").addClass("hide");
+        $("#history").addClass("hide");
+    } else {
+        $("#historyContainer").removeClass("hide");
+        $("#historyTab").removeClass("hide");
+        $("#history").removeClass("hide");
+    }
+    if (!vendo.showPortalHeader) {
+        $("#headerContainer").addClass("hide");
+    } else {
+        $("#headerContainer").removeClass("hide");
+    }
+    if (!vendo.wheelConfig) {
+        $("#spinRedeemBtn").addClass("hide");
+    } else {
+        $("#spinRedeemBtn").removeClass("hide");
     }
 }
 
