@@ -302,16 +302,16 @@ function renderView() {
                     if (!!dtls) {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
+                        multiVendoConfiguration(dtls, userData);
                     }
-                    multiVendoConfiguration(dtls, userData);
                 } else if (multiVendoOption == 2) {
                     $("#vendoSelectDiv").addClass("hide");
                     var dtls = multiVendoAddresses.find(x => x.interfaceName === interfaceName);
                     if (!!dtls) {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
+                        multiVendoConfiguration(dtls, userData);
                     }
-                    multiVendoConfiguration(dtls, userData);
                 } else {
                     var selectedVendo = getStorageValue('selectedVendo');
                     if (selectedVendo === "null") {
@@ -347,9 +347,8 @@ function renderView() {
                             wheelConfig = selectedVendoDtls.wheelConfig;
                             pointsEnabled = selectedVendoDtls.pointsPercentage > 0;
                             showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig);
+                            multiVendoConfiguration(dtls, userData);
                         }
-
-                        multiVendoConfiguration(dtls, userData);
 
                         evaluateChargingButton(selectedVendoDtls);
                         evaluateEloadButton(selectedVendoDtls);
@@ -506,8 +505,6 @@ function renderView() {
 }
 
 function multiVendoConfiguration(vendo, user) {
-    console.log(vendo);
-    console.log(user);
     if (!vendo.showExtendTimeButton && user.timeRemaining > 0) {
         $("#insertBtn").addClass("hide");
     } else {
