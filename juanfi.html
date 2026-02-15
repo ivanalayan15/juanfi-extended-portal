@@ -11,28 +11,28 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <title>JuanFi Extended</title>
 
-    <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-3x341si3gjs">
-    <link rel="stylesheet" href="assets/css/core.css?v=$(ip)-$(mac)-3x341si3gjs">
-    <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)-3x341si3gjs">
-    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)-3x341si3gjs">
-    <link rel="stylesheet" href="assets/css/toast.min.css?v=$(ip)-$(mac)-3x341si3gjs">
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-098d31s3">
+    <link rel="stylesheet" href="assets/css/core.css?v=$(ip)-$(mac)-098d31s3">
+    <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)-098d31s3">
+    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)-098d31s3">
+    <link rel="stylesheet" href="assets/css/toast.min.css?v=$(ip)-$(mac)-098d31s3">
 
     <script>
         var loginError = "";
         var mac = "$(mac)";
         var uIp = "$(ip)";
-        var appendUrl = "$(ip)-$(mac)-3x341si3gjs";
+        var appendUrl = "$(ip)-$(mac)-098d31s3";
         var hotspotAddress = "$(server-address)";
         var interfaceName = "$(interface-name)";
         var remainingTimer = null;
     </script>
-    <script src="assets/js/signalr.min.js?v=$(ip)-$(mac)-3x341si3gjs" defer></script>
-    <script src="assets/js/jquery.min.js?v=$(ip)-$(mac)-3x341si3gjs" defer></script>
-    <script src="assets/js/eload.js?v=$(ip)-$(mac)-3x341si3gjs" defer></script>
-    <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)-3x341si3gjs" defer></script>
-    <script src="assets/js/cache.js?v=$(ip)-$(mac)-3x341si3gjs" defer></script>
-    <script src="assets/js/core.js?v=$(ip)-$(mac)-3x341si3gjs" defer></script>
-    <script src="assets/js/pako.min.js?v=$(ip)-$(mac)-3x341si3gjs" defer></script>
+    <script src="assets/js/signalr.min.js?v=$(ip)-$(mac)-098d31s3" defer></script>
+    <script src="assets/js/jquery.min.js?v=$(ip)-$(mac)-098d31s3" defer></script>
+    <script src="assets/js/eload.js?v=$(ip)-$(mac)-098d31s3" defer></script>
+    <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)-098d31s3" defer></script>
+    <script src="assets/js/cache.js?v=$(ip)-$(mac)-098d31s3" defer></script>
+    <script src="assets/js/core.js?v=$(ip)-$(mac)-098d31s3" defer></script>
+    <script src="assets/js/pako.min.js?v=$(ip)-$(mac)-098d31s3" defer></script>
 </head>
 
 <body class="col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2 ">
@@ -48,7 +48,7 @@
 
     <div id="headerContainer" class="d-flex justify-content-between align-items-center container">
         <div class="d-flex flex-column gap-0 align-items-center">
-            <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-3x341si3gjs" class="img-fluid banner"/>
+            <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-098d31s3" class="img-fluid banner"/>
         </div>
         <div class="d-flex flex-column gap-3 text-end">
             <small id="ipInfo" class="juanfi-default-text small">Loading</small>
@@ -120,18 +120,18 @@
             <div class="tab-pane fade show active" id="home" role="tabpanel">
                 <div class="d-flex flex-column pt-2">
                     <div id="vendoSelectDiv" class="col-sm-12">
-                        <label for="exampleFormControlSelect2">Select Vendo</label>
+                        <label for="vendoSelected">Select Vendo</label>
                         <select class="form-control fullwidth" name="vendoSelected" id="vendoSelected">
                         </select>
                     </div>
                     <div class="d-flex justify-content-between align-items-center gap-3">
-                        <div>
+                        <div id="insertBtnContainer">
                             <button style="min-height: 120px;min-width: 120px; border-radius: 100%" type="button" id="insertBtn" onclick="insertBtnAction(); return false"
                                     class="btn btn-primary w-100 w-100" data-insert-type="extend" data-toggle="modal">
                                 INSERT
                             </button>
                         </div>
-                        <div class="d-flex flex-column gap-2 w-75">
+                        <div class="d-flex flex-column gap-2 w-100">
                             <button type="button" id="resumeTimeBtn" class="btn btn-success w-100">
                                 RESUME
                             </button>
@@ -472,7 +472,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="promoRatesModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    <div class="modal fade" id="promoRatesModal" tabindex="-1" role="dialog" aria-labelledby="promoRatesModalLabel"
          data-backdrop="static" data-keyboard="false">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
@@ -505,12 +505,12 @@
         </div>
     </div>
 
-    <div class="modal fade" id="chargingModal" tabindex="1" role="dialog" aria-labelledby="exampleModalLabel"
+    <div class="modal fade" id="chargingModal" tabindex="1" role="dialog" aria-labelledby="chargingStationTitle"
          aria-hidden="true" data-backdrop="static" data-keyboard="false">
         <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Charging Station</h5>
+                    <h5 class="modal-title" id="chargingStationTitle">Charging Station</h5>
                     <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -527,12 +527,12 @@
         </div>
     </div>
 
-    <div class="modal fade" id="eloadModal" tabindex="1" role="dialog" aria-labelledby="exampleModalLabel"
+    <div class="modal fade" id="eloadModal" tabindex="1" role="dialog" aria-labelledby="eloadTitle"
          aria-hidden="true" data-backdrop="static" data-keyboard="false">
         <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">E-LOAD</h5>
+                    <h5 class="modal-title" id="eloadTitle">E-LOAD</h5>
                     <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -544,23 +544,23 @@
                                     style="color: #2e86de; text-shadow: 1px 2px 3px #000">CONFIRM YOUR SELECTED
 										DETAILS</span></h4>
                             <div id="mobileNumDiv" class="input-bottom-space-20px">
-                                <label for="exampleFormControlSelect2">Mobile #</label>
+                                <label for="mobileNo">Mobile #</label>
                                 <input type="number" class="form-control" id="mobileNo" aria-describedby="mobileNo"
                                        pattern="\d*" maxlength="11" placeholder="Enter mobile number (Ex: 09182392234)"
                                        required>
                             </div>
                             <div id="loadTypeDiv" style="display: none" class="input-bottom-space-20px">
-                                <label for="exampleFormControlSelect2">Select Load Type</label>
+                                <label for="loadTypeSelected">Select Load Type</label>
                                 <select class="form-control" name="loadType" onChange="loadTypeChanged(this)"
                                         id="loadTypeSelected">
                                 </select>
                             </div>
                             <div id="productTypeDiv" style="display: none" class="input-bottom-space-20px">
-                                <label for="exampleFormControlSelect2">Select Product</label>
+                                <label for="productTypeSelected">Select Product</label>
                                 <select class="form-control input-bottom-space-20px" name="productType"
                                         id="productTypeSelected" onChange="productTypeChanged(this)">
                                 </select>
-                                <label for="exampleFormControlSelect2">Price (PHP)</label>
+                                <label for="price">Price (PHP)</label>
                                 <input type="text" class="form-control" id="price" aria-describedby="mobileNo"
                                        disabled>
                             </div>

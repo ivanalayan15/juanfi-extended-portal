@@ -207,9 +207,9 @@ function renderView() {
             $("#memberBtn").addClass("hide");
         }
         if (!data.showInsertCoin) {
-            $("#insertBtn").addClass("hide");
+            $("#insertBtnContainer").addClass("hide");
         } else {
-            $("#insertBtn").removeClass("hide");
+            $("#insertBtnContainer").removeClass("hide");
         }
         if (!data.showPauseTime) {
             $("#pauseBtnContainer").addClass("hide");
@@ -387,7 +387,7 @@ function renderView() {
             }
 
             if (!showExtendTimeButton && time > 0) {
-                $("#insertBtn").addClass("hide");
+                $("#insertBtnContainer").addClass("hide");
             }
             if (time > 0) {
                 $("#insertBtn").html("EXTEND");
@@ -476,7 +476,7 @@ function renderView() {
             }
 
             if (isMember) {
-                $("#insertBtn").addClass("hide");
+                $("#insertBtnContainer").addClass("hide");
                 $("#vendoSelectDiv").addClass("hide");
                 $("#historyTab").addClass("hide");
                 $("#rewardDtlsBtn").addClass("hide");
@@ -506,9 +506,9 @@ function renderView() {
 
 function multiVendoConfiguration(vendo, user) {
     if (!vendo.showExtendTimeButton && user.timeRemaining > 0) {
-        $("#insertBtn").addClass("hide");
+        $("#insertBtnContainer").addClass("hide");
     } else {
-        $("#insertBtn").removeClass("hide");
+        $("#insertBtnContainer").removeClass("hide");
     }
     if (user.timeRemaining <= 0) {
         showResumeButton();
@@ -532,9 +532,9 @@ function multiVendoConfiguration(vendo, user) {
         $("#memberBtn").removeClass("hide");
     }
     if (!vendo.showInsertCoin) {
-        $("#insertBtn").addClass("hide");
+        $("#insertBtnContainer").addClass("hide");
     } else {
-        $("#insertBtn").removeClass("hide");
+        $("#insertBtnContainer").removeClass("hide");
     }
     if (!vendo.showPauseTime) {
         $("#pauseBtnContainer").addClass("hide");
@@ -803,6 +803,9 @@ function parseDuration(minutes) {
 }
 
 function populatePromoRates(retryCount) {
+    if(vendorIpAddress == null)
+        return;
+
     const tableBody = document.querySelector("#rateTable tbody");
     tableBody.innerHTML = "";
     $.ajax({
