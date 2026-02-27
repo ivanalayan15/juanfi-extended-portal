@@ -498,12 +498,37 @@ function renderView() {
             initLoad = true;
 
             if (isOnline) {
+                if(isCaptivePortal()){
+                    RefreshPortal();
+                }
                 checkInternet();
             }
         });
     });
 }
+function RefreshPortal(){
+	setTimeout(function () {
+		window.open('', '_self');
+		window.close();
+	}, 1500);
+}
+function isCaptivePortal() {
 
+    var ua = navigator.userAgent || "";
+
+    var isAndroid = /Android/i.test(ua);
+    var isIOS = /iPhone|iPad|iPod/i.test(ua);
+
+    if (isAndroid && !window.opener && window.innerHeight < 700) {
+        return true;
+    }
+
+    if (isIOS && !navigator.standalone) {
+        return true;
+    }
+
+    return false;
+}
 function multiVendoConfiguration(vendo, user) {
     if (!vendo.showExtendTimeButton && user.timeRemaining > 0) {
         $("#insertBtnContainer").addClass("hide");
@@ -1389,16 +1414,15 @@ function parseTime(str) {
         return null;
     }
 }
-
 function checkInternet() {
     const iframe = document.createElement('iframe');
     var os = getDeviceOS();
     switch (os) {
         case 'Android':
-            iframe.src = "http://connectivitycheck.gstatic.com/generate_204";
+            iframe.src = "https://connectivitycheck.gstatic.com/generate_204";
             break;
         case 'iOS':
-            iframe.src = "http://captive.apple.com/hotspot-detect.html";
+            iframe.src = "https://captive.apple.com/hotspot-detect.html";
             break;
         case 'Windows':
             iframe.src = "http://www.msftconnecttest.com/connecttest.txt";
@@ -1418,7 +1442,6 @@ function checkInternet() {
         setTimeout(checkInternet, 1000);
     };
 }
-
 function getDeviceOS() {
     const userAgent = window.navigator.userAgent;
 
@@ -1430,7 +1453,7 @@ function getDeviceOS() {
         return 'Android';
     }
     if (/iPad|iPhone|iPod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
-        return 'iOS'; // Note: Modern iPads often identify as "MacIntel"
+        return 'iOS';
     }
     if (/Windows/i.test(userAgent)) {
         return 'Windows';
@@ -1447,10 +1470,6 @@ function getDeviceOS() {
 
     return 'Unknown';
 }
-
-// Usage:
-const os = getDeviceOS();
-console.log("Detected OS:", os);
 
 function fetchUserInfo(macNoColon, pointsEnabled, cb) {
     var params = `mac=${macNoColon}&interfaceName=${interfaceName}`
