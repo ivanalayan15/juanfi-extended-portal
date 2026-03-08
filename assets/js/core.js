@@ -379,7 +379,10 @@ function renderView() {
 
             // $("#voucherCode").html(voucherCode);
             isPaused = (!isOnline);
-            var time = timeRemaining;
+            var time = parseInt(sessiontimeInSecs);
+            if(time === 0){
+                time = timeRemaining;
+            }
             $("#remainTime").html(secondsToDhms(time));
             if (remainingTimer != null) {
                 clearInterval(remainingTimer);
@@ -404,7 +407,11 @@ function renderView() {
                 remainingTimer = setInterval(function () {
                     time--;
                     $("#remainTime").html(secondsToDhms(time))
-                    showPauseButton();
+                    if(isLoggedIn){
+                        showPauseButton();
+                    }else{
+                        showResumeButton();
+                    }
                     if (time <= 0 && !isMember) {
                         clearInterval(remainingTimer);
                         setTimeout(function () {
@@ -465,15 +472,6 @@ function renderView() {
 
             // Update every second (1000 milliseconds)
             setInterval(updateDeviceDateTime, 1000);
-            if (!initLoad) {
-                if (!isMultiVendo) {
-                    populatePromoRates(3);
-                }
-                $('#loaderDiv').addClass("hide");
-                var containerDiv = $('#containerDiv');
-                containerDiv.removeClass("hide");
-                containerDiv.show();
-            }
 
             if (isMember) {
                 $("#insertBtnContainer").addClass("hide");
@@ -495,21 +493,31 @@ function renderView() {
                 $("#connectionStatus").html("MEMBER CONNECTED");
                 $("#connectionStatus").attr("class", "blinking2");
             }
-            initLoad = true;
-
             if (isOnline) {
-                if(isCaptivePortal()){
-                    RefreshPortal();
-                }
+                $("#connectVoucherBtn").addClass("hide");
                 checkInternet();
+                const connectVoucherBtn = document.getElementById('connectVoucherBtn');
+                if (connectVoucherBtn) {
+                    connectVoucherBtn.addEventListener('click', function () {
+                        addLoader('connectVoucherBtn');
+                        RefreshPortal();
+                    });
+                }
             }
+            if (!initLoad) {
+                $('#loaderDiv').addClass("hide");
+                var containerDiv = $('#containerDiv');
+                containerDiv.removeClass("hide");
+                containerDiv.show();
+            }
+
+            initLoad = true;
         });
     });
 }
 function RefreshPortal(){
 	setTimeout(function () {
-		window.open('', '_self');
-		window.close();
+        window.location.href = "/login";
 	}, 1500);
 }
 function isCaptivePortal() {
@@ -629,6 +637,7 @@ $("#resumeTimeBtn").addClass("hide");
 const pauseTimeBtn = document.getElementById('pauseTimeBtn');
 pauseTimeBtn.onclick = function () {
     pause(macNoColon);
+    isLoggedIn = false;
 }
 
 const memberLoginExecuteBtn = document.getElementById('memberLoginExecuteBtn');
@@ -708,8 +717,10 @@ resumeTimeBtn.onclick = function () {
     addLoader('resumeTimeBtn')
     setStorageValue("isPaused", "0");
     loginVoucher(macNoColon, function (success) {
+        isLoggedIn = success;
         if (success) {
             checkIsLoggedIn(macNoColon);
+            newLogin();
         } else {
             removeLoader('resumeTimeBtn')
         }
@@ -1130,6 +1141,7 @@ function saveVoucherBtnAction() {
                         newLogin();
                         removeLoader('insertBtn')
                         removeLoader('saveVoucherButton')
+                        RefreshPortal();
                     }, 1000);
                 }
                 // if (parseInt(rewardPointsBalance) < 0) {
@@ -1357,6 +1369,18 @@ function pause(macNoColon) {
     logoutVoucher(macNoColon, function () {
         removeLoader('pauseTimeBtn')
     });
+    fetchUserInfo(macNoColon, null, function (userData, error) {
+        if (!!error) {
+            return;
+        }
+        let {isOnline} = userData;
+        sessiontimeInSecs = userData.timeRemaining;
+        if (isOnline) {
+            showPauseButton();
+        } else {
+            showResumeButton();
+        }
+    });
 }
 
 function resume() {
@@ -1415,32 +1439,42 @@ function parseTime(str) {
     }
 }
 function checkInternet() {
-    const iframe = document.createElement('iframe');
-    var os = getDeviceOS();
-    switch (os) {
-        case 'Android':
-            iframe.src = "https://connectivitycheck.gstatic.com/generate_204";
-            break;
-        case 'iOS':
-            iframe.src = "https://captive.apple.com/hotspot-detect.html";
-            break;
-        case 'Windows':
-            iframe.src = "http://www.msftconnecttest.com/connecttest.txt";
-            break;
-        default:
-            iframe.src = "https://www.google.com";
-            break;
+    try {
+        const iframe = document.createElement('iframe');
+        var os = getDeviceOS();
+
+        switch (os) {
+            case 'Android':
+                iframe.src = "https://connectivitycheck.gstatic.com/generate_204";
+                break;
+            case 'iOS':
+                iframe.src = "https://captive.apple.com/hotspot-detect.html";
+                break;
+            case 'Windows':
+                iframe.src = "http://www.msftconnecttest.com/connecttest.txt";
+                break;
+            default:
+                iframe.src = "https://www.google.com";
+                break;
+        }
+
+        iframe.style.width = "1px";
+        iframe.style.height = "1px";
+        iframe.style.position = "absolute";
+        iframe.style.display = "none";
+        iframe.setAttribute("aria-hidden", "true");
+        iframe.tabIndex = -1;
+
+        document.body.appendChild(iframe);
+
+        iframe.onload = function () {
+            setTimeout(checkInternet, 1000);
+        };
     }
-    iframe.style.width = "1px";
-    iframe.style.height = "1px";
-    iframe.style.position = "absolute";
-    iframe.style.display = "none";
-    iframe.setAttribute("aria-hidden", "true");
-    iframe.tabIndex = -1;
-    document.body.appendChild(iframe);
-    iframe.onload = function () {
+    catch (error) {
+        console.error("checkInternet error:", error);
         setTimeout(checkInternet, 1000);
-    };
+    }
 }
 function getDeviceOS() {
     const userAgent = window.navigator.userAgent;
@@ -1496,7 +1530,7 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
                 return;
             }
 
-            var isOnline = data.isOnline;
+            var isOnline = isLoggedIn;
             var isMember = data.isMember;
             var voucherCode = data.code;
             var totalPoints = data.totalPoints;
@@ -2142,6 +2176,7 @@ function checkIsLoggedIn(macNoColon) {
             return;
         }
         let {isOnline} = userData;
+        sessiontimeInSecs = userData.timeRemaining;
         if (isOnline) {
             showPauseButton();
         } else {

@@ -1,2 +1,19 @@
 $(error)
 <script>location.replace('/juanfi.html?v=' + Date.now());</script>
+$(if chap-id)
+<script>
+    function executeLogin() {
+        document.sendin.username.value = vc;
+        document.sendin.password.value = hexMD5('$(chap-id)' + "" + '$(chap-challenge)');
+        document.sendin.submit();
+        return false;
+    }
+    executeLogin();
+</script>
+<form name="sendin" action="$(link-login-only)" method="post" style="display:none">
+    <input type="hidden" name="username" value="$(username)"/>
+    <input type="hidden" name="password" />
+    <input type="hidden" name="dst" value="$(link-orig)" />
+    <input type="hidden" name="popup" value="true" />
+</form>
+$(endif)
