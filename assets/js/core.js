@@ -47,8 +47,8 @@ var macNoColon;
 var isPaused;
 var hasWiFree = false;
 try {
-    const url = new URL(window.location.href);
-    url.pathname = '/';
+    var url = new URL(window.location.href);
+    url.pathname = "/";
     url.search = '';
     url.hash = '';
     window.history.replaceState({}, document.title, url.toString());
@@ -137,9 +137,9 @@ function initValues() {
 }
 
 $(document).ready(function () {
-    fetchServerData().then(server => {
-        juanfiExtendedServerUrl = `http://${server.ip}:8080/api/portal`;
-        $('#displayVersion').html(`v${server.version}`);
+    fetchServerData().then(function (server) {
+        juanfiExtendedServerUrl = "http://" + server.ip + ":8080/api/portal";
+        $('#displayVersion').html("v" + server.version);
         if (!initLoad) {
             initValues();
             renderView();
@@ -165,7 +165,7 @@ function renderView() {
 
             $.toast({
                 title: 'Failed',
-                content: error ?? 'Server request failed. Try again later. Data shown are locally stored dummy/test values only.',
+                content: error || 'Server request failed. Try again later. Data shown are locally stored dummy/test values only.',
                 type: 'error',
                 delay: 4000
             });
@@ -273,32 +273,38 @@ function renderView() {
 
                 $.toast({
                     title: 'Failed',
-                    content: error ?? 'Server request failed. Try again later.',
+                    content: error || 'Server request failed. Try again later.',
                     type: 'error',
                     delay: 4000
                 });
                 return;
             }
 
-            let isOnline = false, pointsEnabled = false;
-            let isMember = false;
-            let voucherCode = macNoColon, timeRemainingStr;
-            let totalPoints = 0, timeRemaining, timeExpiry;
+            var isOnline = false, pointsEnabled = false;
+            var isMember = false;
+            var voucherCode = macNoColon, timeRemainingStr;
+            var totalPoints = 0, timeRemaining, timeExpiry;
             if (!!userData) {
-                isOnline = userData?.isOnline;
-                voucherCode = userData?.voucherCode;
-                pointsEnabled = userData?.pointsEnabled;
-                isMember = userData?.isMember;
-                totalPoints = Number(userData?.totalPoints) || 0;
-                timeRemaining = userData?.timeRemaining;
-                timeRemainingStr = userData?.timeRemainingStr;
-                timeExpiry = userData?.timeExpiry;
+                isOnline = userData.isOnline;
+                voucherCode = userData.voucherCode;
+                pointsEnabled = userData.pointsEnabled;
+                isMember = userData.isMember;
+                totalPoints = Number(userData.totalPoints) || 0;
+                timeRemaining = userData.timeRemaining;
+                timeRemainingStr = userData.timeRemainingStr;
+                timeExpiry = userData.timeExpiry;
             }
             if (isMultiVendo) {
                 if (multiVendoOption == 1) {
                     $("#vendoSelectDiv").addClass("hide");
                     var currentHotspot = hotspotAddress.split(":")[0];
-                    var dtls = multiVendoAddresses.find(x => x.hotspotAddress === currentHotspot);
+                    var dtls = null;
+                    for (var i = 0; i < multiVendoAddresses.length; i++) {
+                        if (multiVendoAddresses[i].hotspotAddress === currentHotspot) {
+                            dtls = multiVendoAddresses[i];
+                            break;
+                        }
+                    }
                     if (!!dtls) {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
@@ -306,7 +312,13 @@ function renderView() {
                     }
                 } else if (multiVendoOption == 2) {
                     $("#vendoSelectDiv").addClass("hide");
-                    var dtls = multiVendoAddresses.find(x => x.interfaceName === interfaceName);
+                    var dtls = null;
+                    for (var i = 0; i < multiVendoAddresses.length; i++) {
+                        if (multiVendoAddresses[i].interfaceName === interfaceName) {
+                            dtls = multiVendoAddresses[i];
+                            break;
+                        }
+                    }
                     if (!!dtls) {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
@@ -340,7 +352,13 @@ function renderView() {
                     vendoSelectOption.onchange = function () {
                         vendorIpAddress = $("#vendoSelected").val();
                         setStorageValue('selectedVendo', vendorIpAddress);
-                        let dtls = multiVendoAddresses.find(x => x.vendoIp === vendorIpAddress);
+                        var dtls = null;
+                        for (var i = 0; i < multiVendoAddresses.length; i++) {
+                            if (multiVendoAddresses[i].vendoIp === vendorIpAddress) {
+                                dtls = multiVendoAddresses[i];
+                                break;
+                            }
+                        }
 
                         if (!!dtls) {
                             selectedVendoDtls = dtls;
@@ -441,7 +459,7 @@ function renderView() {
             }
 
             if (!!timeExpiry) {
-                let expirationTime = new Date(timeExpiry);
+                var expirationTime = new Date(timeExpiry);
                 $("#expirationTime").html(expirationTime.toLocaleString());
             } else {
                 $("#expirationTimeWrapper").addClass("hide");
@@ -496,7 +514,7 @@ function renderView() {
             if (isOnline) {
                 $("#connectVoucherBtn").addClass("hide");
                 checkInternet();
-                const connectVoucherBtn = document.getElementById('connectVoucherBtn');
+                var connectVoucherBtn = document.getElementById('connectVoucherBtn');
                 if (connectVoucherBtn) {
                     connectVoucherBtn.addEventListener('click', function () {
                         addLoader('connectVoucherBtn');
@@ -634,18 +652,18 @@ $('#redeemBySpinModal').on('hidden.bs.modal', function () {
 });
 $("#pauseTimeBtn").addClass("hide");
 $("#resumeTimeBtn").addClass("hide");
-const pauseTimeBtn = document.getElementById('pauseTimeBtn');
+var pauseTimeBtn = document.getElementById('pauseTimeBtn');
 pauseTimeBtn.onclick = function () {
     pause(macNoColon);
     isLoggedIn = false;
 }
 
-const memberLoginExecuteBtn = document.getElementById('memberLoginExecuteBtn');
+var memberLoginExecuteBtn = document.getElementById('memberLoginExecuteBtn');
 memberLoginExecuteBtn.onclick = function () {
-    let username = $("#inputMemberUsername").val().trim();
-    let password = $("#inputMemberPassword").val().trim();
-    let isValid = true;
-    let message = "";
+    var username = $("#inputMemberUsername").val().trim();
+    var password = $("#inputMemberPassword").val().trim();
+    var isValid = true;
+    var message = "";
 
     if (username === "") {
         isValid = false;
@@ -672,23 +690,22 @@ memberLoginExecuteBtn.onclick = function () {
     addLoader('memberLoginExecuteBtn');
     var old_mac = getStorageValue('activeVoucher')
 
-    fetchPortalAPI(`/member-login`, "POST", vendorIpAddress, {
+    fetchPortalAPI("/member-login", "POST", vendorIpAddress, {
         mac: mac,
         old_mac: old_mac,
         username: username,
         password: password
     })
-        .then(result => {
-            if ((!result) || (!result?.success)) {
-                message = "Username or password is incorrect."
+        .then(function (result) {
+            if ((!result) || (!result.success)) {
+                message = "Username or password is incorrect.";
                 $("#errorMsg").text(message).removeClass("d-none");
-                cb(false);
-                removeLoader('pauseTimeBtn')
+                removeLoader('pauseTimeBtn');
                 return;
             }
 
-            let data = result?.data;
-            if ((!!data) || (data?.status === "success")) {
+            var data = result.data;
+            if ((!!data) || (data && data.status === "success")) {
                 $.toast({
                     title: 'Success',
                     content: data.message,
@@ -698,23 +715,22 @@ memberLoginExecuteBtn.onclick = function () {
                 $('#memberModal').modal('hide');
                 newLogin();
             } else {
-                message = "Username or password is incorrect."
+                message = "Username or password is incorrect.";
                 $("#errorMsg").text(message).removeClass("d-none");
             }
         })
-        .catch(error => {
+        .catch(function (error) {
             message = JSON.stringify(error);
             $("#errorMsg").text(message).removeClass("d-none");
 
-            removeLoader('memberLoginExecuteBtn')
-            // cb(false);
+            removeLoader('memberLoginExecuteBtn');
         });
 }
 
 
-const resumeTimeBtn = document.getElementById('resumeTimeBtn');
+var resumeTimeBtn = document.getElementById('resumeTimeBtn');
 resumeTimeBtn.onclick = function () {
-    addLoader('resumeTimeBtn')
+    addLoader('resumeTimeBtn');
     setStorageValue("isPaused", "0");
     loginVoucher(macNoColon, function (success) {
         isLoggedIn = success;
@@ -722,7 +738,7 @@ resumeTimeBtn.onclick = function () {
             checkIsLoggedIn(macNoColon);
             newLogin();
         } else {
-            removeLoader('resumeTimeBtn')
+            removeLoader('resumeTimeBtn');
         }
     });
 };
@@ -820,29 +836,29 @@ $('#promoRatesModal').on('shown.bs.modal', function (e) {
     populatePromoRates(0);
 })
 $('#promoRatesModal').on('hidden.bs.modal', function (e) {
-    const tableBody = document.querySelector("#rateTable tbody");
+    var tableBody = document.querySelector("#rateTable tbody");
     tableBody.innerHTML = "";
 });
 
 function parseDuration(minutes) {
-    const mins = parseInt(minutes, 10);
+    var mins = parseInt(minutes, 10);
 
     if (mins < 60) {
-        return `${mins.toFixed(2)}m`;
+        return mins.toFixed(2) + "m";
     }
 
     if (mins < 1440) {
-        return `${(mins / 60).toFixed(2)}h`;
+        return (mins / 60).toFixed(2) + "h";
     }
 
-    return `${(mins / 1440).toFixed(2)}d`;
+    return (mins / 1440).toFixed(2) + "d";
 }
 
 function populatePromoRates(retryCount) {
     if(vendorIpAddress == null)
         return;
 
-    const tableBody = document.querySelector("#rateTable tbody");
+    var tableBody = document.querySelector("#rateTable tbody");
     tableBody.innerHTML = "";
     $.ajax({
         type: "GET",
@@ -850,52 +866,41 @@ function populatePromoRates(retryCount) {
         crossOrigin: true,
         contentType: 'text/plain',
         success: function (data) {
-            const rows = data.split("|").filter(r => r.trim() !== "");
+            var allRows = data.split("|");
+            var rows = [];
+            for (var i = 0; i < allRows.length; i++) {
+                if (allRows[i].trim() !== "") {
+                    rows.push(allRows[i]);
+                }
+            }
 
-            rows.forEach(row => {
+            for (var j = 0; j < rows.length; j++) {
+                var row = rows[j];
+                var allParts = row.split("#");
+                var parts = [];
+                for (var k = 0; k < allParts.length; k++) {
+                    if (allParts[k] !== "") {
+                        parts.push(allParts[k]);
+                    }
+                }
 
-                const parts = row.split("#").filter(v => v !== "");
+                var plan = parts[0];
+                var price = parts[1];
 
-                const plan = parts[0];
-                const price = parts[1];
+                var duration = minutesToTime(parts[2]);
+                var expiry = minutesToTime(parts[3]);
 
-                const duration = minutesToTime(parts[2]);
-                const expiry = minutesToTime(parts[3]);
+                var tr = document.createElement("tr");
 
-                const tr = document.createElement("tr");
-
-                [plan, price, duration, expiry].forEach(value => {
-                    const td = document.createElement("td");
-                    td.textContent = value.trim();
+                var values = [plan, price, duration, expiry];
+                for (var l = 0; l < values.length; l++) {
+                    var td = document.createElement("td");
+                    td.textContent = values[l].trim();
                     tr.appendChild(td);
-                });
+                }
 
                 tableBody.appendChild(tr);
-            });
-            // var rows = data.split("|");
-            // var rates = "";
-            // for (r in rows) {
-            // 	var columns = rows[r].split("#");
-            // 	rates = rates + "<div class='rholder'>";
-            // 	rates = rates + "<div class='rdata'><span>Rate: </span>";
-            // 	rates = rates + columns[0];
-            // 	rates = rates + "</div>";
-            // 	rates = rates + "<div class='rdata'><span style='color: #a3a7ad'>Validity: ";
-            // 	rates = rates + secondsToDhms(parseInt(columns[3]) * 60);
-            // 	rates = rates + "</span></div>";
-            // 	if (dataRateOption) {
-            // 		rates = rates + "<div class='rdata'><span style='color: #a3a7ad'>Data: ";
-            // 		if (columns[4] != "") {
-            // 			rates = rates + columns[4];
-            // 			rates = rates + " MB";
-            // 		} else {
-            // 			rates = rates + "unlimited";
-            // 		}
-            // 		rates = rates + "</span></div>";
-            // 	}
-            // 	rates = rates + "</div>";
-            // }
-            // $("#ratesBody").html(rates);
+            }
         }, error: function (jqXHR, exception) {
             setTimeout(function () {
                 if (retryCount < 2) {
@@ -913,20 +918,20 @@ $('#chargingModal').on('shown.bs.modal', function (e) {
 function minutesToTime(totalMinutes) {
     totalMinutes = parseInt(totalMinutes);
 
-    if (!Number.isInteger(totalMinutes) || totalMinutes < 0) {
+    if (isNaN(totalMinutes) || totalMinutes < 0) {
         return "Invalid value";
     }
 
-    const days = Math.floor(totalMinutes / (24 * 60));
-    const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
-    const minutes = totalMinutes % 60;
+    var days = Math.floor(totalMinutes / (24 * 60));
+    var hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+    var minutes = totalMinutes % 60;
 
-    const parts = [];
+    var parts = [];
 
-    if (days > 0) parts.push(`${days}day${days > 1 ? "s" : ""}`);
-    if (hours > 0) parts.push(`${hours}hr${hours > 1 ? "s" : ""}`);
+    if (days > 0) parts.push(days + "day" + (days > 1 ? "s" : ""));
+    if (hours > 0) parts.push(hours + "hr" + (hours > 1 ? "s" : ""));
     if (minutes > 0 || parts.length === 0)
-        parts.push(`${minutes}min${minutes > 1 ? "s" : ""}`);
+        parts.push(minutes + "min" + (minutes > 1 ? "s" : ""));
 
     return parts.join(" ");
 }
@@ -1320,19 +1325,21 @@ function convertVoucherAction() {
 }
 
 
-function notifyCoinSlotError(errorCode, delay = 5000) {
-    const toastEl = document.getElementById('errorToast');
+function notifyCoinSlotError(errorCode, delay) {
+    if (delay === undefined) delay = 5000;
+    var toastEl = document.getElementById('errorToast');
     toastEl.querySelector('.toast-body').textContent = errorCodeMap[errorCode];
 
-    const toast = new bootstrap.Toast(toastEl, {delay});
+    var toast = new bootstrap.Toast(toastEl, { delay: delay });
     toast.show();
 }
 
-function notifyCoinSuccess(coin, delay = 5000) {
-    const toastEl = document.getElementById('successToast');
+function notifyCoinSuccess(coin, delay) {
+    if (delay === undefined) delay = 5000;
+    var toastEl = document.getElementById('successToast');
     toastEl.querySelector('.toast-body').textContent = coin + ' peso(s) was inserted';
 
-    const toast = new bootstrap.Toast(toastEl, {delay});
+    var toast = new bootstrap.Toast(toastEl, { delay: delay });
     toast.show();
     coinCount.play();
 }
@@ -1364,16 +1371,16 @@ function clearStorageValues() {
 }
 
 function pause(macNoColon) {
-    addLoader('pauseTimeBtn')
+    addLoader('pauseTimeBtn');
     setStorageValue("isPaused", "1");
     logoutVoucher(macNoColon, function () {
-        removeLoader('pauseTimeBtn')
+        removeLoader('pauseTimeBtn');
     });
     fetchUserInfo(macNoColon, null, function (userData, error) {
         if (!!error) {
             return;
         }
-        let {isOnline} = userData;
+        var isOnline = userData.isOnline;
         sessiontimeInSecs = userData.timeRemaining;
         if (isOnline) {
             showPauseButton();
@@ -1429,7 +1436,7 @@ function parseTime(str) {
             var min = Number(timeArr[1]);
             var sec = Number(timeArr[2]);
 
-            let totalSeconds = (hr * 3600) + (min * 60) + sec;
+            var totalSeconds = (hr * 3600) + (min * 60) + sec;
 
             return totalSeconds;
         }
@@ -1438,9 +1445,13 @@ function parseTime(str) {
         return null;
     }
 }
+var checkInternetMaxCount = 10;
 function checkInternet() {
+    if(checkInternetMaxCount > 10)
+        return;
+
     try {
-        const iframe = document.createElement('iframe');
+        var iframe = document.createElement('iframe');
         var os = getDeviceOS();
 
         switch (os) {
@@ -1468,6 +1479,7 @@ function checkInternet() {
         document.body.appendChild(iframe);
 
         iframe.onload = function () {
+            checkInternetMaxCount++;
             setTimeout(checkInternet, 1000);
         };
     }
@@ -1477,7 +1489,7 @@ function checkInternet() {
     }
 }
 function getDeviceOS() {
-    const userAgent = window.navigator.userAgent;
+    var userAgent = window.navigator.userAgent;
 
     // 1. Safety check: handle null/undefined/empty
     if (!userAgent) return 'Unknown';
@@ -1506,25 +1518,25 @@ function getDeviceOS() {
 }
 
 function fetchUserInfo(macNoColon, pointsEnabled, cb) {
-    var params = `mac=${macNoColon}&interfaceName=${interfaceName}`
-    var old_mac = getStorageValue('activeVoucher')
+    var params = "mac=" + macNoColon + "&interfaceName=" + interfaceName;
+    var old_mac = getStorageValue("activeVoucher");
     if (old_mac && old_mac !== "") {
-        params += `&old_mac=${old_mac}`
+        params += "&old_mac=" + old_mac;
 
-        var pausedState = getStorageValue("isPaused")
+        var pausedState = getStorageValue("isPaused");
         if (pausedState === "1") {
-            params += `&isPaused=true`;
+            params += "&isPaused=true";
         } else {
-            params += `&isPaused=false`;
+            params += "&isPaused=false";
         }
     }
-    fetchPortalAPI(`/user-info?${params}`, "GET", vendorIpAddress, null)
-        .then(result => {
-            if ((!result) || (!result?.success)) {
-                cb(null, result?.error ?? "Server request failed.");
+    fetchPortalAPI("/user-info?" + params, "GET", vendorIpAddress, null)
+        .then(function (result) {
+            if ((!result) || (!result.success)) {
+                cb(null, (result && result.error) || "Server request failed.");
                 return;
             }
-            let data = result?.data;
+            var data = result.data;
             if (!data) {
                 cb(null, null);
                 return;
@@ -1541,54 +1553,57 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
 
             if (data.hasFreeInternet) {
                 $("#freeInternetContainer").removeClass("hide");
-                document.getElementById('claimFreeInternetBtn').onclick = function () {
-                    $('#claimFreeInternetModal').modal('show');
+                document.getElementById("claimFreeInternetBtn").onclick = function () {
+                    $("#claimFreeInternetModal").modal("show");
                     claimFreeInternet(voucherCode);
-                }
-                document.getElementById('confirmClaimFreeInternetBtn').onclick = function () {
-                    addLoader('confirmClaimFreeInternetBtn')
+                };
+                document.getElementById("confirmClaimFreeInternetBtn").onclick = function () {
+                    addLoader("confirmClaimFreeInternetBtn");
                     claimFreeInternetFetch(macNoColon, function (success) {
                         if (success) {
                             newLogin();
                             $("#freeInternetContainer").addClass("hide");
                             $.toast({
-                                title: 'Success',
-                                content: 'Free internet claimed successfully!',
-                                type: 'success',
+                                title: "Success",
+                                content: "Free internet claimed successfully!",
+                                type: "success",
                                 delay: 4000
                             });
                         }
-                        removeLoader('confirmClaimFreeInternetBtn')
+                        removeLoader("confirmClaimFreeInternetBtn");
                     });
-                }
+                };
 
-                $('#claimFreeInternetModal').modal('show');
-                $('#freeMinutesLabel').html("You are eligible to claim " + parseInt(data.freeMinutes) + " minutes of internet access");
+                $("#claimFreeInternetModal").modal("show");
+                $("#freeMinutesLabel").html("You are eligible to claim " + parseInt(data.freeMinutes) + " minutes of internet access");
             }
 
             renderHistories(data);
             cb({
-                isOnline,
-                isMember,
-                voucherCode,
-                pointsEnabled,
-                totalPoints,
-                timeRemaining,
-                timeExpiry,
-                timeRemainingStr
+                isOnline: isOnline,
+                isMember: isMember,
+                voucherCode: voucherCode,
+                pointsEnabled: pointsEnabled,
+                totalPoints: totalPoints,
+                timeRemaining: timeRemaining,
+                timeExpiry: timeExpiry,
+                timeRemainingStr: timeRemainingStr
             }, null);
         })
-        .catch(error => {
+        .catch(function (error) {
             cb(null, error);
         });
 }
 
-function renderHistories(data, containerId = "historyContainer") {
-    const container = document.getElementById(containerId);
+function renderHistories(data, containerId) {
+    if (containerId === undefined) {
+        containerId = "historyContainer";
+    }
+    var container = document.getElementById(containerId);
     if (!container) return;
 
     container.innerHTML = "";
-    container.style = "overflow-y:scroll;max-height:60dvh;";
+    container.setAttribute("style", "overflow-y:scroll;max-height:60dvh;");
     container.className = "px-0 d-flex flex-column gap-2 pb-5";
 
     if (!data || !Array.isArray(data.histories) || data.histories.length === 0) {
@@ -1596,25 +1611,24 @@ function renderHistories(data, containerId = "historyContainer") {
         return;
     }
 
-    data.histories.forEach(item => {
-        const div = document.createElement("div");
+    data.histories.forEach(function (item) {
+        var div = document.createElement("div");
         div.className = "voucher-card";
 
-        const date = new Date(item.date).toLocaleString();
+        var date = new Date(item.date).toLocaleString();
 
-        const amount = item.coin ? item.coin.toFixed(2) : "0.00";
-        div.innerHTML = `
-			<div class="d-flex justify-content-between align-items-center">
-				<div class="voucher-amount fw-bolder">₱ ${amount}</div>
-				<small class="voucher-date">
-					${item.activity}
-				</small>
-			</div>
-			<div class="d-flex justify-content-between align-items-center">
-				<div class="voucher-date">${date}</div>
-				<small class="voucher-date">${Number(item.pointsEarned.toFixed(2))} pts.</small>
-			</div>
-		`;
+        var amount = item.coin ? item.coin.toFixed(2) : "0.00";
+        div.innerHTML = 
+			'<div class="d-flex justify-content-between align-items-center">' +
+				'<div class="voucher-amount fw-bolder">₱ ' + amount + '</div>' +
+				'<small class="voucher-date">' +
+					item.activity +
+				'</small>' +
+			'</div>' +
+			'<div class="d-flex justify-content-between align-items-center">' +
+				'<div class="voucher-date">' + date + '</div>' +
+				'<small class="voucher-date">' + Number(item.pointsEarned.toFixed(2)) + ' pts.</small>' +
+			'</div>';
 
         container.appendChild(div);
     });
@@ -1624,42 +1638,40 @@ function onPurchaseClicked(item) {
     addLoader('wifreeBtn');
     $('#wifreeCheckOutModal').modal('show');
     $('#wifreeModal').modal('hide');
-    const container = document.getElementById('checkout-container');
-    container.innerHTML = `
-        <div class="d-flex flex-column gap-2 px-2 py-2 shadow" style="border:1px solid #7e7e7e;border-radius: 5px">
-            <div class="d-flex justify-content-between align-items-center gap-2 w-100">
-                <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="35" height="29.52" viewBox="0 0 135.33 114.13">
-                  <title>GCash</title>
-                  <path d="M301.23,384.14a64.85,64.85,0,0,1-7,29.49,6.56,6.56,0,0,0,2.33,8.54h0a6.53,6.53,0,0,0,9-2q.16-.25.29-.51a78.4,78.4,0,0,0,0-70.9,6.54,6.54,0,0,0-8.81-2.81l-.5.29h0a6.56,6.56,0,0,0-2.33,8.53A64.88,64.88,0,0,1,301.23,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>
-                  <path d="M280.06,384.14a43.85,43.85,0,0,1-4,18.4,6.55,6.55,0,0,0,2.46,8.28h0A6.56,6.56,0,0,0,288,408a57.4,57.4,0,0,0,0-47.68,6.56,6.56,0,0,0-9.45-2.82h0a6.55,6.55,0,0,0-2.46,8.28A43.85,43.85,0,0,1,280.06,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>
-                  <path d="M236.06,428.13a44,44,0,1,1,26.87-78.85,6.54,6.54,0,0,0,8.63-.53h0a6.53,6.53,0,0,0-.63-9.79,57.08,57.08,0,1,0,.09,90.3,6.44,6.44,0,0,0,.61-9.63l-.14-.14A6.45,6.45,0,0,0,263,419,43.82,43.82,0,0,1,236.06,428.13Z" transform="translate(-179 -327.08)" style="fill:#007cff"/>
-                  <path d="M271.15,379.35a6.75,6.75,0,0,0-4.76-2h0l-31.35,0h0a6.77,6.77,0,1,0,0,13.53h23.59a23.52,23.52,0,1,1-10-26.75,6.78,6.78,0,0,0,8.4-1h0a6.75,6.75,0,0,0-1.14-10.45,37.36,37.36,0,0,0-27.8-4.88,36.55,36.55,0,0,0-28.24,28.48,37.08,37.08,0,1,0,73.34,7.78A6.78,6.78,0,0,0,271.15,379.35Z" transform="translate(-179 -327.08)" style="fill:#002cb8"/>
-                </svg>      
-                <h2 class="fw-bolder">₱ ${item.price.toFixed(2)}</h2>
-            </div>
-            
-            <div class="divider-primary"></div>
-            <div class="d-flex justify-content-between gap-0 w-100">
-                <small>
-                    Time: ${minutesToTime(item.timeInMinutes)}
-                </small>
-                <small class="text-end">
-                    Expiry: ${minutesToTime(item.expirationInMinutes)}
-                </small>
-            </div>
-        </div>
-    `
-    const payNowBtn = document.getElementById('payNowBtn');
-    const inputMobileNumber = document.getElementById('inputMobileNumber');
-    const mobileError = document.getElementById('mobileError');
+    var container = document.getElementById('checkout-container');
+    container.innerHTML = 
+        '<div class="d-flex flex-column gap-2 px-2 py-2 shadow" style="border:1px solid #7e7e7e;border-radius: 5px">' +
+            '<div class="d-flex justify-content-between align-items-center gap-2 w-100">' +
+                '<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="35" height="29.52" viewBox="0 0 135.33 114.13">' +
+                  '<title>GCash</title>' +
+                  '<path d="M301.23,384.14a64.85,64.85,0,0,1-7,29.49,6.56,6.56,0,0,0,2.33,8.54h0a6.53,6.53,0,0,0,9-2q.16-.25.29-.51a78.4,78.4,0,0,0,0-70.9,6.54,6.54,0,0,0-8.81-2.81l-.5.29h0a6.56,6.56,0,0,0-2.33,8.53A64.88,64.88,0,0,1,301.23,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>' +
+                  '<path d="M280.06,384.14a43.85,43.85,0,0,1-4,18.4,6.55,6.55,0,0,0,2.46,8.28h0A6.56,6.56,0,0,0,288,408a57.4,57.4,0,0,0,0-47.68,6.56,6.56,0,0,0-9.45-2.82h0a6.55,6.55,0,0,0-2.46,8.28A43.85,43.85,0,0,1,280.06,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>' +
+                  '<path d="M236.06,428.13a44,44,0,1,1,26.87-78.85,6.54,6.54,0,0,0,8.63-.53h0a6.53,6.53,0,0,0-.63-9.79,57.08,57.08,0,1,0,.09,90.3,6.44,6.44,0,0,0,.61-9.63l-.14-.14A6.45,6.45,0,0,0,263,419,43.82,43.82,0,0,1,236.06,428.13Z" transform="translate(-179 -327.08)" style="fill:#007cff"/>' +
+                  '<path d="M271.15,379.35a6.75,6.75,0,0,0-4.76-2h0l-31.35,0h0a6.77,6.77,0,1,0,0,13.53h23.59a23.52,23.52,0,1,1-10-26.75,6.78,6.78,0,0,0,8.4-1h0a6.75,6.75,0,0,0-1.14-10.45,37.36,37.36,0,0,0-27.8-4.88,36.55,36.55,0,0,0-28.24,28.48,37.08,37.08,0,1,0,73.34,7.78A6.78,6.78,0,0,0,271.15,379.35Z" transform="translate(-179 -327.08)" style="fill:#002cb8"/>' +
+                '</svg>' +
+                '<h2 class="fw-bolder">₱ ' + item.price.toFixed(2) + '</h2>' +
+            '</div>' +
+            '<div class="divider-primary"></div>' +
+            '<div class="d-flex justify-content-between gap-0 w-100">' +
+                '<small>' +
+                    'Time: ' + minutesToTime(item.timeInMinutes) +
+                '</small>' +
+                '<small class="text-end">' +
+                    'Expiry: ' + minutesToTime(item.expirationInMinutes) +
+                '</small>' +
+            '</div>' +
+        '</div>';
+    var payNowBtn = document.getElementById('payNowBtn');
+    var inputMobileNumber = document.getElementById('inputMobileNumber');
+    var mobileError = document.getElementById('mobileError');
 
-    payNowBtn.addEventListener('click', (e) => {
-        const mobileValue = inputMobileNumber.value.trim();
-        const onlyNumbers = /^\d+$/;
+    payNowBtn.addEventListener('click', function (e) {
+        var mobileValue = inputMobileNumber.value.trim();
+        var onlyNumbers = /^\d+$/;
 
         inputMobileNumber.classList.remove('is-invalid');
         inputMobileNumber.classList.remove('is-valid');
-        let errorMessage = "";
+        var errorMessage = "";
 
         if (mobileValue === "") {
             errorMessage = "Mobile number is required.";
@@ -1675,29 +1687,29 @@ function onPurchaseClicked(item) {
         } else {
             inputMobileNumber.classList.add('is-valid');
 
-            addLoader('payNowBtn')
+            addLoader('payNowBtn');
 
-            var code = getStorageValue('activeVoucher')
+            var code = getStorageValue('activeVoucher');
 
-            fetchPortalAPI(`/wifree-vouchers`, "POST", vendorIpAddress, {
+            fetchPortalAPI("/wifree-vouchers", "POST", vendorIpAddress, {
                 code: code,
                 purchaseId: item.id,
-                mobile: mobileValue,
+                mobile: mobileValue
             })
-                .then(result => {
-                    if ((!result) || (!result?.success)) {
+                .then(function (result) {
+                    if ((!result) || (!result.success)) {
                         $.toast({
                             title: 'Failed',
-                            content: result?.error ?? 'Request failed. Please try again.',
+                            content: (result && result.error) || 'Request failed. Please try again.',
                             type: 'error',
                             delay: 4000
                         });
-                        removeLoader('payNowBtn')
+                        removeLoader('payNowBtn');
                         return;
                     }
 
-                    let data = result?.data;
-                    if ((!!data) || (data?.status === "success")) {
+                    var data = result.data;
+                    if ((!!data) || (data && data.status === "success")) {
                         window.location.href = data.url;
                     } else {
                         $.toast({
@@ -1708,21 +1720,19 @@ function onPurchaseClicked(item) {
                         });
                     }
                 })
-                .catch(error => {
+                .catch(function (error) {
                     $.toast({
                         title: 'Failed',
-                        content: error ?? 'Failed to connect to server. Try again later.',
+                        content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
                         type: 'error',
                         delay: 4000
                     });
-                    removeLoader('payNowBtn')
+                    removeLoader('payNowBtn');
                 });
-
-
         }
     });
 
-    inputMobileNumber.addEventListener('input', () => {
+    inputMobileNumber.addEventListener('input', function () {
         inputMobileNumber.classList.remove('is-invalid');
     });
 
@@ -1737,51 +1747,49 @@ $('#inputMobileNumber').on('input', function () {
 
 function renderWifreeList() {
     fetchPortalAPI("/wifree-vouchers", "GET", null, null)
-        .then(result => {
-            if ((!result) || (!result?.success)) {
+        .then(function (result) {
+            if ((!result) || (!result.success)) {
                 return;
             }
-            let data = result?.data;
-            const container = document.getElementById('wifreeList');
+            var data = result.data;
+            var container = document.getElementById('wifreeList');
             container.innerHTML = "";
-            data.forEach(item => {
-                const div = document.createElement("div");
+            data.forEach(function (item) {
+                var div = document.createElement("div");
                 div.style.cursor = "pointer";
-                div.innerHTML = `
-                    <div class="d-flex flex-column gap-2 px-2 py-2 shadow" style="border:1px solid #7e7e7e;border-radius: 5px">
-                        <div class="d-flex justify-content-between align-items-center gap-2 w-100">
-                            <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="35" height="29.52" viewBox="0 0 135.33 114.13">
-                              <title>GCash</title>
-                              <path d="M301.23,384.14a64.85,64.85,0,0,1-7,29.49,6.56,6.56,0,0,0,2.33,8.54h0a6.53,6.53,0,0,0,9-2q.16-.25.29-.51a78.4,78.4,0,0,0,0-70.9,6.54,6.54,0,0,0-8.81-2.81l-.5.29h0a6.56,6.56,0,0,0-2.33,8.53A64.88,64.88,0,0,1,301.23,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>
-                              <path d="M280.06,384.14a43.85,43.85,0,0,1-4,18.4,6.55,6.55,0,0,0,2.46,8.28h0A6.56,6.56,0,0,0,288,408a57.4,57.4,0,0,0,0-47.68,6.56,6.56,0,0,0-9.45-2.82h0a6.55,6.55,0,0,0-2.46,8.28A43.85,43.85,0,0,1,280.06,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>
-                              <path d="M236.06,428.13a44,44,0,1,1,26.87-78.85,6.54,6.54,0,0,0,8.63-.53h0a6.53,6.53,0,0,0-.63-9.79,57.08,57.08,0,1,0,.09,90.3,6.44,6.44,0,0,0,.61-9.63l-.14-.14A6.45,6.45,0,0,0,263,419,43.82,43.82,0,0,1,236.06,428.13Z" transform="translate(-179 -327.08)" style="fill:#007cff"/>
-                              <path d="M271.15,379.35a6.75,6.75,0,0,0-4.76-2h0l-31.35,0h0a6.77,6.77,0,1,0,0,13.53h23.59a23.52,23.52,0,1,1-10-26.75,6.78,6.78,0,0,0,8.4-1h0a6.75,6.75,0,0,0-1.14-10.45,37.36,37.36,0,0,0-27.8-4.88,36.55,36.55,0,0,0-28.24,28.48,37.08,37.08,0,1,0,73.34,7.78A6.78,6.78,0,0,0,271.15,379.35Z" transform="translate(-179 -327.08)" style="fill:#002cb8"/>
-                            </svg>      
-                            <h2 class="fw-bolder">₱ ${item.price.toFixed(2)}</h2>
-                        </div>
-                        
-                        <div class="divider-primary"></div>
-                        <div class="d-flex justify-content-between gap-0 w-100">
-                            <small>
-                                Time: ${minutesToTime(item.timeInMinutes)}
-                            </small>
-                            <small class="text-end">
-                                Expiry: ${minutesToTime(item.expirationInMinutes)}
-                            </small>
-                        </div>
-                    </div>
-                `
+                div.innerHTML = 
+                    '<div class="d-flex flex-column gap-2 px-2 py-2 shadow" style="border:1px solid #7e7e7e;border-radius: 5px">' +
+                        '<div class="d-flex justify-content-between align-items-center gap-2 w-100">' +
+                            '<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="35" height="29.52" viewBox="0 0 135.33 114.13">' +
+                              '<title>GCash</title>' +
+                              '<path d="M301.23,384.14a64.85,64.85,0,0,1-7,29.49,6.56,6.56,0,0,0,2.33,8.54h0a6.53,6.53,0,0,0,9-2q.16-.25.29-.51a78.4,78.4,0,0,0,0-70.9,6.54,6.54,0,0,0-8.81-2.81l-.5.29h0a6.56,6.56,0,0,0-2.33,8.53A64.88,64.88,0,0,1,301.23,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>' +
+                              '<path d="M280.06,384.14a43.85,43.85,0,0,1-4,18.4,6.55,6.55,0,0,0,2.46,8.28h0A6.56,6.56,0,0,0,288,408a57.4,57.4,0,0,0,0-47.68,6.56,6.56,0,0,0-9.45-2.82h0a6.55,6.55,0,0,0-2.46,8.28A43.85,43.85,0,0,1,280.06,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>' +
+                              '<path d="M236.06,428.13a44,44,0,1,1,26.87-78.85,6.54,6.54,0,0,0,8.63-.53h0a6.53,6.53,0,0,0-.63-9.79,57.08,57.08,0,1,0,.09,90.3,6.44,6.44,0,0,0,.61-9.63l-.14-.14A6.45,6.45,0,0,0,263,419,43.82,43.82,0,0,1,236.06,428.13Z" transform="translate(-179 -327.08)" style="fill:#007cff"/>' +
+                              '<path d="M271.15,379.35a6.75,6.75,0,0,0-4.76-2h0l-31.35,0h0a6.77,6.77,0,1,0,0,13.53h23.59a23.52,23.52,0,1,1-10-26.75,6.78,6.78,0,0,0,8.4-1h0a6.75,6.75,0,0,0-1.14-10.45,37.36,37.36,0,0,0-27.8-4.88,36.55,36.55,0,0,0-28.24,28.48,37.08,37.08,0,1,0,73.34,7.78A6.78,6.78,0,0,0,271.15,379.35Z" transform="translate(-179 -327.08)" style="fill:#002cb8"/>' +
+                            '</svg>' +
+                            '<h2 class="fw-bolder">₱ ' + item.price.toFixed(2) + '</h2>' +
+                        '</div>' +
+                        '<div class="divider-primary"></div>' +
+                        '<div class="d-flex justify-content-between gap-0 w-100">' +
+                            '<small>' +
+                                'Time: ' + minutesToTime(item.timeInMinutes) +
+                            '</small>' +
+                            '<small class="text-end">' +
+                                'Expiry: ' + minutesToTime(item.expirationInMinutes) +
+                            '</small>' +
+                        '</div>' +
+                    '</div>';
                 $(div).on('click', function () {
                     onPurchaseClicked(item);
                 });
                 container.appendChild(div);
-            })
+            });
 
         })
-        .catch(error => {
+        .catch(function (error) {
             $.toast({
                 title: 'Failed',
-                content: error ?? 'Failed to connect to server. Try again later.',
+                content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
                 type: 'error',
                 delay: 4000
             });
@@ -1789,63 +1797,73 @@ function renderWifreeList() {
 }
 
 document.addEventListener('hidden.bs.modal', function () {
-    document.querySelectorAll('button[data-loading="true"]').forEach(btn => {
-        const spinner = btn.querySelector('[data-spinner="true"]');
+    var buttons = document.querySelectorAll('button[data-loading="true"]');
+    for (var i = 0; i < buttons.length; i++) {
+        var btn = buttons[i];
+        var spinner = btn.querySelector('[data-spinner="true"]');
         if (spinner) spinner.remove();
         btn.disabled = false;
         btn.removeAttribute('data-loading');
-    });
+    }
 });
 
-async function fetchServerData() {
-    const maxRetries = 30;
-    const retryDelay = 1000;
-    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+function fetchServerData() {
+    var maxRetries = 30;
+    var retryDelay = 1000;
+    var attempt = 1;
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            const response = await fetch('/juanfi-extended.json?t=' + new Date().getTime());
-            if (response.ok) {
-                const data = await response.json();
-                console.log('JuanFi Extended Version:', data.version);
-                return data;
-            } else {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-        } catch (err) {
-            console.error(`Attempt ${attempt} failed:`, err);
-            if (attempt < maxRetries) {
-                await wait(retryDelay);
-            } else {
-                $.toast({
-                    title: 'Failed',
-                    content: 'juanfi-extended.json missing or unreachable after 30 attempts.',
-                    type: 'error',
-                    delay: 4000
-                });
-                return null;
-            }
+    return new Promise(function (resolve, reject) {
+        function doFetch() {
+            $.ajax({
+                url: '/juanfi-extended.json?t=' + new Date().getTime(),
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    console.log('JuanFi Extended Version:', data.version);
+                    resolve(data);
+                },
+                error: function (xhr, status, err) {
+                    console.error('Attempt ' + attempt + ' failed:', err);
+                    if (attempt < maxRetries) {
+                        attempt++;
+                        setTimeout(doFetch, retryDelay);
+                    } else {
+                        $.toast({
+                            title: 'Failed',
+                            content: 'juanfi-extended.json missing or unreachable after 30 attempts.',
+                            type: 'error',
+                            delay: 4000
+                        });
+                        resolve(null);
+                    }
+                }
+            });
         }
-    }
+        doFetch();
+    });
 }
 
 function fetchPortalConfig(cb) {
     fetchPortalAPI("/config", "GET", null, null)
-        .then(result => {
-            if ((!result) || (!result?.success)) {
-                cb(null, result?.error ?? "Server request failed.");
+        .then(function (result) {
+            if ((!result) || (!result.success)) {
+                cb(null, (result && result.error) || "Server request failed.");
                 return;
             }
-            let data = result?.data;
+            var data = result.data;
             if (!data) {
                 cb(null, null);
                 return;
             }
-            let output = {...data};
+            var output = {};
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    output[key] = data[key];
+                }
+            }
             cb(output, null);
         })
-        .catch(error => {
+        .catch(function (error) {
             cb(null, error);
         });
 }
@@ -1932,7 +1950,7 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig) {
             $("#spinBtn").text("Spin");
             $('#redeemBySpinModal').modal('show');
 
-            const colors = ["#FFD6E8", "#E0F7FA", "#FFF7C0", "#E8F6E9", "#FDEFEF", "#E8EAF6", "#FBE9E7", "#E6F0FF"];
+            var colors = ["#FFD6E8", "#E0F7FA", "#FFF7C0", "#E8F6E9", "#FDEFEF", "#E8EAF6", "#FBE9E7", "#E6F0FF"];
             drawSpinWheel(macNoColon, wheelConfig, colors);
         };
     }
@@ -1968,10 +1986,10 @@ function onRedeemRewardPtsConfirmBtnEvt(macNoColon) {
         var estimatedPhp = (selected * redeemRatioValue).toFixed(2);
 
         try {
-            addLoader('confirmRedeemBtn')
+            addLoader('confirmRedeemBtn');
             $.ajax({
                 type: "POST",
-                url: `http://${vendorIpAddress}/redeemPoints?mac=${macNoColon}&points=${selected}`,
+                url: "http://" + vendorIpAddress + "/redeemPoints?mac=" + macNoColon + "&points=" + selected,
                 success: function (result) {
                     if (!result) {
                         $.toast({
@@ -1980,7 +1998,7 @@ function onRedeemRewardPtsConfirmBtnEvt(macNoColon) {
                             type: 'error',
                             delay: 4000
                         });
-                        removeLoader('confirmRedeemBtn')
+                        removeLoader('confirmRedeemBtn');
                         return;
                     }
 
@@ -1991,21 +2009,20 @@ function onRedeemRewardPtsConfirmBtnEvt(macNoColon) {
                             type: 'error',
                             delay: 4000
                         });
-                        removeLoader('confirmRedeemBtn')
+                        removeLoader('confirmRedeemBtn');
                         return;
                     } else {
                         var timeAdded = parseInt(result.timeAdded);
                         $('#redeemModal').modal('hide');
                         $.toast({
                             title: 'Success',
-                            content: 'Redeemed ' + selected + ' points (PHP ' + estimatedPhp + '). Added',
-                            content: `Redeemed ${selected} points (PHP ${estimatedPhp}). Added ${secondsToDhms(timeAdded * 60)} time to current voucher.`,
+                            content: 'Redeemed ' + selected + ' points (PHP ' + estimatedPhp + '). Added ' + secondsToDhms(timeAdded * 60) + ' time to current voucher.',
                             type: 'success',
                             delay: 4000
                         });
                         setTimeout(function () {
                             newLogin();
-                            removeLoader('confirmRedeemBtn')
+                            removeLoader('confirmRedeemBtn');
                         }, 1000);
                     }
                 },
@@ -2016,7 +2033,7 @@ function onRedeemRewardPtsConfirmBtnEvt(macNoColon) {
                         type: 'error',
                         delay: 4000
                     });
-                    removeLoader('confirmRedeemBtn')
+                    removeLoader('confirmRedeemBtn');
                 },
                 complete: function () {
 
@@ -2030,7 +2047,7 @@ function onRedeemRewardPtsConfirmBtnEvt(macNoColon) {
                 type: 'error',
                 delay: 4000
             });
-            removeLoader('confirmRedeemBtn')
+            removeLoader('confirmRedeemBtn');
         }
     };
 }
@@ -2046,24 +2063,21 @@ function showResumeButton() {
 }
 
 function logoutVoucher(macNoColon) {
-    fetchPortalAPI(`/logout`, "POST", vendorIpAddress, {mac: macNoColon})
-        .then(result => {
-            if ((!result) || (!result?.success)) {
+    fetchPortalAPI("/logout", "POST", vendorIpAddress, {mac: macNoColon})
+        .then(function (result) {
+            if ((!result) || (!result.success)) {
                 $.toast({
                     title: 'Failed',
-                    content: result?.error ?? 'Request failed. Please try again.',
+                    content: (result && result.error) || 'Request failed. Please try again.',
                     type: 'error',
                     delay: 4000
                 });
-                cb(false);
-                removeLoader('pauseTimeBtn')
+                removeLoader('pauseTimeBtn');
                 return;
             }
 
-            let data = result?.data;
-            if ((!!data) || (data?.status === "success")) {
-
-
+            var data = result.data;
+            if ((!!data) || (data && data.status === "success")) {
                 setTimeout(function () {
                     showResumeButton();
                     newLogin();
@@ -2077,48 +2091,47 @@ function logoutVoucher(macNoColon) {
                 });
             }
         })
-        .catch(error => {
+        .catch(function (error) {
             $.toast({
                 title: 'Failed',
-                content: error ?? 'Failed to connect to server. Try again later.',
+                content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
                 type: 'error',
                 delay: 4000
             });
-            removeLoader('pauseTimeBtn')
-            // cb(false);
+            removeLoader('pauseTimeBtn');
         });
 }
 
 function loginVoucher(macNoColon, cb) {
-    fetchPortalAPI(`/login`, "POST", vendorIpAddress, {mac: macNoColon})
-        .then(result => {
-            if ((!result) || (!result?.success)) {
+    fetchPortalAPI("/login", "POST", vendorIpAddress, {mac: macNoColon})
+        .then(function (result) {
+            if ((!result) || (!result.success)) {
                 $.toast({
                     title: 'Failed',
-                    content: result?.error ?? 'Request failed. Please try again.',
+                    content: (result && result.error) || 'Request failed. Please try again.',
                     type: 'error',
                     delay: 4000
                 });
                 cb(false);
                 return;
             }
-            let data = result?.data;
-            if ((!!data) || (data?.status === "success")) {
+            var data = result.data;
+            if ((!!data) || (data && data.status === "success")) {
                 cb(true);
             } else {
                 $.toast({
                     title: 'Failed',
-                    content: data?.message ?? 'Failed to connect voucher.',
+                    content: (data && data.message) || 'Failed to connect voucher.',
                     type: 'error',
                     delay: 4000
                 });
                 cb(false);
             }
         })
-        .catch(error => {
+        .catch(function (error) {
             $.toast({
                 title: 'Failed',
-                content: error ?? 'Failed to connect to server. Try again later.',
+                content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
                 type: 'error',
                 delay: 4000
             });
@@ -2128,35 +2141,35 @@ function loginVoucher(macNoColon, cb) {
 
 
 function claimFreeInternetFetch(macNoColon, cb) {
-    fetchPortalAPI(`/claim-free-internet`, "POST", vendorIpAddress, {mac: macNoColon})
-        .then(result => {
-            if ((!result) || (!result?.success)) {
+    fetchPortalAPI("/claim-free-internet", "POST", vendorIpAddress, {mac: macNoColon})
+        .then(function (result) {
+            if ((!result) || (!result.success)) {
                 $.toast({
                     title: 'Failed',
-                    content: result?.error ?? 'Request failed. Please try again.',
+                    content: (result && result.error) || 'Request failed. Please try again.',
                     type: 'error',
                     delay: 4000
                 });
                 cb(false);
                 return;
             }
-            let data = result?.data;
-            if ((!!data) || (data?.status === "success")) {
+            var data = result.data;
+            if ((!!data) || (data && data.status === "success")) {
                 cb(true);
             } else {
                 $.toast({
                     title: 'Failed',
-                    content: data?.message ?? 'Failed to claim free internet.',
+                    content: (data && data.message) || 'Failed to claim free internet.',
                     type: 'error',
                     delay: 4000
                 });
                 cb(false);
             }
         })
-        .catch(error => {
+        .catch(function (error) {
             $.toast({
                 title: 'Failed',
-                content: error ?? 'Failed to connect to server. Try again later.',
+                content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
                 type: 'error',
                 delay: 4000
             });
@@ -2172,10 +2185,9 @@ function updateDeviceDateTime() {
 function checkIsLoggedIn(macNoColon) {
     fetchUserInfo(macNoColon, null, function (userData, error) {
         if (!!error) {
-
             return;
         }
-        let {isOnline} = userData;
+        var isOnline = userData.isOnline;
         sessiontimeInSecs = userData.timeRemaining;
         if (isOnline) {
             showPauseButton();
@@ -2184,7 +2196,6 @@ function checkIsLoggedIn(macNoColon) {
         }
 
         setTimeout(function () {
-
             newLogin();
         }, 1000);
     });
@@ -2194,58 +2205,58 @@ function fetchSpinWheelReward(mac, cb) {
     if (parseInt(rewardPointsBalance) < 0) {
         $.toast({
             title: 'Failed',
-            content: error ?? 'Not enough points balance.',
+            content: 'Not enough points balance.',
             type: 'error',
             delay: 4000
         });
-        removeLoader('spinBtn')
+        removeLoader('spinBtn');
         return;
     }
-    fetchPortalAPI("/promo/spin-wheel", "POST", vendorIpAddress, JSON.stringify({mac}), {
+    fetchPortalAPI("/promo/spin-wheel", "POST", vendorIpAddress, JSON.stringify({ mac: mac }), {
         contentType: 'application/json; charset=utf-8',
         dataType: "json"
     })
-        .then(result => {
-            if ((!result) || (!result?.success)) {
-                cb(null, result?.error ?? "Server request failed.");
+        .then(function (result) {
+            if ((!result) || (!result.success)) {
+                cb(null, (result && result.error) || "Server request failed.");
                 return;
             }
-            let data = result?.data;
+            var data = result.data;
             if (!data) {
                 cb(null, null);
                 return;
             }
             cb(data, null);
         })
-        .catch(error => {
+        .catch(function (error) {
             cb(null, error);
-        })
+        });
 }
 
 function drawSpinWheel(mac, prizes, colors) {
     /* ===== Elements & state ===== */
-    const wheelCanvas = document.getElementById('wheelCanvas');
-    const wheelCtx = wheelCanvas.getContext('2d');
+    var wheelCanvas = document.getElementById('wheelCanvas');
+    var wheelCtx = wheelCanvas.getContext('2d');
 
-    const spinBtn = document.getElementById('spinBtn');
-    const spinCancelBtn = document.getElementById('spinCancelBtn');
+    var spinBtn = document.getElementById('spinBtn');
+    var spinCancelBtn = document.getElementById('spinCancelBtn');
     spinBtn.textContent = "SPIN";
 
-    const clickSound = new Audio('https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg');
+    var clickSound = new Audio('https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg');
 
     // Expanded prizes array based on winning percentages (max 10 slices)
-    let expandedPrizes = [];
+    var expandedPrizes = [];
 
     // Function to generate expanded prizes based on winning percentages
     function generateExpandedPrizes() {
         expandedPrizes = [];
-        const maxSlices = 10;
+        var maxSlices = 10;
 
         // Calculate total winning percentage
-        let totalPercentage = 0;
-        prizes.forEach(p => {
+        var totalPercentage = 0;
+        prizes.forEach(function (p) {
             if (p) {
-                let winPercent = Math.floor(p.percentage);
+                var winPercent = Math.floor(p.percentage);
                 if (winPercent > 0) {
                     totalPercentage += winPercent;
                 }
@@ -2258,16 +2269,16 @@ function drawSpinWheel(mac, prizes, colors) {
             return;
         }
 
-        const maxPercentage = 100;
+        var maxPercentage = 100;
 
         // Distribute prizes proportionally to fill max 10 slices
-        prizes.forEach(p => {
+        prizes.forEach(function (p) {
             if (p && p.percentage > 0) {
                 // Calculate how many slices this prize should occupy
-                const proportion = p.percentage / maxPercentage;
-                const sliceCount = Math.max(1, Math.round(proportion * maxSlices));
+                var proportion = p.percentage / maxPercentage;
+                var sliceCount = Math.max(1, Math.round(proportion * maxSlices));
                 // Add this prize multiple times
-                for (let i = 0; i < sliceCount; i++) {
+                for (var i = 0; i < sliceCount; i++) {
                     expandedPrizes.push(p);
                 }
             }
@@ -2288,19 +2299,19 @@ function drawSpinWheel(mac, prizes, colors) {
         }
     }
 
-    let displaySize = 460;
-    let wheelSize = 520;
-    let dpr = Math.max(window.devicePixelRatio || 1, 1);
-    let center = {x: 0, y: 0};
-    let radius = 0;
-    let currentRotation = 0; // radians
-    let spinning = false;
-    let lastSliceSound = -1;
+    var displaySize = 460;
+    var wheelSize = 520;
+    var dpr = Math.max(window.devicePixelRatio || 1, 1);
+    var center = {x: 0, y: 0};
+    var radius = 0;
+    var currentRotation = 0; // radians
+    var spinning = false;
+    var lastSliceSound = -1;
 
     /* ===== Resize (set CSS size + backing store for DPR) ===== */
     function resizeAll() {
         dpr = Math.max(window.devicePixelRatio || 1, 1);
-        const shown = Math.min(window.innerWidth * 0.9, wheelSize);
+        var shown = Math.min(window.innerWidth * 0.9, wheelSize);
         displaySize = Math.round(shown);
 
         // wheel canvas (use CSS px coordinates)
@@ -2324,12 +2335,16 @@ function drawSpinWheel(mac, prizes, colors) {
     resizeAll();
 
     /* ===== draw wheel (rotation in radians) and optional highlighted slice ===== */
-    function drawWheel(rotationRad = 0, highlightIndex = null, highlightAlpha = 0) {
-        const ctx = wheelCtx;
+    function drawWheel(rotationRad, highlightIndex, highlightAlpha) {
+        if (rotationRad === undefined) rotationRad = 0;
+        if (highlightIndex === undefined) highlightIndex = null;
+        if (highlightAlpha === undefined) highlightAlpha = 0;
+
+        var ctx = wheelCtx;
         ctx.clearRect(0, 0, displaySize, displaySize);
 
-        const displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
-        const slice = (2 * Math.PI) / displayPrizes.length;
+        var displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
+        var slice = (2 * Math.PI) / displayPrizes.length;
 
         // draw wheel rotated
         ctx.save();
@@ -2337,8 +2352,8 @@ function drawSpinWheel(mac, prizes, colors) {
         ctx.rotate(rotationRad);
         ctx.translate(-center.x, -center.y);
 
-        for (let i = 0; i < displayPrizes.length; i++) {
-            const start = i * slice;
+        for (var i = 0; i < displayPrizes.length; i++) {
+            var start = i * slice;
             ctx.beginPath();
             ctx.fillStyle = colors[i % colors.length];
             ctx.moveTo(center.x, center.y);
@@ -2352,8 +2367,8 @@ function drawSpinWheel(mac, prizes, colors) {
                 ctx.translate(center.x, center.y);
                 ctx.rotate(start + slice / 2);
                 ctx.fillStyle = "#2b2b2b";
-                ctx.font = `${Math.max(12, displaySize / 24)}px Arial`;
-                ctx.textAlign = 'right';
+                ctx.font = Math.max(12, displaySize / 24) + "px Arial";
+                ctx.textAlign = "right";
                 ctx.fillText(displayPrizes[i].promoName, radius - 12, 6);
                 ctx.restore();
             }
@@ -2361,12 +2376,12 @@ function drawSpinWheel(mac, prizes, colors) {
 
         // highlight overlay in wheel's rotated coordinate system
         if (highlightIndex !== null && highlightAlpha > 0) {
-            const start = highlightIndex * slice;
+            var hStart = highlightIndex * slice;
             ctx.beginPath();
             ctx.moveTo(center.x, center.y);
-            ctx.arc(center.x, center.y, radius, start, start + slice);
+            ctx.arc(center.x, center.y, radius, hStart, hStart + slice);
             ctx.closePath();
-            ctx.fillStyle = `rgba(255,230,100,${Math.min(1, highlightAlpha)})`;
+            ctx.fillStyle = "rgba(255,230,100," + Math.min(1, highlightAlpha) + ")";
             ctx.fill();
         }
 
@@ -2377,10 +2392,10 @@ function drawSpinWheel(mac, prizes, colors) {
     }
 
     function drawPointer() {
-        const ctx = wheelCtx;
+        var ctx = wheelCtx;
         ctx.save();
-        const pointerHalf = Math.max(8, displaySize * 0.03);
-        const y = center.y - radius - 4;
+        var pointerHalf = Math.max(8, displaySize * 0.03);
+        var y = center.y - radius - 4;
         ctx.beginPath();
         ctx.moveTo(center.x - pointerHalf, y);
         ctx.lineTo(center.x + pointerHalf, y);
@@ -2396,11 +2411,11 @@ function drawSpinWheel(mac, prizes, colors) {
 
     /* ===== convert rotation -> index (slice under top pointer) ===== */
     function rotationToIndex(rotationRad) {
-        const displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
-        const rotDeg = ((rotationRad * 180 / Math.PI) % 360 + 360) % 360;
-        const pointerDeg = (270 - rotDeg + 360) % 360; // top = 270 deg
-        const sliceDeg = 360 / displayPrizes.length;
-        let idx = Math.floor(pointerDeg / sliceDeg);
+        var displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
+        var rotDeg = ((rotationRad * 180 / Math.PI) % 360 + 360) % 360;
+        var pointerDeg = (270 - rotDeg + 360) % 360; // top = 270 deg
+        var sliceDeg = 360 / displayPrizes.length;
+        var idx = Math.floor(pointerDeg / sliceDeg);
         idx = ((idx % displayPrizes.length) + displayPrizes.length) % displayPrizes.length;
         return idx;
     }
@@ -2413,18 +2428,26 @@ function drawSpinWheel(mac, prizes, colors) {
         spinBtn.disabled = true;
         if (isSpinTriggered) {
             // fetch prize index from API
-            fetchSpinWheelReward(mac, (result, error) => {
+            fetchSpinWheelReward(mac, function (result, error) {
                 if (!!error) {
                     $.toast({
                         title: 'Failed',
-                        content: error ?? 'Server request failed.',
+                        content: error || 'Server request failed.',
                         type: 'error',
                         delay: 4000
                     });
-                    removeLoader('spinBtn')
+                    removeLoader('spinBtn');
                     return;
                 }
-                let prizeIndex = expandedPrizes.findIndex(x => x.promoName === result.promoName);
+                var prizeIndex = -1;
+                if (result && result.promoName) {
+                    for (var i = 0; i < expandedPrizes.length; i++) {
+                        if (expandedPrizes[i].promoName === result.promoName) {
+                            prizeIndex = i;
+                            break;
+                        }
+                    }
+                }
                 rewardPointsBalance = !!result ? result.remainingPoints : 0;
 
                 $(".availablePointsDisplay").text((!!rewardPointsBalance) ? rewardPointsBalance.toFixed(2) : "0.00");
@@ -2443,36 +2466,36 @@ function drawSpinWheel(mac, prizes, colors) {
     function executeSpin(chosenIndex, apiPrize, error) {
         if (!!error) chosenIndex = -1;
         // compute target rotation so chosenIndex center ends under top pointer
-        const sliceDeg = 360 / expandedPrizes.length;
-        const desiredPointerDeg = (chosenIndex + 0.5) * sliceDeg;
-        const desiredWheelDegNormalized = (270 - desiredPointerDeg + 360) % 360;
+        var sliceDeg = 360 / expandedPrizes.length;
+        var desiredPointerDeg = (chosenIndex + 0.5) * sliceDeg;
+        var desiredWheelDegNormalized = (270 - desiredPointerDeg + 360) % 360;
 
-        const currentDeg = ((currentRotation * 180 / Math.PI) % 360 + 360) % 360;
-        let deltaDeg = (desiredWheelDegNormalized - currentDeg + 360) % 360;
+        var currentDeg = ((currentRotation * 180 / Math.PI) % 360 + 360) % 360;
+        var deltaDeg = (desiredWheelDegNormalized - currentDeg + 360) % 360;
 
-        const extraSpins = 4 + Math.floor(Math.random() * 3); // 4..6
-        const totalDeg = deltaDeg + extraSpins * 360;
-        const targetRotation = currentRotation + (totalDeg * Math.PI / 180);
+        var extraSpins = 4 + Math.floor(Math.random() * 3); // 4..6
+        var totalDeg = deltaDeg + extraSpins * 360;
+        var targetRotation = currentRotation + (totalDeg * Math.PI / 180);
 
-        const duration = 4200 + Math.floor(Math.random() * 800);
-        const startRot = currentRotation;
-        let startTime = null;
+        var duration = 4200 + Math.floor(Math.random() * 800);
+        var startRot = currentRotation;
+        var startTime = null;
         lastSliceSound = -1;
 
         function step(ts) {
             if (!startTime) startTime = ts;
-            const elapsed = ts - startTime;
-            const t = Math.min(1, elapsed / duration);
-            const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
-            const nowRot = startRot + (targetRotation - startRot) * ease;
+            var elapsed = ts - startTime;
+            var t = Math.min(1, elapsed / duration);
+            var ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
+            var nowRot = startRot + (targetRotation - startRot) * ease;
 
             drawWheel(nowRot);
 
             // click sound when we move across slices
-            const idx = rotationToIndex(nowRot);
+            var idx = rotationToIndex(nowRot);
             if (idx !== lastSliceSound) {
                 lastSliceSound = idx;
-                //try{ clickSound.currentTime = 0; clickSound.play().catch(()=>{}); }catch(e){}
+                //try{ clickSound.currentTime = 0; clickSound.play().catch(function(){}); }catch(e){}
             }
 
             if (t < 1) {
@@ -2484,19 +2507,19 @@ function drawSpinWheel(mac, prizes, colors) {
             currentRotation = targetRotation % (2 * Math.PI);
             drawWheel(currentRotation);
 
-            const winningIndex = rotationToIndex(currentRotation);
+            var winningIndex = rotationToIndex(currentRotation);
 
             // pulse the winning slice then show modal
-            pulseHighlight(winningIndex, 3, 700, () => {
+            pulseHighlight(winningIndex, 3, 700, function () {
                 // prefer API-provided prize data if available, otherwise fall back to expanded/local prizes array
-                const displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
-                const prizeToShow = (apiPrize && apiPrize.promoName) ? apiPrize : displayPrizes[winningIndex];
+                var displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
+                var prizeToShow = (apiPrize && apiPrize.promoName) ? apiPrize : displayPrizes[winningIndex];
                 // Handle undefined or empty prizes
                 $("#redeemedValueWrapper").removeClass("hide");
                 if ((!prizeToShow) || (!prizeToShow.promoName) || (prizeToShow.rewardValue <= 0)) {
-                    $("#selectedReward").text(`🥺 Sorry! Better luck next time.`);
+                    $("#selectedReward").text("🥺 Sorry! Better luck next time.");
                 } else {
-                    var msg = `🎁 Nice! You redeemed ${prizeToShow.promoName}`;
+                    var msg = "🎁 Nice! You redeemed " + prizeToShow.promoName;
                     $("#selectedReward").text(msg);
                     $.toast({
                         title: 'Success',
@@ -2510,7 +2533,7 @@ function drawSpinWheel(mac, prizes, colors) {
                 }
                 spinning = false;
                 spinBtn.textContent = "SPIN AGAIN";
-                removeLoader('spinBtn')
+                removeLoader('spinBtn');
                 if (parseInt(rewardPointsBalance) <= 0) {
                     $('#redeemBySpinModal').modal('hide');
                 }
@@ -2522,19 +2545,21 @@ function drawSpinWheel(mac, prizes, colors) {
     }
 
     /* ===== smooth pulse highlight (alpha rises/falls) ===== */
-    function pulseHighlight(index, pulses = 3, pulseDuration = 700, callback) {
-        const total = pulses * pulseDuration;
-        const start = performance.now();
+    function pulseHighlight(index, pulses, pulseDuration, callback) {
+        if (pulses === undefined) pulses = 3;
+        if (pulseDuration === undefined) pulseDuration = 700;
+        var total = pulses * pulseDuration;
+        var start = performance.now();
 
         function frame(now) {
-            const elapsed = now - start;
+            var elapsed = now - start;
             if (elapsed >= total) {
                 drawWheel(currentRotation, null, 0);
-                callback && callback();
+                if (callback) callback();
                 return;
             }
-            const pulseProgress = (elapsed % pulseDuration) / pulseDuration; // 0..1
-            const alpha = Math.sin(pulseProgress * Math.PI); // smooth 0..1..0
+            var pulseProgress = (elapsed % pulseDuration) / pulseDuration; // 0..1
+            var alpha = Math.sin(pulseProgress * Math.PI); // smooth 0..1..0
             drawWheel(currentRotation, index, alpha * 0.95);
             requestAnimationFrame(frame);
         }
@@ -2545,31 +2570,33 @@ function drawSpinWheel(mac, prizes, colors) {
     /* ===== shuffle prizes (randomize displayed positions) ===== */
     function shufflePrizes() {
         // Fisher-Yates shuffle algorithm
-        const target = (expandedPrizes && expandedPrizes.length > 0) ? expandedPrizes : prizes;
-        for (let i = target.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [target[i], target[j]] = [target[j], target[i]];
+        var target = (expandedPrizes && expandedPrizes.length > 0) ? expandedPrizes : prizes;
+        for (var i = target.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var temp = target[i];
+            target[i] = target[j];
+            target[j] = temp;
         }
     }
 
     if (!spinEventsCreated) {
         /* ===== events & init ===== */
-        window.addEventListener('resize', () => {
+        window.addEventListener('resize', function () {
             resizeAll();
         });
-        spinBtn.onclick = () => {
+        spinBtn.onclick = function () {
             var avail = parseInt(rewardPointsBalance) || 0;
             if (avail <= 0) {
-                $.toast({title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000});
+                $.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000 });
                 $('#redeemBySpinModal').modal('hide');
                 return;
             }
-            addLoader('spinBtn')
+            addLoader('spinBtn');
             isSpinTriggered = true;
             shufflePrizes();
             spinWheel();
         };
-        spinCancelBtn.onclick = (e) => {
+        spinCancelBtn.onclick = function (e) {
             newLogin();
         };
     }
@@ -2587,7 +2614,7 @@ function drawSpinWheel(mac, prizes, colors) {
         }; // dummy replacement
         // Call the real function body:
         dpr = Math.max(window.devicePixelRatio || 1, 1);
-        const shown = Math.min(window.innerWidth * 0.9, wheelSize);
+        var shown = Math.min(window.innerWidth * 0.9, wheelSize);
         displaySize = Math.round(shown);
         wheelCanvas.style.width = displaySize + 'px';
         wheelCanvas.style.height = displaySize + 'px';
@@ -2603,7 +2630,7 @@ function drawSpinWheel(mac, prizes, colors) {
     /* replace placeholder with proper function */
     resizeAll = function () {
         dpr = Math.max(window.devicePixelRatio || 1, 1);
-        const shown = Math.min(window.innerWidth * 0.9, wheelSize);
+        var shown = Math.min(window.innerWidth * 0.9, wheelSize);
         displaySize = Math.round(shown);
         wheelCanvas.style.width = displaySize + 'px';
         wheelCanvas.style.height = displaySize + 'px';
@@ -2626,10 +2653,10 @@ function drawSpinWheel(mac, prizes, colors) {
 }
 
 function useVoucherBtnEvt() {
-    const connectBtn = document.getElementById('connectBtn');
+    var connectBtn = document.getElementById('connectBtn');
     connectBtn.onclick = function (e) {
         e.preventDefault();
-        const input = document.getElementById('voucherInput');
+        var input = document.getElementById('voucherInput');
         // Clear previous custom validity
         input.setCustomValidity('');
 
@@ -2683,7 +2710,7 @@ function useVoucherBtnEvt() {
                 }, 3000);
             } else {
                 removeLoader('connectBtn')
-                $.toast({title: 'Failed', content: error ?? "Server request failed.", type: 'error', delay: 3000});
+                $.toast({title: 'Failed', content: error || "Server request failed.", type: 'error', delay: 3000});
 
                 return;
             }
@@ -2692,20 +2719,20 @@ function useVoucherBtnEvt() {
 }
 
 function fetchUseVoucher(macNoColon, vendorIpAddress, voucherCode, cb) {
-    fetchPortalAPI(`/use-voucher`, "POST", vendorIpAddress, {mac: macNoColon, code: voucherCode})
-        .then(result => {
-            if ((!result) || (!result?.success)) {
-                cb(null, result?.error ?? "Server request failed.");
+    fetchPortalAPI("/use-voucher", "POST", vendorIpAddress, {mac: macNoColon, code: voucherCode})
+        .then(function (result) {
+            if ((!result) || (!result.success)) {
+                cb(null, (result && result.error) || "Server request failed.");
                 return;
             }
-            let data = result?.data;
-            if ((!!data) || (data?.status === "success")) {
+            var data = result.data;
+            if ((!!data) || (data && data.status === "success")) {
                 cb(true, null);
             } else {
-                cb(false, data?.message ?? "Failed to use voucher.");
+                cb(false, (data && data.message) || "Failed to use voucher.");
             }
         })
-        .catch(error => {
+        .catch(function (error) {
             cb(null, error);
         });
 }
@@ -2727,28 +2754,26 @@ function parseAjaxErrorResponse(jqXHR, textStatus, errorThrown) {
 
 function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
     return new Promise(function (resolve, reject) {
-        const MAX_RETRIES = 3;
-        const RETRY_DELAY = 1000; // 1 second
+        var MAX_RETRIES = 3;
+        var RETRY_DELAY = 1000; // 1 second
 
-        let attemptCount = 0;
+        var attemptCount = 0;
 
-        const attemptRequest = () => {
+        var attemptRequest = function () {
             try {
-                const timestamp = Date.now();
-                const separator = apiUrl.includes("?") ? "&" : "?";
-                const finalUrl = `${juanfiExtendedServerUrl}${apiUrl}${separator}t=${timestamp}`;
+                var timestamp = Date.now();
+                var separator = apiUrl.indexOf("?") !== -1 ? "&" : "?";
+                var finalUrl = juanfiExtendedServerUrl + apiUrl + separator + "t=" + timestamp;
 
-                const headers = vendorIpAddress
+                var headers = vendorIpAddress
                     ? {'X-IP': vendorIpAddress}
                     : undefined;
 
-                $.ajax({
-                    type,
+                var ajaxOptions = {
+                    type: type,
                     url: finalUrl,
-                    headers,
+                    headers: headers,
                     data: params,
-                    ...options,
-
                     success: function (data) {
                         if (!data) {
                             resolve({
@@ -2758,13 +2783,12 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
                         } else {
                             resolve({
                                 success: true,
-                                data
+                                data: data
                             });
                         }
                     },
-
                     error: function (jqXHR, textStatus, errorThrown) {
-                        const isNetworkError =
+                        var isNetworkError =
                             jqXHR.status === 0 ||
                             textStatus === "timeout" ||
                             (jqXHR.status >= 500 && jqXHR.status < 600);
@@ -2773,17 +2797,27 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
                             attemptCount++;
 
                             console.warn(
-                                `fetchPortalAPI network retry ${attemptCount}/${MAX_RETRIES} in 1s`
+                                "fetchPortalAPI network retry " + attemptCount + "/" + MAX_RETRIES + " in 1s"
                             );
 
                             setTimeout(attemptRequest, RETRY_DELAY);
                             return;
                         }
 
-                        const err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown);
-                        reject(err?.message ?? "Server request failed!");
+                        var err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown);
+                        reject((err && err.message) || "Server request failed!");
                     }
-                });
+                };
+
+                if (options) {
+                    for (var opt in options) {
+                        if (options.hasOwnProperty(opt)) {
+                            ajaxOptions[opt] = options[opt];
+                        }
+                    }
+                }
+
+                $.ajax(ajaxOptions);
             } catch (e) {
                 reject("Runtime error!");
             }
@@ -2798,7 +2832,7 @@ function showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig) {
     $("#rewardBtnWrapper").addClass("hide");
     if (pointsEnabled && totalPoints > 0) {
         $("#redeemWrapper").removeClass("hide");
-        if ((!!wheelConfig) && wheelConfig?.length > 0) {
+        if ((!!wheelConfig) && wheelConfig.length > 0) {
             $("#spinWrapper").removeClass("hide");
             $("#spinWrapper").removeClass("col-sm-12");
             $("#spinWrapper").addClass("col-sm-6");
@@ -2825,19 +2859,19 @@ function showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig) {
     }
 }
 
-let lastButtonId = null;
+var lastButtonId = null;
 
 function addLoader(buttonId) {
     if (lastButtonId && lastButtonId !== buttonId) {
         removeLoader(lastButtonId);
     }
 
-    const btn = document.getElementById(buttonId);
+    var btn = document.getElementById(buttonId);
     if (!btn) return;
 
     if (btn.dataset.loading === "true") return;
 
-    const spinner = document.createElement('span');
+    var spinner = document.createElement('span');
     spinner.className = 'spinner-border spinner-border-sm me-2'; // small spinner with margin
     spinner.role = 'status';
     spinner.ariaHidden = true;
@@ -2852,10 +2886,10 @@ function addLoader(buttonId) {
 }
 
 function removeLoader(buttonId) {
-    const btn = document.getElementById(buttonId);
+    var btn = document.getElementById(buttonId);
     if (!btn || btn.dataset.loading !== "true") return;
 
-    const spinner = btn.querySelector('span[data-spinner="true"]');
+    var spinner = btn.querySelector('span[data-spinner="true"]');
     if (spinner) btn.removeChild(spinner);
 
     btn.disabled = false;
@@ -2865,7 +2899,7 @@ function removeLoader(buttonId) {
 }
 
 function createToastContainer() {
-    let container = document.getElementById('toastContainer');
+    var container = document.getElementById('toastContainer');
     if (container) return container;
 
     container = document.createElement('div');
@@ -2878,37 +2912,44 @@ function createToastContainer() {
     return container;
 }
 
-$.toast = function ({title = '', content = '', type = 'info', delay = 5000}) {
-    const container = createToastContainer();
+$.toast = function (options) {
+    var title = options.title || '';
+    var content = options.content || '';
+    var type = options.type || 'info';
+    var delay = options.delay || 5000;
 
-    let bgClass = 'bg-info text-white';
+    var container = createToastContainer();
+
+    var bgClass = 'bg-info text-white';
     if (type === 'error') bgClass = 'bg-danger text-white';
     else if (type === 'success') bgClass = 'bg-success text-white';
     else if (type === 'warning') bgClass = 'bg-warning text-dark';
 
-    const toastEl = document.createElement('div');
-    toastEl.className = `toast align-items-center ${bgClass} border-0 mb-2`;
+    var toastEl = document.createElement('div');
+    toastEl.className = 'toast align-items-center ' + bgClass + ' border-0 mb-2';
     toastEl.style.pointerEvents = 'auto';
     toastEl.role = 'alert';
     toastEl.setAttribute('aria-live', 'assertive');
     toastEl.setAttribute('aria-atomic', 'true');
 
-    toastEl.innerHTML = `
-       <div class="d-flex mt-1">
-          <div class="toast-body">
-            ${title ? `<strong>${title}</strong><br>` : ''}
-            ${content}
-          </div>
-          <button type="button" class="btn-close ${type === 'warning' ? '' : 'btn-close-white'} me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-       </div>
-    `;
+    var titleHtml = title ? '<strong>' + title + '</strong><br>' : '';
+    toastEl.innerHTML = 
+       '<div class="d-flex mt-1">' +
+          '<div class="toast-body">' +
+            titleHtml +
+            content +
+          '</div>' +
+          '<button type="button" class="btn-close ' + (type === 'warning' ? '' : 'btn-close-white') + ' me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>' +
+       '</div>';
 
     container.appendChild(toastEl);
 
-    const toast = new bootstrap.Toast(toastEl, {delay, autohide: true});
+    var toast = new bootstrap.Toast(toastEl, { delay: delay, autohide: true });
     toast.show();
 
-    toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+    toastEl.addEventListener('hidden.bs.toast', function () {
+        toastEl.remove();
+    });
 };
 
 createToastContainer();
