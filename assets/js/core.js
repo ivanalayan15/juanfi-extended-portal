@@ -14,8 +14,8 @@ errorCodeMap['eload.failed'] = 'Sorry, Eload processing is failed';
 
 //DO NOT UPDATE - START
 var initLoad = false;
-var insertcoinbg = new Audio('assets/insertcoinbg.mp3?v=' + appendUrl);
-var coinCount = new Audio('assets/coin-received.mp3?v=' + appendUrl);
+var insertcoinbg = new Audio('assets/insertcoinbg.mp3');
+var coinCount = new Audio('assets/coin-received.mp3');
 var TOPUP_CHARGER = "CHARGER";
 var TOPUP_INTERNET = "INTERNET";
 var TOPUP_ELOAD = "ELOAD";
@@ -46,6 +46,19 @@ var wheelConfig = [];
 var macNoColon;
 var isPaused;
 var hasWiFree = false;
+var announcementText = '';
+var isTestMode = !window.location.href.startsWith("http");
+if (isTestMode) {
+    $('#loaderDiv').addClass("hide");
+    var containerDiv = $('#containerDiv');
+    containerDiv.removeClass("hide");
+    containerDiv.show();
+    $("#serverStatus").removeClass("hide");
+    $("#serverStatus").html('Test Mode')
+} else {
+    $("#serverStatus").addClass("hide");
+}
+
 try {
     var url = new URL(window.location.href);
     url.pathname = "/";
@@ -53,7 +66,7 @@ try {
     url.hash = '';
     window.history.replaceState({}, document.title, url.toString());
 } catch (e) {
-    console.error(e);
+
 }
 
 function initValues() {
@@ -190,6 +203,12 @@ function renderView() {
             autologin = data.autoLoginHotspot;
             wheelConfig = data.wheelConfig;
             hasWiFree = data.hasWiFree;
+            announcementText = data.announcement;
+        }
+        if (announcementText) {
+            var announcement = $("#announcement");
+            announcement.removeClass("hide");
+            announcement.html(announcementText);
         }
         // handle the data if needed
         $("#saveVoucherButton").prop('disabled', true);
@@ -398,7 +417,7 @@ function renderView() {
             // $("#voucherCode").html(voucherCode);
             isPaused = (!isOnline);
             var time = parseInt(sessiontimeInSecs);
-            if(time === 0){
+            if (time === 0) {
                 time = timeRemaining;
             }
             $("#remainTime").html(secondsToDhms(time));
@@ -425,9 +444,9 @@ function renderView() {
                 remainingTimer = setInterval(function () {
                     time--;
                     $("#remainTime").html(secondsToDhms(time))
-                    if(isLoggedIn){
+                    if (isLoggedIn) {
                         showPauseButton();
-                    }else{
+                    } else {
                         showResumeButton();
                     }
                     if (time <= 0 && !isMember) {
@@ -533,11 +552,13 @@ function renderView() {
         });
     });
 }
-function RefreshPortal(){
-	setTimeout(function () {
+
+function RefreshPortal() {
+    setTimeout(function () {
         window.location.href = "/login";
-	}, 1500);
+    }, 1500);
 }
+
 function isCaptivePortal() {
 
     var ua = navigator.userAgent || "";
@@ -555,6 +576,7 @@ function isCaptivePortal() {
 
     return false;
 }
+
 function multiVendoConfiguration(vendo, user) {
     if (!vendo.showExtendTimeButton && user.timeRemaining > 0) {
         $("#insertBtnContainer").addClass("hide");
@@ -855,7 +877,7 @@ function parseDuration(minutes) {
 }
 
 function populatePromoRates(retryCount) {
-    if(vendorIpAddress == null)
+    if (vendorIpAddress == null)
         return;
 
     var tableBody = document.querySelector("#rateTable tbody");
@@ -1327,21 +1349,25 @@ function convertVoucherAction() {
 
 function notifyCoinSlotError(errorCode, delay) {
     if (delay === undefined) delay = 5000;
-    var toastEl = document.getElementById('errorToast');
-    toastEl.querySelector('.toast-body').textContent = errorCodeMap[errorCode];
-
-    var toast = new bootstrap.Toast(toastEl, { delay: delay });
-    toast.show();
+    $.toast({
+        title: "Coin Error",
+        content: errorCodeMap[errorCode],
+        type: "error",
+        delay: delay
+    });
 }
 
 function notifyCoinSuccess(coin, delay) {
     if (delay === undefined) delay = 5000;
-    var toastEl = document.getElementById('successToast');
-    toastEl.querySelector('.toast-body').textContent = coin + ' peso(s) was inserted';
-
-    var toast = new bootstrap.Toast(toastEl, { delay: delay });
-    toast.show();
     coinCount.play();
+
+    $.toast({
+        title: "Insert Coin",
+        content: coin + " peso(s) was inserted",
+        type: "success",
+        delay: delay
+    });
+
 }
 
 function secondsToDhms(seconds) {
@@ -1445,9 +1471,11 @@ function parseTime(str) {
         return null;
     }
 }
+
 var checkInternetMaxCount = 10;
+
 function checkInternet() {
-    if(checkInternetMaxCount > 10)
+    if (checkInternetMaxCount > 10)
         return;
 
     try {
@@ -1482,12 +1510,12 @@ function checkInternet() {
             checkInternetMaxCount++;
             setTimeout(checkInternet, 1000);
         };
-    }
-    catch (error) {
+    } catch (error) {
         console.error("checkInternet error:", error);
         setTimeout(checkInternet, 1000);
     }
 }
+
 function getDeviceOS() {
     var userAgent = window.navigator.userAgent;
 
@@ -1618,17 +1646,17 @@ function renderHistories(data, containerId) {
         var date = new Date(item.date).toLocaleString();
 
         var amount = item.coin ? item.coin.toFixed(2) : "0.00";
-        div.innerHTML = 
-			'<div class="d-flex justify-content-between align-items-center">' +
-				'<div class="voucher-amount fw-bolder">₱ ' + amount + '</div>' +
-				'<small class="voucher-date">' +
-					item.activity +
-				'</small>' +
-			'</div>' +
-			'<div class="d-flex justify-content-between align-items-center">' +
-				'<div class="voucher-date">' + date + '</div>' +
-				'<small class="voucher-date">' + Number(item.pointsEarned.toFixed(2)) + ' pts.</small>' +
-			'</div>';
+        div.innerHTML =
+            '<div class="d-flex justify-content-between align-items-center">' +
+            '<div class="voucher-amount fw-bolder">₱ ' + amount + '</div>' +
+            '<small class="voucher-date">' +
+            item.activity +
+            '</small>' +
+            '</div>' +
+            '<div class="d-flex justify-content-between align-items-center">' +
+            '<div class="voucher-date">' + date + '</div>' +
+            '<small class="voucher-date">' + Number(item.pointsEarned.toFixed(2)) + ' pts.</small>' +
+            '</div>';
 
         container.appendChild(div);
     });
@@ -1639,27 +1667,27 @@ function onPurchaseClicked(item) {
     $('#wifreeCheckOutModal').modal('show');
     $('#wifreeModal').modal('hide');
     var container = document.getElementById('checkout-container');
-    container.innerHTML = 
+    container.innerHTML =
         '<div class="d-flex flex-column gap-2 px-2 py-2 shadow" style="border:1px solid #7e7e7e;border-radius: 5px">' +
-            '<div class="d-flex justify-content-between align-items-center gap-2 w-100">' +
-                '<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="35" height="29.52" viewBox="0 0 135.33 114.13">' +
-                  '<title>GCash</title>' +
-                  '<path d="M301.23,384.14a64.85,64.85,0,0,1-7,29.49,6.56,6.56,0,0,0,2.33,8.54h0a6.53,6.53,0,0,0,9-2q.16-.25.29-.51a78.4,78.4,0,0,0,0-70.9,6.54,6.54,0,0,0-8.81-2.81l-.5.29h0a6.56,6.56,0,0,0-2.33,8.53A64.88,64.88,0,0,1,301.23,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>' +
-                  '<path d="M280.06,384.14a43.85,43.85,0,0,1-4,18.4,6.55,6.55,0,0,0,2.46,8.28h0A6.56,6.56,0,0,0,288,408a57.4,57.4,0,0,0,0-47.68,6.56,6.56,0,0,0-9.45-2.82h0a6.55,6.55,0,0,0-2.46,8.28A43.85,43.85,0,0,1,280.06,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>' +
-                  '<path d="M236.06,428.13a44,44,0,1,1,26.87-78.85,6.54,6.54,0,0,0,8.63-.53h0a6.53,6.53,0,0,0-.63-9.79,57.08,57.08,0,1,0,.09,90.3,6.44,6.44,0,0,0,.61-9.63l-.14-.14A6.45,6.45,0,0,0,263,419,43.82,43.82,0,0,1,236.06,428.13Z" transform="translate(-179 -327.08)" style="fill:#007cff"/>' +
-                  '<path d="M271.15,379.35a6.75,6.75,0,0,0-4.76-2h0l-31.35,0h0a6.77,6.77,0,1,0,0,13.53h23.59a23.52,23.52,0,1,1-10-26.75,6.78,6.78,0,0,0,8.4-1h0a6.75,6.75,0,0,0-1.14-10.45,37.36,37.36,0,0,0-27.8-4.88,36.55,36.55,0,0,0-28.24,28.48,37.08,37.08,0,1,0,73.34,7.78A6.78,6.78,0,0,0,271.15,379.35Z" transform="translate(-179 -327.08)" style="fill:#002cb8"/>' +
-                '</svg>' +
-                '<h2 class="fw-bolder">₱ ' + item.price.toFixed(2) + '</h2>' +
-            '</div>' +
-            '<div class="divider-primary"></div>' +
-            '<div class="d-flex justify-content-between gap-0 w-100">' +
-                '<small>' +
-                    'Time: ' + minutesToTime(item.timeInMinutes) +
-                '</small>' +
-                '<small class="text-end">' +
-                    'Expiry: ' + minutesToTime(item.expirationInMinutes) +
-                '</small>' +
-            '</div>' +
+        '<div class="d-flex justify-content-between align-items-center gap-2 w-100">' +
+        '<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="35" height="29.52" viewBox="0 0 135.33 114.13">' +
+        '<title>GCash</title>' +
+        '<path d="M301.23,384.14a64.85,64.85,0,0,1-7,29.49,6.56,6.56,0,0,0,2.33,8.54h0a6.53,6.53,0,0,0,9-2q.16-.25.29-.51a78.4,78.4,0,0,0,0-70.9,6.54,6.54,0,0,0-8.81-2.81l-.5.29h0a6.56,6.56,0,0,0-2.33,8.53A64.88,64.88,0,0,1,301.23,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>' +
+        '<path d="M280.06,384.14a43.85,43.85,0,0,1-4,18.4,6.55,6.55,0,0,0,2.46,8.28h0A6.56,6.56,0,0,0,288,408a57.4,57.4,0,0,0,0-47.68,6.56,6.56,0,0,0-9.45-2.82h0a6.55,6.55,0,0,0-2.46,8.28A43.85,43.85,0,0,1,280.06,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>' +
+        '<path d="M236.06,428.13a44,44,0,1,1,26.87-78.85,6.54,6.54,0,0,0,8.63-.53h0a6.53,6.53,0,0,0-.63-9.79,57.08,57.08,0,1,0,.09,90.3,6.44,6.44,0,0,0,.61-9.63l-.14-.14A6.45,6.45,0,0,0,263,419,43.82,43.82,0,0,1,236.06,428.13Z" transform="translate(-179 -327.08)" style="fill:#007cff"/>' +
+        '<path d="M271.15,379.35a6.75,6.75,0,0,0-4.76-2h0l-31.35,0h0a6.77,6.77,0,1,0,0,13.53h23.59a23.52,23.52,0,1,1-10-26.75,6.78,6.78,0,0,0,8.4-1h0a6.75,6.75,0,0,0-1.14-10.45,37.36,37.36,0,0,0-27.8-4.88,36.55,36.55,0,0,0-28.24,28.48,37.08,37.08,0,1,0,73.34,7.78A6.78,6.78,0,0,0,271.15,379.35Z" transform="translate(-179 -327.08)" style="fill:#002cb8"/>' +
+        '</svg>' +
+        '<h2 class="fw-bolder">₱ ' + item.price.toFixed(2) + '</h2>' +
+        '</div>' +
+        '<div class="divider-primary"></div>' +
+        '<div class="d-flex justify-content-between gap-0 w-100">' +
+        '<small>' +
+        'Time: ' + minutesToTime(item.timeInMinutes) +
+        '</small>' +
+        '<small class="text-end">' +
+        'Expiry: ' + minutesToTime(item.expirationInMinutes) +
+        '</small>' +
+        '</div>' +
         '</div>';
     var payNowBtn = document.getElementById('payNowBtn');
     var inputMobileNumber = document.getElementById('inputMobileNumber');
@@ -1757,27 +1785,27 @@ function renderWifreeList() {
             data.forEach(function (item) {
                 var div = document.createElement("div");
                 div.style.cursor = "pointer";
-                div.innerHTML = 
+                div.innerHTML =
                     '<div class="d-flex flex-column gap-2 px-2 py-2 shadow" style="border:1px solid #7e7e7e;border-radius: 5px">' +
-                        '<div class="d-flex justify-content-between align-items-center gap-2 w-100">' +
-                            '<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="35" height="29.52" viewBox="0 0 135.33 114.13">' +
-                              '<title>GCash</title>' +
-                              '<path d="M301.23,384.14a64.85,64.85,0,0,1-7,29.49,6.56,6.56,0,0,0,2.33,8.54h0a6.53,6.53,0,0,0,9-2q.16-.25.29-.51a78.4,78.4,0,0,0,0-70.9,6.54,6.54,0,0,0-8.81-2.81l-.5.29h0a6.56,6.56,0,0,0-2.33,8.53A64.88,64.88,0,0,1,301.23,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>' +
-                              '<path d="M280.06,384.14a43.85,43.85,0,0,1-4,18.4,6.55,6.55,0,0,0,2.46,8.28h0A6.56,6.56,0,0,0,288,408a57.4,57.4,0,0,0,0-47.68,6.56,6.56,0,0,0-9.45-2.82h0a6.55,6.55,0,0,0-2.46,8.28A43.85,43.85,0,0,1,280.06,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>' +
-                              '<path d="M236.06,428.13a44,44,0,1,1,26.87-78.85,6.54,6.54,0,0,0,8.63-.53h0a6.53,6.53,0,0,0-.63-9.79,57.08,57.08,0,1,0,.09,90.3,6.44,6.44,0,0,0,.61-9.63l-.14-.14A6.45,6.45,0,0,0,263,419,43.82,43.82,0,0,1,236.06,428.13Z" transform="translate(-179 -327.08)" style="fill:#007cff"/>' +
-                              '<path d="M271.15,379.35a6.75,6.75,0,0,0-4.76-2h0l-31.35,0h0a6.77,6.77,0,1,0,0,13.53h23.59a23.52,23.52,0,1,1-10-26.75,6.78,6.78,0,0,0,8.4-1h0a6.75,6.75,0,0,0-1.14-10.45,37.36,37.36,0,0,0-27.8-4.88,36.55,36.55,0,0,0-28.24,28.48,37.08,37.08,0,1,0,73.34,7.78A6.78,6.78,0,0,0,271.15,379.35Z" transform="translate(-179 -327.08)" style="fill:#002cb8"/>' +
-                            '</svg>' +
-                            '<h2 class="fw-bolder">₱ ' + item.price.toFixed(2) + '</h2>' +
-                        '</div>' +
-                        '<div class="divider-primary"></div>' +
-                        '<div class="d-flex justify-content-between gap-0 w-100">' +
-                            '<small>' +
-                                'Time: ' + minutesToTime(item.timeInMinutes) +
-                            '</small>' +
-                            '<small class="text-end">' +
-                                'Expiry: ' + minutesToTime(item.expirationInMinutes) +
-                            '</small>' +
-                        '</div>' +
+                    '<div class="d-flex justify-content-between align-items-center gap-2 w-100">' +
+                    '<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="35" height="29.52" viewBox="0 0 135.33 114.13">' +
+                    '<title>GCash</title>' +
+                    '<path d="M301.23,384.14a64.85,64.85,0,0,1-7,29.49,6.56,6.56,0,0,0,2.33,8.54h0a6.53,6.53,0,0,0,9-2q.16-.25.29-.51a78.4,78.4,0,0,0,0-70.9,6.54,6.54,0,0,0-8.81-2.81l-.5.29h0a6.56,6.56,0,0,0-2.33,8.53A64.88,64.88,0,0,1,301.23,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>' +
+                    '<path d="M280.06,384.14a43.85,43.85,0,0,1-4,18.4,6.55,6.55,0,0,0,2.46,8.28h0A6.56,6.56,0,0,0,288,408a57.4,57.4,0,0,0,0-47.68,6.56,6.56,0,0,0-9.45-2.82h0a6.55,6.55,0,0,0-2.46,8.28A43.85,43.85,0,0,1,280.06,384.14Z" transform="translate(-179 -327.08)" style="fill:#51c1ff"/>' +
+                    '<path d="M236.06,428.13a44,44,0,1,1,26.87-78.85,6.54,6.54,0,0,0,8.63-.53h0a6.53,6.53,0,0,0-.63-9.79,57.08,57.08,0,1,0,.09,90.3,6.44,6.44,0,0,0,.61-9.63l-.14-.14A6.45,6.45,0,0,0,263,419,43.82,43.82,0,0,1,236.06,428.13Z" transform="translate(-179 -327.08)" style="fill:#007cff"/>' +
+                    '<path d="M271.15,379.35a6.75,6.75,0,0,0-4.76-2h0l-31.35,0h0a6.77,6.77,0,1,0,0,13.53h23.59a23.52,23.52,0,1,1-10-26.75,6.78,6.78,0,0,0,8.4-1h0a6.75,6.75,0,0,0-1.14-10.45,37.36,37.36,0,0,0-27.8-4.88,36.55,36.55,0,0,0-28.24,28.48,37.08,37.08,0,1,0,73.34,7.78A6.78,6.78,0,0,0,271.15,379.35Z" transform="translate(-179 -327.08)" style="fill:#002cb8"/>' +
+                    '</svg>' +
+                    '<h2 class="fw-bolder">₱ ' + item.price.toFixed(2) + '</h2>' +
+                    '</div>' +
+                    '<div class="divider-primary"></div>' +
+                    '<div class="d-flex justify-content-between gap-0 w-100">' +
+                    '<small>' +
+                    'Time: ' + minutesToTime(item.timeInMinutes) +
+                    '</small>' +
+                    '<small class="text-end">' +
+                    'Expiry: ' + minutesToTime(item.expirationInMinutes) +
+                    '</small>' +
+                    '</div>' +
                     '</div>';
                 $(div).on('click', function () {
                     onPurchaseClicked(item);
@@ -1808,12 +1836,14 @@ document.addEventListener('hidden.bs.modal', function () {
 });
 
 function fetchServerData() {
-    var maxRetries = 30;
-    var retryDelay = 1000;
+    var maxRetries = 5;
+    var retryDelay = 2000;
     var attempt = 1;
 
     return new Promise(function (resolve, reject) {
         function doFetch() {
+            if (isTestMode)
+                return;
             $.ajax({
                 url: '/juanfi-extended.json?t=' + new Date().getTime(),
                 method: 'GET',
@@ -1821,6 +1851,8 @@ function fetchServerData() {
                 success: function (data) {
                     console.log('JuanFi Extended Version:', data.version);
                     resolve(data);
+                    $("#serverStatus").addClass("hide");
+                    $("#serverStatus").html(null);
                 },
                 error: function (xhr, status, err) {
                     console.error('Attempt ' + attempt + ' failed:', err);
@@ -1830,15 +1862,18 @@ function fetchServerData() {
                     } else {
                         $.toast({
                             title: 'Failed',
-                            content: 'juanfi-extended.json missing or unreachable after 30 attempts.',
+                            content: 'juanfi-extended.json missing or unreachable after 5 attempts.',
                             type: 'error',
                             delay: 4000
                         });
+                        $("#serverStatus").removeClass("hide");
+                        $("#serverStatus").html('Missing juanfi-extended.json')
                         resolve(null);
                     }
                 }
             });
         }
+
         doFetch();
     });
 }
@@ -1934,25 +1969,50 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig) {
 
     if (!!wheelConfig) {
         var spinRedeemBtn = document.getElementById("spinRedeemBtn");
-        spinRedeemBtn.onclick = function (e) {
-            e.preventDefault();
-            var avail = parseInt(rewardPointsBalance) || 0;
-            ;
-            if (avail <= 0) {
-                $.toast({title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000});
-                return;
-            }
-            spinBtn.disabled = false;
-            $("#redeemedValueWrapper").addClass("hide");
-            $("#selectedReward").text("")
 
-            $(".availablePointsDisplay").html((!!rewardPointsBalance) ? rewardPointsBalance.toFixed(2) : "0.00");
-            $("#spinBtn").text("Spin");
-            $('#redeemBySpinModal').modal('show');
+        if (spinRedeemBtn) {
+            spinRedeemBtn.addEventListener("click", function (e) {
+                e.preventDefault();
 
-            var colors = ["#FFD6E8", "#E0F7FA", "#FFF7C0", "#E8F6E9", "#FDEFEF", "#E8EAF6", "#FBE9E7", "#E6F0FF"];
-            drawSpinWheel(macNoColon, wheelConfig, colors);
-        };
+                var avail = parseInt(rewardPointsBalance) || 0;
+
+                if (avail <= 0) {
+                    $.toast({
+                        title: 'Info',
+                        content: 'No reward points available to redeem.',
+                        type: 'error',
+                        delay: 3000
+                    });
+                    return;
+                }
+
+                spinBtn.disabled = false;
+
+                $("#redeemedValueWrapper").addClass("hide");
+                $("#selectedReward").text("");
+
+                $(".availablePointsDisplay").html(
+                    (!!rewardPointsBalance) ? rewardPointsBalance.toFixed(2) : "0.00"
+                );
+
+                $("#spinBtn").text("Spin");
+
+                $('#redeemBySpinModal').modal('show');
+
+                var colors = [
+                    "#FFD6E8",
+                    "#E0F7FA",
+                    "#FFF7C0",
+                    "#E8F6E9",
+                    "#FDEFEF",
+                    "#E8EAF6",
+                    "#FBE9E7",
+                    "#E6F0FF"
+                ];
+
+                drawSpinWheel(macNoColon, wheelConfig, colors);
+            });
+        }
     }
 }
 
@@ -2212,7 +2272,7 @@ function fetchSpinWheelReward(mac, cb) {
         removeLoader('spinBtn');
         return;
     }
-    fetchPortalAPI("/promo/spin-wheel", "POST", vendorIpAddress, JSON.stringify({ mac: mac }), {
+    fetchPortalAPI("/promo/spin-wheel", "POST", vendorIpAddress, JSON.stringify({mac: mac}), {
         contentType: 'application/json; charset=utf-8',
         dataType: "json"
     })
@@ -2587,7 +2647,7 @@ function drawSpinWheel(mac, prizes, colors) {
         spinBtn.onclick = function () {
             var avail = parseInt(rewardPointsBalance) || 0;
             if (avail <= 0) {
-                $.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000 });
+                $.toast({title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000});
                 $('#redeemBySpinModal').modal('hide');
                 return;
             }
@@ -2933,18 +2993,18 @@ $.toast = function (options) {
     toastEl.setAttribute('aria-atomic', 'true');
 
     var titleHtml = title ? '<strong>' + title + '</strong><br>' : '';
-    toastEl.innerHTML = 
-       '<div class="d-flex mt-1">' +
-          '<div class="toast-body">' +
-            titleHtml +
-            content +
-          '</div>' +
-          '<button type="button" class="btn-close ' + (type === 'warning' ? '' : 'btn-close-white') + ' me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>' +
-       '</div>';
+    toastEl.innerHTML =
+        '<div class="d-flex mt-1">' +
+        '<div class="toast-body">' +
+        titleHtml +
+        content +
+        '</div>' +
+        '<button type="button" class="btn-close ' + (type === 'warning' ? '' : 'btn-close-white') + ' me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>' +
+        '</div>';
 
     container.appendChild(toastEl);
 
-    var toast = new bootstrap.Toast(toastEl, { delay: delay, autohide: true });
+    var toast = new bootstrap.Toast(toastEl, {delay: delay, autohide: true});
     toast.show();
 
     toastEl.addEventListener('hidden.bs.toast', function () {
