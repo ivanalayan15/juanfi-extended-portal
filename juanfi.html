@@ -41,596 +41,600 @@
 </head>
 
 <body class="col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2 ">
-<div class="d-flex flex-column align-items-center justify-content-center">
-    <div id="loaderDiv" class="spinner-border" role="status">
-        <span class="sr-only"></span>
-    </div>
-</div>
-
-
-<div id="containerDiv" class="d-flex flex-column gap-2 hide">
-    <div class="juanfi-default-text small" id="displayVersion"></div>
-
-    <div id="headerContainer" class="d-flex justify-content-between align-items-center container">
-        <div class="d-flex flex-column gap-0 align-items-center">
-            <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-9d1z83h" class="img-fluid banner"/>
-        </div>
-        <div class="d-flex flex-column gap-3 text-end">
-            <small id="ipInfo" class="juanfi-default-text small">Loading</small>
-            <small id="macInfo" class="juanfi-default-text small">Loading</small>
-            <small id="voucherCode" class="juanfi-default-text small">Loading</small>
-        </div>
-
-    </div>
-    <div class="container px-2 py-1 d-flex justify-content-around gap-2 align-items-center">
-        <div class="d-flex justify-content-between gap-2 align-items-center">
-            <i class="bi bi-cloud-download juanfi-primary-text"></i>
-            <small class="small">$(bytes-in-nice)</small>
-        </div>
-        <div>
-            <small class="blinking2" id="connectionStatus">Loading...</small>
-        </div>
-        <div class="d-flex justify-content-between gap-2 align-items-center">
-            <i class="bi bi-cloud-upload juanfi-primary-text"></i>
-            <small class="small">$(bytes-out-nice)</small>
+    <div class="d-flex flex-column align-items-center justify-content-center">
+        <div id="loaderDiv" class="spinner-border" role="status">
+            <span class="sr-only"></span>
         </div>
     </div>
-    <div class="container text-center px-2 py-1 d-flex flex-column gap-1 align-items-center">
-        <h2 style="font-family: 'Courier New', monospace;" id="remainTime"
-            class="fw-bolder juanfi-primary-text my-0">Loading...</h2>
-        <small id="expirationTime"></small>
-    </div>
-    <div id="useVoucherContainer" class="container d-flex justify-content-between align-items-center gap-2">
-        <input type="voucher" required class="form-control w-100" id="voucherInput" aria-describedby="voucherHelp"
-               placeholder="Voucher code here..">
-        <div>
-            <button type="button" id="connectBtn" class="btn btn-info fullwidth">
-                CONSUME
+
+
+    <div id="containerDiv" class="d-flex flex-column gap-2 hide">
+        <div class="juanfi-default-text small" id="displayVersion"></div>
+
+        <div id="headerContainer" class="d-flex justify-content-between align-items-center container">
+            <div class="d-flex flex-column gap-0 align-items-center">
+                <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-9d1z83h" class="img-fluid banner" />
+            </div>
+            <div class="d-flex flex-column gap-3 text-end">
+                <small id="ipInfo" class="juanfi-default-text small">Loading</small>
+                <small id="macInfo" class="juanfi-default-text small">Loading</small>
+                <small id="voucherCode" class="juanfi-default-text small">Loading</small>
+            </div>
+
+        </div>
+        <div class="container px-2 py-1 d-flex justify-content-around gap-2 align-items-center">
+            <div class="d-flex justify-content-between gap-2 align-items-center">
+                <i class="bi bi-cloud-download juanfi-primary-text"></i>
+                <small class="small">$(bytes-in-nice)</small>
+            </div>
+            <div>
+                <small class="blinking2" id="connectionStatus">Loading...</small>
+            </div>
+            <div class="d-flex justify-content-between gap-2 align-items-center">
+                <i class="bi bi-cloud-upload juanfi-primary-text"></i>
+                <small class="small">$(bytes-out-nice)</small>
+            </div>
+        </div>
+        <div class="container text-center px-2 py-1 d-flex flex-column gap-1 align-items-center">
+            <h2 style="font-family: 'Courier New', monospace;" id="remainTime"
+                class="fw-bolder juanfi-primary-text my-0">Loading...</h2>
+            <small id="expirationTime"></small>
+        </div>
+        <div id="useVoucherContainer" class="container d-flex justify-content-between align-items-center gap-2">
+            <input type="voucher" required class="form-control w-100" id="voucherInput" aria-describedby="voucherHelp"
+                placeholder="Voucher code here..">
+            <div>
+                <button type="button" id="connectBtn" class="btn btn-info fullwidth">
+                    CONSUME
+                </button>
+            </div>
+        </div>
+        <div id="serverStatus" class="small py-0 bg-danger text-white container text-center hide">
+            Offline
+        </div>
+        <div id="announcement" class="small bg-info container text-black text-center hide">
+            <div class="marquee">
+                <span id="announcementText">Hello world!</span>
+            </div>
+        </div>
+        <div id="freeInternetContainer" class="hide container d-flex justify-content-between align-items-center gap-2">
+            <button type="button" id="claimFreeInternetBtn" class="btn btn-success w-100">
+                CLAIM FREE INTERNET
             </button>
         </div>
-    </div>
-    <div id="serverStatus" class="small py-0 bg-danger text-white container text-center hide">
-        Offline
-    </div>
-    <div id="announcement" class="small bg-info container text-black text-center hide">
-        <div class="marquee">
-            <span id="announcementText">Hello world!</span>
+        <div id="gamesContainer" class="container d-flex justify-content-between align-items-center gap-2 mt-2">
+            <button type="button" id="gamesBtn" class="btn btn-warning w-100 fw-bold"
+                onclick="window.location.href='games.html?mac=' + macNoColon + '&ip=' + vendorIpAddress">
+                <i class="bi bi-controller me-2"></i>GAMES
+            </button>
         </div>
-    </div>
-    <div id="freeInternetContainer" class="hide container d-flex justify-content-between align-items-center gap-2">
-        <button type="button" id="claimFreeInternetBtn" class="btn btn-success w-100">
-            CLAIM FREE INTERNET
-        </button>
-    </div>
-    <div class="container d-flex flex-column gap-0">
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <div class="container d-flex flex-column gap-0">
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
 
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home"
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home"
                         type="button" role="tab">
-                    <i class="bi bi-house-door me-1 juanfi-primary-text"></i>
-                    Home
-                </button>
-            </li>
+                        <i class="bi bi-house-door me-1 juanfi-primary-text"></i>
+                        Home
+                    </button>
+                </li>
 
-            <li id="rewardDtlsBtn" class="nav-item" role="presentation">
-                <button class="nav-link" id="points-tab" data-bs-toggle="tab" data-bs-target="#points" type="button"
+                <li id="rewardDtlsBtn" class="nav-item" role="presentation">
+                    <button class="nav-link" id="points-tab" data-bs-toggle="tab" data-bs-target="#points" type="button"
                         role="tab">
-                    <i class="bi bi-heart me-1 juanfi-primary-text"></i>
-                    Points
-                </button>
-            </li>
+                        <i class="bi bi-heart me-1 juanfi-primary-text"></i>
+                        Points
+                    </button>
+                </li>
 
-            <li class="nav-item" role="presentation" id="historyTab">
-                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history"
+                <li class="nav-item" role="presentation" id="historyTab">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history"
                         type="button" role="tab">
-                    <i class="bi bi-clock-history me-1 juanfi-primary-text"></i>
-                    History
-                </button>
-            </li>
-        </ul>
-        <div class="tab-content mt-3" id="myTabContent">
-            <div class="tab-pane fade show active" id="home" role="tabpanel">
-                <div class="d-flex flex-column pt-2">
-                    <div id="vendoSelectDiv" class="mb-3">
-                        <label for="vendoSelected">Select Vendo</label>
-                        <select class="form-control fullwidth" name="vendoSelected" id="vendoSelected">
-                        </select>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center gap-3">
-                        <div id="insertBtnContainer">
-                            <button style="min-height: 120px;min-width: 120px; border-radius: 100%" type="button"
+                        <i class="bi bi-clock-history me-1 juanfi-primary-text"></i>
+                        History
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content mt-3" id="myTabContent">
+                <div class="tab-pane fade show active" id="home" role="tabpanel">
+                    <div class="d-flex flex-column pt-2">
+                        <div id="vendoSelectDiv" class="mb-3">
+                            <label for="vendoSelected">Select Vendo</label>
+                            <select class="form-control fullwidth" name="vendoSelected" id="vendoSelected">
+                            </select>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center gap-3">
+                            <div id="insertBtnContainer">
+                                <button style="min-height: 120px;min-width: 120px; border-radius: 100%" type="button"
                                     id="insertBtn" onclick="insertBtnAction(); return false"
                                     class="btn btn-primary w-100 w-100" data-insert-type="extend" data-toggle="modal">
-                                INSERT
-                            </button>
-                        </div>
-                        <div class="d-flex flex-column gap-2 w-100">
-                            <button type="button" id="resumeTimeBtn" class="btn btn-success w-100">
-                                RESUME
-                            </button>
-                            <div id="pauseBtnContainer" class="d-flex w-100 mb-3">
-                                <button type="button" id="pauseTimeBtn" class="btn btn-danger w-100">
-                                    PAUSE
+                                    INSERT
                                 </button>
                             </div>
-                            <button type="button" id="btnPromoRates" onclick="promoBtnAction()"
+                            <div class="d-flex flex-column gap-2 w-100">
+                                <button type="button" id="resumeTimeBtn" class="btn btn-success w-100">
+                                    RESUME
+                                </button>
+                                <div id="pauseBtnContainer" class="d-flex w-100 mb-3">
+                                    <button type="button" id="pauseTimeBtn" class="btn btn-danger w-100">
+                                        PAUSE
+                                    </button>
+                                </div>
+                                <button type="button" id="btnPromoRates" onclick="promoBtnAction()"
                                     class="btn btn-danger w-100">
-                                RATES
-                            </button>
+                                    RATES
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    $(if session-time-left)
-                    <button type="button" id="connectVoucherBtn" class="btn btn-success mt-3 w-100">
-                        CONNECT
-                    </button>
-                    $(endif)
-                    <button type="button" id="wifreeBtn" class="btn btn-info mt-3 w-100" data-bs-toggle="modal"
+                        $(if session-time-left)
+                        <button type="button" id="connectVoucherBtn" class="btn btn-success mt-3 w-100">
+                            CONNECT
+                        </button>
+                        $(endif)
+                        <button type="button" id="wifreeBtn" class="btn btn-info mt-3 w-100" data-bs-toggle="modal"
                             data-bs-target="#wifreeModal">
-                        G-CASH
-                    </button>
-                    <button type="button" id="memberBtn" class="btn btn-warning mt-3 w-100" data-bs-toggle="modal"
+                            G-CASH
+                        </button>
+                        <button type="button" id="memberBtn" class="btn btn-warning mt-3 w-100" data-bs-toggle="modal"
                             data-bs-target="#memberModal">
-                        MEMBER
-                    </button>
-
-                    <button onclick="clearAllData();" type="button" id="refreshBtn" class="btn btn-dark mt-3 w-100">
-                        REFRESH
-                    </button>
-                    <div class="d-flex justify-content-between mt-3 gap-2">
-                        <button type="button" id="chargingBtn" onclick="chargingBtnAction(); return false"
-                                class="btn btn-primary w-100">
-                            CHARGING STATION
+                            MEMBER
                         </button>
-                        <button type="button" id="eloadBtn" onclick="eloadBtnAction(); return false"
-                                class="btn btn-primary w-100">
-                            E-LOAD
+
+                        <button onclick="clearAllData();" type="button" id="refreshBtn" class="btn btn-dark mt-3 w-100">
+                            REFRESH
                         </button>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="tab-pane fade" id="points" role="tabpanel">
-                <div id="rewardDtls" class="d-flex flex-column gap-0">
-                    <div class="d-flex flex-column align-items-center gap-2 ">
-                        <h2 id="rewardPoints">0.00</h2>
-                        <small class="small juanfi-primary-text">Points Balance</small>
-                    </div>
-                    <hr/>
-                    <div class="d-flex justify-content-between gap-2">
-                        <button type="button" id="spinRedeemBtn" class="btn btn-primary w-100">SPIN</button>
-                        <button type="button" id="redeemPtsBtn" class="btn btn-primary w-100">CONVERT</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-pane fade" id="history" role="tabpanel">
-                <div id="historyContainer" class="d-flex flex-column gap-2">
-                    <h6>No history</h6>
-                    <p>Please insert a coin</p>
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="modal fade" id="memberModal" tabindex="-1" role="dialog" aria-labelledby="memberModalLabel"
-         aria-hidden="true" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="memberModalLabel">Member Login</h5>
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body d-flex flex-column gap-3">
-                    <input type="text" required class="form-control w-100" id="inputMemberUsername"
-                           placeholder="Username">
-                    <input type="password" required class="form-control w-100" id="inputMemberPassword"
-                           placeholder="Password">
-                    <div id="errorMsg" class="text-danger mt-2 d-none"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" id="memberLoginExecuteBtn" class="btn btn-success w-100">SIGN IN</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="wifreeModal" tabindex="-1" role="dialog" aria-labelledby="wifreeModalLabel"
-         aria-hidden="true" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="wifreeModalLabel">E-Wallet Purchase</h5>
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div id="wifreeList" class="modal-body d-flex flex-column gap-3">
-
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="wifreeCheckOutModal" tabindex="-1" role="dialog" aria-labelledby="wifreeModalLabel"
-         aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="wifreeCheckOutModalLabel">Check Out</h5>
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body d-flex flex-column gap-2">
-                    <div id="checkout-container"></div>
-                    <input type="text" required class="form-control w-100" id="inputMobileNumber"
-                           placeholder="Mobile Number">
-                    <div id="mobileError" class="invalid-feedback">
-                        Please enter a valid 11-digit mobile number.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" id="payNowBtn" class="btn btn-success w-100">PAY NOW</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="redeemBySpinModal" tabindex="-1" role="dialog"
-         aria-labelledby="redeemBySpinModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="redeemBySpinModalLabel">Spin to Redeem</h5>
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="container-fluid">
-                        <div class="row mb-3">
-                            <div class="col-12 text-center">
-                                <div class="small text-color-white">Reward Point Balance</div>
-                                <div>
-                                    <img src="assets/img/coin.png" width="20px" height="20px"/>
-                                    <span class="availablePointsDisplay text-color-yellow">0.00</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12">
-                                <small class="text-color-white">Redemption rule: <span class="redeemRatio"
-                                                                                       id="redeemRatio2">1</span> point
-                                    = 1 spin</small>
-                            </div>
-                        </div>
-                        <div class="spinner-wrapper">
-                            <canvas id="wheelCanvas" aria-label="Prize wheel"></canvas>
-                        </div>
-                        <div id="redeemedValueWrapper" class="row mb-3 hide">
-                            <div class="col-12">
-                                <span id="selectedReward" type="number" min="0" step="1" value="0"/>
-                            </div>
-                        </div>
-                        <div class="d-flex flex-column gap-3">
-                            <button type="button" id="spinBtn" class="btn btn-success">Spin</button>
-                            <button id="spinCancelBtn" type="button" class="btn btn-danger" data-bs-dismiss="modal"
-                                    aria-label="Close">Close
+                        <div class="d-flex justify-content-between mt-3 gap-2">
+                            <button type="button" id="chargingBtn" onclick="chargingBtnAction(); return false"
+                                class="btn btn-primary w-100">
+                                CHARGING STATION
+                            </button>
+                            <button type="button" id="eloadBtn" onclick="eloadBtnAction(); return false"
+                                class="btn btn-primary w-100">
+                                E-LOAD
                             </button>
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer">
 
+                </div>
+
+                <div class="tab-pane fade" id="points" role="tabpanel">
+                    <div id="rewardDtls" class="d-flex flex-column gap-0">
+                        <div class="d-flex flex-column align-items-center gap-2 ">
+                            <h2 id="rewardPoints">0.00</h2>
+                            <small class="small juanfi-primary-text">Points Balance</small>
+                        </div>
+                        <hr />
+                        <div class="d-flex justify-content-between gap-2">
+                            <button type="button" id="spinRedeemBtn" class="btn btn-primary w-100">SPIN</button>
+                            <button type="button" id="redeemPtsBtn" class="btn btn-primary w-100">CONVERT</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="history" role="tabpanel">
+                    <div id="historyContainer" class="d-flex flex-column gap-2">
+                        <h6>No history</h6>
+                        <p>Please insert a coin</p>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="modal fade" id="memberModal" tabindex="-1" role="dialog" aria-labelledby="memberModalLabel"
+            aria-hidden="true" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="memberModalLabel">Member Login</h5>
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body d-flex flex-column gap-3">
+                        <input type="text" required class="form-control w-100" id="inputMemberUsername"
+                            placeholder="Username">
+                        <input type="password" required class="form-control w-100" id="inputMemberPassword"
+                            placeholder="Password">
+                        <div id="errorMsg" class="text-danger mt-2 d-none"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="memberLoginExecuteBtn" class="btn btn-success w-100">SIGN IN</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="modal fade" id="redeemModal" tabindex="-1" role="dialog" aria-labelledby="redeemModalLabel"
-         aria-hidden="true" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="redeemModalLabel">Redeem Reward Points</h5>
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+
+        <div class="modal fade" id="wifreeModal" tabindex="-1" role="dialog" aria-labelledby="wifreeModalLabel"
+            aria-hidden="true" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="wifreeModalLabel">E-Wallet Purchase</h5>
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div id="wifreeList" class="modal-body d-flex flex-column gap-3">
+
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <div class="container-fluid">
-                        <div class="row mb-3">
-                            <div class="col-12 text-center">
-                                <div class="small text-color-white">Available Points</div>
-                                <div>
-                                    <img src="assets/img/coin.png" width="20px" height="20px"/>
-                                    <span class="availablePointsDisplay text-color-yellow">0.00</span>
+            </div>
+        </div>
+
+        <div class="modal fade" id="wifreeCheckOutModal" tabindex="-1" role="dialog" aria-labelledby="wifreeModalLabel"
+            aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="wifreeCheckOutModalLabel">Check Out</h5>
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body d-flex flex-column gap-2">
+                        <div id="checkout-container"></div>
+                        <input type="text" required class="form-control w-100" id="inputMobileNumber"
+                            placeholder="Mobile Number">
+                        <div id="mobileError" class="invalid-feedback">
+                            Please enter a valid 11-digit mobile number.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="payNowBtn" class="btn btn-success w-100">PAY NOW</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="redeemBySpinModal" tabindex="-1" role="dialog"
+            aria-labelledby="redeemBySpinModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="redeemBySpinModalLabel">Spin to Redeem</h5>
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row mb-3">
+                                <div class="col-12 text-center">
+                                    <div class="small text-color-white">Reward Point Balance</div>
+                                    <div>
+                                        <img src="assets/img/coin.png" width="20px" height="20px" />
+                                        <span class="availablePointsDisplay text-color-yellow">0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <small class="text-color-white">Redemption rule: <span class="redeemRatio"
+                                            id="redeemRatio2">1</span> point
+                                        = 1 spin</small>
+                                </div>
+                            </div>
+                            <div class="spinner-wrapper">
+                                <canvas id="wheelCanvas" aria-label="Prize wheel"></canvas>
+                            </div>
+                            <div id="redeemedValueWrapper" class="row mb-3 hide">
+                                <div class="col-12">
+                                    <span id="selectedReward" type="number" min="0" step="1" value="0" />
+                                </div>
+                            </div>
+                            <div class="d-flex flex-column gap-3">
+                                <button type="button" id="spinBtn" class="btn btn-success">Spin</button>
+                                <button id="spinCancelBtn" type="button" class="btn btn-danger" data-bs-dismiss="modal"
+                                    aria-label="Close">Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="redeemModal" tabindex="-1" role="dialog" aria-labelledby="redeemModalLabel"
+            aria-hidden="true" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="redeemModalLabel">Redeem Reward Points</h5>
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row mb-3">
+                                <div class="col-12 text-center">
+                                    <div class="small text-color-white">Available Points</div>
+                                    <div>
+                                        <img src="assets/img/coin.png" width="20px" height="20px" />
+                                        <span class="availablePointsDisplay text-color-yellow">0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-2">
+                                <div class="col-12">
+                                    <label for="redeemSlider" class="text-color-white">Select points to
+                                        redeem</label>
+                                    <input id="redeemSlider" type="range" class="form-control-range" min="0"
+                                        value="1" />
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-6 text-left">
+                                    <small class="text-color-white">Selected</small>
+                                    <input id="selectedPointsInput" type="number" min="0" step="1" value="0"
+                                        class="form-control" style="width:100px; display:inline-block" />
+
+                                </div>
+                                <div class="col-6 text-right">
+                                    <small class="text-color-white">Estimated Value</small>
+                                    <div id="estimatedValueDisplay"
+                                        style="font-size:20px; font-weight:bold; color:#28a745">
+                                        PHP 0.00
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <small class="text-color-white">Redemption rule: <span class="redeemRatio"
+                                            id="redeemRatio">1</span> point =
+                                        PHP 1.00</small>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">Close
+                        </button>
+                        <button type="button" id="confirmRedeemBtn" class="btn btn-success">Redeem</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                        <div class="row mb-2">
-                            <div class="col-12">
-                                <label for="redeemSlider" class="text-color-white">Select points to
-                                    redeem</label>
-                                <input id="redeemSlider" type="range" class="form-control-range" min="0"
-                                       value="1"/>
-                            </div>
+        <div class="modal fade" id="claimFreeInternetModal" tabindex="-1" role="dialog"
+            aria-labelledby="claimFreeInternetModalLabel" aria-hidden="true" data-backdrop="static"
+            data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="claimFreeInternetModalLabel">Claim Free Internet</h5>
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <p id="freeMinutesLabel"></p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="confirmClaimFreeInternetBtn" class="btn btn-success w-100">CLAIM NOW
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="insertCoinModal" style="z-index: 1500" data-bs-backdrop="static"
+            data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="insertCoinModalTitle"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="insertCoinModalTitle">Please insert the coin</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="progress" style="margin-bottom: 20px">
+                            <div id="progressDiv" class="progress-bar progress-bar-striped progress-bar-animated"
+                                role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"
+                                style="width: 100%; height: 30px"></div>
                         </div>
 
-                        <div class="row mb-3">
-                            <div class="col-6 text-left">
-                                <small class="text-color-white">Selected</small>
-                                <input id="selectedPointsInput" type="number" min="0" step="1" value="0"
-                                       class="form-control" style="width:100px; display:inline-block"/>
+                        <div id="noticeDiv" style="display: none">
+                            <center>
+                                <h4 id="noticeText">Coin is reading, please wait</h4>
+                            </center>
+                        </div>
 
-                            </div>
-                            <div class="col-6 text-right">
-                                <small class="text-color-white">Estimated Value</small>
-                                <div id="estimatedValueDisplay"
-                                     style="font-size:20px; font-weight:bold; color:#28a745">
-                                    PHP 0.00
+                        <div class="inscoin">
+                            <center>
+                                <div class="inscoinholder"
+                                    style="border: 2px solid #576574; padding: 5px; height: 90px; border-radius: 3px">
+                                    <span style="color: #747d8c">Your code is</span><br>
+                                    <span id="codeGeneratedBlock">
+                                        <span id="codeGenerated"
+                                            style="font-size: 25px; font-weight: bold; color: #4cd137">*****</span>
+                                    </span>
                                 </div>
-                            </div>
+
+                                <div class="inscoinholder">
+                                    <span id="totalCoin"
+                                        style="font-size: 20px; font-weight: bold; color: #fff">0</span><span
+                                        style="font-size: 20px; font-weight: bold; color: #fff">.00 Php</span><br>
+                                    <span style="color: #747d8c">Coin</span>
+                                </div>
+
+                                <div class="inscoinholder" id="totalTimeDiv">
+                                    <span id="totalTime"
+                                        style="font-size: 20px; font-weight: bold; color: #fff"></span><br>
+                                    <span style="color: #747d8c">Time: </span>
+                                </div>
+
+                                <div class="inscoinholder" id="expectedCoinDiv" style="display: none">
+                                    <span id="expectedCoin"
+                                        style="font-size: 20px; font-weight: bold; color: #fff"></span><br>
+                                    <span style="color: #747d8c">Expected Coin </span>
+                                </div>
+                            </center>
                         </div>
 
-                        <div class="row">
-                            <div class="col-12">
-                                <small class="text-color-white">Redemption rule: <span class="redeemRatio"
-                                                                                       id="redeemRatio">1</span> point =
-                                    PHP 1.00</small>
-                            </div>
-                        </div>
+
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"
-                            aria-label="Close">Close
-                    </button>
-                    <button type="button" id="confirmRedeemBtn" class="btn btn-success">Redeem</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="claimFreeInternetModal" tabindex="-1" role="dialog"
-         aria-labelledby="claimFreeInternetModalLabel"
-         aria-hidden="true" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="claimFreeInternetModalLabel">Claim Free Internet</h5>
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="container-fluid">
-                        <p id="freeMinutesLabel"></p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" id="confirmClaimFreeInternetBtn" class="btn btn-success w-100">CLAIM NOW
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="insertCoinModal" style="z-index: 1500" data-bs-backdrop="static"
-         data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="insertCoinModalTitle"
-         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="insertCoinModalTitle">Please insert the coin</h5>
-                </div>
-                <div class="modal-body">
-                    <div class="progress" style="margin-bottom: 20px">
-                        <div id="progressDiv" class="progress-bar progress-bar-striped progress-bar-animated"
-                             role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"
-                             style="width: 100%; height: 30px"></div>
-                    </div>
-
-                    <div id="noticeDiv" style="display: none">
-                        <center>
-                            <h4 id="noticeText">Coin is reading, please wait</h4>
-                        </center>
-                    </div>
-
-                    <div class="inscoin">
-                        <center>
-                            <div class="inscoinholder"
-                                 style="border: 2px solid #576574; padding: 5px; height: 90px; border-radius: 3px">
-                                <span style="color: #747d8c">Your code is</span><br>
-                                <span id="codeGeneratedBlock">
-										<span id="codeGenerated"
-                                              style="font-size: 25px; font-weight: bold; color: #4cd137">*****</span>
-									</span>
-                            </div>
-
-                            <div class="inscoinholder">
-									<span id="totalCoin"
-                                          style="font-size: 20px; font-weight: bold; color: #fff">0</span><span
-                                    style="font-size: 20px; font-weight: bold; color: #fff">.00 Php</span><br>
-                                <span style="color: #747d8c">Coin</span>
-                            </div>
-
-                            <div class="inscoinholder" id="totalTimeDiv">
-									<span id="totalTime"
-                                          style="font-size: 20px; font-weight: bold; color: #fff"></span><br>
-                                <span style="color: #747d8c">Time: </span>
-                            </div>
-
-                            <div class="inscoinholder" id="expectedCoinDiv" style="display: none">
-									<span id="expectedCoin"
-                                          style="font-size: 20px; font-weight: bold; color: #fff"></span><br>
-                                <span style="color: #747d8c">Expected Coin </span>
-                            </div>
-                        </center>
-                    </div>
-
-
-                </div>
-                <div class="modal-footer">
-                    <button type="button" id="saveVoucherButton" data-save-type="extend"
+                    <div class="modal-footer">
+                        <button type="button" id="saveVoucherButton" data-save-type="extend"
                             onclick="saveVoucherBtnAction(); return false" class="btn btn-success w-100">
-                        DONE PAYING
-                    </button>
-                    <button type="button" id="cncl" class="btn btn-danger w-100" data-bs-dismiss="modal"
+                            DONE PAYING
+                        </button>
+                        <button type="button" id="cncl" class="btn btn-danger w-100" data-bs-dismiss="modal"
                             aria-label="Close">CANCEL
-                    </button>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="modal fade" id="promoRatesModal" tabindex="-1" role="dialog" aria-labelledby="promoRatesModalLabel"
-         data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="promoRatesModalLabel">Promo Rates</h5>
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <table border="1" cellpadding="5" cellspacing="0" id="rateTable" class="mt-2 w-100"
-                           style="font-size: 12px !important;">
-                        <thead>
-                        <tr>
-                            <th>Rate</th>
-                            <th>Price</th>
-                            <th>Validity</th>
-                            <th>Expiry</th>
-                        </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal"
-                            aria-label="Close">Dismiss
-                    </button>
+        <div class="modal fade" id="promoRatesModal" tabindex="-1" role="dialog" aria-labelledby="promoRatesModalLabel"
+            data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="promoRatesModalLabel">Promo Rates</h5>
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <table border="1" cellpadding="5" cellspacing="0" id="rateTable" class="mt-2 w-100"
+                            style="font-size: 12px !important;">
+                            <thead>
+                                <tr>
+                                    <th>Rate</th>
+                                    <th>Price</th>
+                                    <th>Validity</th>
+                                    <th>Expiry</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">Dismiss
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="modal fade" id="chargingModal" tabindex="1" role="dialog" aria-labelledby="chargingStationTitle"
-         aria-hidden="true" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="chargingStationTitle">Charging Station</h5>
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <center>
-                        <div id="chargingBody"></div>
-                    </center>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+        <div class="modal fade" id="chargingModal" tabindex="1" role="dialog" aria-labelledby="chargingStationTitle"
+            aria-hidden="true" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="chargingStationTitle">Charging Station</h5>
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <center>
+                            <div id="chargingBody"></div>
+                        </center>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="modal fade" id="eloadModal" tabindex="1" role="dialog" aria-labelledby="eloadTitle"
-         aria-hidden="true" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="eloadTitle">E-LOAD</h5>
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <center>
-                        <div id="eloadingBody">
-                            <h4 id="eloadConfirm" style="display: none"><span
-                                    style="color: #2e86de; text-shadow: 1px 2px 3px #000">CONFIRM YOUR SELECTED
-										DETAILS</span></h4>
-                            <div id="mobileNumDiv" class="input-bottom-space-20px">
-                                <label for="mobileNo">Mobile #</label>
-                                <input type="number" class="form-control" id="mobileNo" aria-describedby="mobileNo"
-                                       pattern="\d*" maxlength="11" placeholder="Enter mobile number (Ex: 09182392234)"
-                                       required>
-                            </div>
-                            <div id="loadTypeDiv" style="display: none" class="input-bottom-space-20px">
-                                <label for="loadTypeSelected">Select Load Type</label>
-                                <select class="form-control" name="loadType" onChange="loadTypeChanged(this)"
+        <div class="modal fade" id="eloadModal" tabindex="1" role="dialog" aria-labelledby="eloadTitle"
+            aria-hidden="true" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="eloadTitle">E-LOAD</h5>
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <center>
+                            <div id="eloadingBody">
+                                <h4 id="eloadConfirm" style="display: none"><span
+                                        style="color: #2e86de; text-shadow: 1px 2px 3px #000">CONFIRM YOUR SELECTED
+                                        DETAILS</span></h4>
+                                <div id="mobileNumDiv" class="input-bottom-space-20px">
+                                    <label for="mobileNo">Mobile #</label>
+                                    <input type="number" class="form-control" id="mobileNo" aria-describedby="mobileNo"
+                                        pattern="\d*" maxlength="11" placeholder="Enter mobile number (Ex: 09182392234)"
+                                        required>
+                                </div>
+                                <div id="loadTypeDiv" style="display: none" class="input-bottom-space-20px">
+                                    <label for="loadTypeSelected">Select Load Type</label>
+                                    <select class="form-control" name="loadType" onChange="loadTypeChanged(this)"
                                         id="loadTypeSelected">
-                                </select>
-                            </div>
-                            <div id="productTypeDiv" style="display: none" class="input-bottom-space-20px">
-                                <label for="productTypeSelected">Select Product</label>
-                                <select class="form-control input-bottom-space-20px" name="productType"
+                                    </select>
+                                </div>
+                                <div id="productTypeDiv" style="display: none" class="input-bottom-space-20px">
+                                    <label for="productTypeSelected">Select Product</label>
+                                    <select class="form-control input-bottom-space-20px" name="productType"
                                         id="productTypeSelected" onChange="productTypeChanged(this)">
-                                </select>
-                                <label for="price">Price (PHP)</label>
-                                <input type="text" class="form-control" id="price" aria-describedby="mobileNo"
-                                       disabled>
-                            </div>
-                            <br/>
-                            <h5 id="eloadConfirm2" style="display: none;" class="input-bottom-space-20px"><span
-                                    style="color: #2e86de; text-shadow: 1px 2px 3px #000">Please make sure to
-										insert
-										the
-										exact amount <ul style="
+                                    </select>
+                                    <label for="price">Price (PHP)</label>
+                                    <input type="text" class="form-control" id="price" aria-describedby="mobileNo"
+                                        disabled>
+                                </div>
+                                <br />
+                                <h5 id="eloadConfirm2" style="display: none;" class="input-bottom-space-20px"><span
+                                        style="color: #2e86de; text-shadow: 1px 2px 3px #000">Please make sure to
+                                        insert
+                                        the
+                                        exact amount <ul style="
 									font-size: medium;
 									color: white;
 									text-align: left;
 								">
-											<li>In case theres an excess amount or amount is insufficient, it will
-												be
-												converted to a voucher code and you can use it for your next
-												e-Loading
-												or
-												you can use it on internet service.</li>
-										</ul></span></h5>
-                        </div>
-                    </center>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" id="buyEloadPrevBtn" class="btn btn-danger"
+                                            <li>In case theres an excess amount or amount is insufficient, it will
+                                                be
+                                                converted to a voucher code and you can use it for your next
+                                                e-Loading
+                                                or
+                                                you can use it on internet service.</li>
+                                        </ul></span></h5>
+                            </div>
+                        </center>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="buyEloadPrevBtn" class="btn btn-danger"
                             onclick="buyEloadPrevAction(); return false">Close
-                    </button>
-                    <button type="button" id="buyEloadBtn" onclick="buyEloadAction(); return false"
+                        </button>
+                        <button type="button" id="buyEloadBtn" onclick="buyEloadAction(); return false"
                             class="btn btn-success">Next
-                    </button>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
 
-    <script>
-        window.name = "hotspot_status";
+        <script>
+            window.name = "hotspot_status";
 
-        $(
+            $(
         if refresh - timeout)
-            setInterval(function () {
-                if (!insertingCoin) {
-                    newLogin();
-                }
-            }, $(refresh - timeout - secs) * 1000);
-        $(endif)
-    </script>
+                setInterval(function () {
+                    if (!insertingCoin) {
+                        newLogin();
+                    }
+                }, $(refresh - timeout - secs) * 1000);
+            $(endif)
+        </script>
 
 
-</div>
+    </div>
 
 </body>
 

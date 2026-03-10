@@ -60,11 +60,13 @@ if (isTestMode) {
 }
 
 try {
-    var url = new URL(window.location.href);
-    url.pathname = "/";
-    url.search = '';
-    url.hash = '';
-    window.history.replaceState({}, document.title, url.toString());
+    setTimeout(function (){
+        var url = new URL(window.location.href);
+        url.pathname = "/";
+        url.search = '';
+        url.hash = '';
+        window.history.replaceState({}, document.title, url.toString());
+    }, 100)
 } catch (e) {
 
 }
@@ -214,8 +216,8 @@ function renderView() {
         $("#saveVoucherButton").prop('disabled', true);
         hideDoneButton();
         $("#cncl").prop('disabled', false);
-        $('#coinToast').toast({delay: 1000, animation: true});
-        $('#coinSlotError').toast({delay: 5000, animation: true});
+        $('#coinToast').toast({ delay: 1000, animation: true });
+        $('#coinSlotError').toast({ delay: 5000, animation: true });
 
         if (!dataRateOption) {
             $("#dataInfoDiv").addClass("hide");
@@ -1953,7 +1955,7 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig) {
         e.preventDefault();
         var avail = parseInt(rewardPointsBalance) || 0;
         if (avail <= 0) {
-            $.toast({title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000});
+            $.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000 });
             return;
         }
 
@@ -2123,7 +2125,7 @@ function showResumeButton() {
 }
 
 function logoutVoucher(macNoColon) {
-    fetchPortalAPI("/logout", "POST", vendorIpAddress, {mac: macNoColon})
+    fetchPortalAPI("/logout", "POST", vendorIpAddress, { mac: macNoColon })
         .then(function (result) {
             if ((!result) || (!result.success)) {
                 $.toast({
@@ -2163,7 +2165,7 @@ function logoutVoucher(macNoColon) {
 }
 
 function loginVoucher(macNoColon, cb) {
-    fetchPortalAPI("/login", "POST", vendorIpAddress, {mac: macNoColon})
+    fetchPortalAPI("/login", "POST", vendorIpAddress, { mac: macNoColon })
         .then(function (result) {
             if ((!result) || (!result.success)) {
                 $.toast({
@@ -2201,7 +2203,7 @@ function loginVoucher(macNoColon, cb) {
 
 
 function claimFreeInternetFetch(macNoColon, cb) {
-    fetchPortalAPI("/claim-free-internet", "POST", vendorIpAddress, {mac: macNoColon})
+    fetchPortalAPI("/claim-free-internet", "POST", vendorIpAddress, { mac: macNoColon })
         .then(function (result) {
             if ((!result) || (!result.success)) {
                 $.toast({
@@ -2272,7 +2274,7 @@ function fetchSpinWheelReward(mac, cb) {
         removeLoader('spinBtn');
         return;
     }
-    fetchPortalAPI("/promo/spin-wheel", "POST", vendorIpAddress, JSON.stringify({mac: mac}), {
+    fetchPortalAPI("/promo/spin-wheel", "POST", vendorIpAddress, JSON.stringify({ mac: mac }), {
         contentType: 'application/json; charset=utf-8',
         dataType: "json"
     })
@@ -2290,6 +2292,69 @@ function fetchSpinWheelReward(mac, cb) {
         })
         .catch(function (error) {
             cb(null, error);
+        });
+}
+function fetchDuckRaceReward(serverIp, mac, betNumber) {
+    vendorIpAddress = serverIp;
+    if (parseInt(rewardPointsBalance) < 0) {
+        $.toast({
+            title: 'Failed',
+            content: 'Not enough points balance.',
+            type: 'error',
+            delay: 4000
+        });
+
+        removeLoader('duckRaceStartBtn');
+        return Promise.resolve(null);
+    }
+
+    return fetchPortalAPI(
+        "/race-duck",
+        "POST",
+        vendorIpAddress,
+        JSON.stringify({ mac: mac, betNumber: betNumber }),
+        {
+            contentType: 'application/json; charset=utf-8',
+            dataType: "json"
+        }
+    )
+        .then(function (result) {
+
+            if ((!result) || (!result.success)) {
+                $.toast({
+                    title: 'Failed',
+                    content: (result && result.error) || 'Failed to connect to server. Try again later.',
+                    type: 'error',
+                    delay: 4000
+                });
+
+                removeLoader('duckRaceStartBtn');
+                return null;
+            }
+
+            var data = result.data;
+
+            if (!data) {
+                removeLoader('duckRaceStartBtn');
+                return null;
+            }
+
+            return {
+                winningDuck: data.result,
+                wonPoints: data.rewards
+            };
+        })
+        .catch(function (error) {
+
+            $.toast({
+                title: 'Failed',
+                content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
+                type: 'error',
+                delay: 4000
+            });
+
+            removeLoader('duckRaceStartBtn');
+            return null;
         });
 }
 
@@ -2362,7 +2427,7 @@ function drawSpinWheel(mac, prizes, colors) {
     var displaySize = 460;
     var wheelSize = 520;
     var dpr = Math.max(window.devicePixelRatio || 1, 1);
-    var center = {x: 0, y: 0};
+    var center = { x: 0, y: 0 };
     var radius = 0;
     var currentRotation = 0; // radians
     var spinning = false;
@@ -2647,7 +2712,7 @@ function drawSpinWheel(mac, prizes, colors) {
         spinBtn.onclick = function () {
             var avail = parseInt(rewardPointsBalance) || 0;
             if (avail <= 0) {
-                $.toast({title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000});
+                $.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000 });
                 $('#redeemBySpinModal').modal('hide');
                 return;
             }
@@ -2751,7 +2816,7 @@ function useVoucherBtnEvt() {
 
         var voucherCode = $("#voucherInput").val();
         if (!voucherCode) {
-            $.toast({title: 'Failed', content: 'Voucher code is required.', type: 'error', delay: 3000});
+            $.toast({ title: 'Failed', content: 'Voucher code is required.', type: 'error', delay: 3000 });
             removeLoader('connectBtn')
             return;
         }
@@ -2770,7 +2835,7 @@ function useVoucherBtnEvt() {
                 }, 3000);
             } else {
                 removeLoader('connectBtn')
-                $.toast({title: 'Failed', content: error || "Server request failed.", type: 'error', delay: 3000});
+                $.toast({ title: 'Failed', content: error || "Server request failed.", type: 'error', delay: 3000 });
 
                 return;
             }
@@ -2779,7 +2844,7 @@ function useVoucherBtnEvt() {
 }
 
 function fetchUseVoucher(macNoColon, vendorIpAddress, voucherCode, cb) {
-    fetchPortalAPI("/use-voucher", "POST", vendorIpAddress, {mac: macNoColon, code: voucherCode})
+    fetchPortalAPI("/use-voucher", "POST", vendorIpAddress, { mac: macNoColon, code: voucherCode })
         .then(function (result) {
             if ((!result) || (!result.success)) {
                 cb(null, (result && result.error) || "Server request failed.");
@@ -2826,7 +2891,7 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
                 var finalUrl = juanfiExtendedServerUrl + apiUrl + separator + "t=" + timestamp;
 
                 var headers = vendorIpAddress
-                    ? {'X-IP': vendorIpAddress}
+                    ? { 'X-IP': vendorIpAddress }
                     : undefined;
 
                 var ajaxOptions = {
@@ -3004,7 +3069,7 @@ $.toast = function (options) {
 
     container.appendChild(toastEl);
 
-    var toast = new bootstrap.Toast(toastEl, {delay: delay, autohide: true});
+    var toast = new bootstrap.Toast(toastEl, { delay: delay, autohide: true });
     toast.show();
 
     toastEl.addEventListener('hidden.bs.toast', function () {

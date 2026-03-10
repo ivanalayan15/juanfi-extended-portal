@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JuanFi - Games</title>
+
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/core.css">
+    <link rel="stylesheet" href="assets/css/JuanFi.css">
+    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css">
+    <link rel="stylesheet" href="assets/css/games.css">
+</head>
+
+<body class="col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2">
+    <div id="containerDiv" class="d-flex flex-column gap-2">
+        <div id="headerContainer" class="d-flex justify-content-between align-items-center container">
+            <div class="d-flex flex-column gap-0 align-items-center">
+                <img src="assets/MainPic.PNG" class="img-fluid banner" />
+            </div>
+            <button class="btn btn-outline-danger btn-sm" onclick="window.location.href='juanfi.html'">
+                <i class="bi bi-arrow-left"></i> BACK
+            </button>
+        </div>
+
+        <div class="container text-center mt-3">
+            <h2 class="text-white fw-bold mb-3" style="text-shadow: 2px 2px 4px #000;">GAMES</h2>
+
+            <div class="row w-100 justify-content-center m-0 gap-3">
+                <div class="col-12 col-md-5 card bg-dark text-white border-warning p-0">
+                    <div class="card-body d-flex flex-column align-items-center">
+                        <h4 class="card-title text-warning fw-bold mb-3">Duck Race</h4>
+                        <img src="assets/img/duck.png" alt="Duck Race" class="mb-3"
+                            style="width: 80px; height: 80px; filter: drop-shadow(0 0 5px gold);"
+                            onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'><text x=\'50%\' y=\'50%\' font-size=\'50\' text-anchor=\'middle\' dominant-baseline=\'middle\'>🦆</text></svg>'">
+                        <p class="card-text small">Bet on your lucky duck and win points! Watch them race to the finish
+                            line.</p>
+                        <button class="btn btn-warning w-100 fw-bold mt-auto" data-bs-toggle="modal"
+                            data-bs-target="#duckRaceModal">
+                            PLAY NOW
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Duck Race Modal -->
+        <div class="modal fade" id="duckRaceModal" tabindex="-1" aria-labelledby="duckRaceModalLabel" aria-hidden="true"
+            data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content bg-dark text-white border-warning">
+                    <div class="modal-header border-warning pb-2 align-items-center">
+                        <h5 class="modal-title text-warning fw-bold mb-0" id="duckRaceModalLabel">Duck Race</h5>
+                        <div class="ms-auto me-3 d-flex align-items-center text-white" style="font-size: 0.9rem;">
+                            <i class="bi bi-coin text-warning me-1"></i>
+                            <span id="userPointsDisplay" class="fw-bold me-1">--</span> pts
+                        </div>
+                        <button type="button" class="btn-close btn-close-white ms-0" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body pt-2 pb-3 px-3">
+                        <h6 class="text-success mb-2 text-center">1 point per race</h6>
+                        <div class="d-flex justify-content-center gap-2 flex-wrap mb-3" id="duckSelection">
+                            <button class="btn btn-outline-info duck-bet-btn btn-sm" data-duck="1">Duck 1</button>
+                            <button class="btn btn-outline-info duck-bet-btn btn-sm" data-duck="2">Duck 2</button>
+                            <button class="btn btn-outline-info duck-bet-btn btn-sm" data-duck="3">Duck 3</button>
+                            <button class="btn btn-outline-info duck-bet-btn btn-sm" data-duck="4">Duck 4</button>
+                            <button class="btn btn-outline-info duck-bet-btn btn-sm" data-duck="5">Duck 5</button>
+                        </div>
+                        <button class="btn btn-warning w-100 fw-bold mb-3" id="duckRaceStartBtn" disabled>
+                            START RACE
+                        </button>
+
+                        <div id="raceResult" class="alert mt-3 d-none fw-bold text-center shadow" role="alert"
+                            style="font-size: 0.9rem;">
+                            <!-- Result message will appear here -->
+                        </div>
+                        <button class="btn btn-success w-100 fw-bold my-2 d-none" id="raceAgainBtn">
+                            RACE AGAIN
+                        </button>
+                        <!-- Race Track UI -->
+                        <div class="race-track rounded shadow overflow-hidden position-relative" style="height: 60dvh;">
+                            <div class="water-background"></div>
+                            <div class="finish-line">FINISH</div>
+
+                            <div class="lanes-container d-flex justify-content-between h-100 position-relative p-2">
+                                <div class="lane" id="lane-1">
+                                    <div class="duck" id="duck-1">🦆<span class="duck-label">1</span></div>
+                                </div>
+                                <div class="lane" id="lane-2">
+                                    <div class="duck" id="duck-2">🦆<span class="duck-label">2</span></div>
+                                </div>
+                                <div class="lane" id="lane-3">
+                                    <div class="duck" id="duck-3">🦆<span class="duck-label">3</span></div>
+                                </div>
+                                <div class="lane" id="lane-4">
+                                    <div class="duck" id="duck-4">🦆<span class="duck-label">4</span></div>
+                                </div>
+                                <div class="lane" id="lane-5">
+                                    <div class="duck" id="duck-5">🦆<span class="duck-label">5</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+        var mac = getUrlParameter('mac');
+        var vendorIpAddress = getUrlParameter('ip');
+        var interfaceName = "";
+        var isLoggedIn = true;
+    </script>
+    <script src="assets/js/core.js"></script>
+    <script src="assets/js/games.js"></script>
+</body>
+
+</html>
