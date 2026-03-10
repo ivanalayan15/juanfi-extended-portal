@@ -19,9 +19,32 @@ function fetchUserPoints() {
         }
         if (userData) {
             const totalPoints = Number(userData.totalPoints) || 0;
+            currentPoints = totalPoints;
             const pointsDisplay = document.getElementById('userPointsDisplay');
             if (pointsDisplay) {
                 pointsDisplay.textContent = totalPoints.toFixed(2);
+            }
+
+            // Re-check start button state based on new points
+            const startBtn = document.getElementById("duckRaceStartBtn");
+            const resultAlert = document.getElementById("raceResult");
+            if (selectedDuck && currentPoints <= 0) {
+                if (startBtn) startBtn.disabled = true;
+                if (resultAlert) {
+                    resultAlert.classList.remove("d-none");
+                    resultAlert.className = "alert mt-3 fw-bold text-center shadow alert-warning";
+                    resultAlert.innerHTML = `⚠️ You don't have enough points to join the race. Drop a coin first! ⚠️`;
+                }
+            } else if (selectedDuck && currentPoints > 0 && !isRacing) {
+                if (startBtn) startBtn.disabled = false;
+
+                // Only hide the alert if we're not currently displaying race results
+                const raceAgainBtn = document.getElementById("raceAgainBtn");
+                const isDisplayingResult = raceAgainBtn && !raceAgainBtn.classList.contains("d-none");
+
+                if (resultAlert && !isDisplayingResult) {
+                    resultAlert.classList.add("d-none");
+                }
             }
         }
     });
@@ -38,6 +61,7 @@ var winningDuck = 0;
 var wonPoints = 0;
 var selectedDuck = null;
 var isRacing = false;
+var currentPoints = 0;
 
 const duckNamesPool = ["Herbie", "Allan", "Jenyl", "Arkie", "Charlie"];
 let currentDuckNames = {}; // Map of duck ID (1-5) to Name
@@ -88,8 +112,16 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.classList.add("active");
             selectedDuck = parseInt(btn.getAttribute("data-duck"));
 
-            // Enable start button
-            startBtn.disabled = false;
+            // Enable start button if points > 0
+            if (currentPoints > 0) {
+                startBtn.disabled = false;
+                resultAlert.classList.add("d-none");
+            } else {
+                startBtn.disabled = true;
+                resultAlert.classList.remove("d-none");
+                resultAlert.className = "alert mt-3 fw-bold text-center shadow alert-warning";
+                resultAlert.innerHTML = `⚠️ You don't have enough points to join the race. Drop a coin first! ⚠️`;
+            }
         });
     });
 
