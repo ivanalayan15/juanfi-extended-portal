@@ -112,9 +112,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 b.classList.add("d-none");
             });
 
-            // Hide previous results
-            resultAlert.classList.add("d-none");
-            resultAlert.className = "alert mt-3 fw-bold text-center shadow d-none"; // Reset classes
+            // Show current bet
+            resultAlert.classList.remove("d-none");
+            resultAlert.className = "alert mt-3 fw-bold text-center shadow alert-info";
+            resultAlert.innerHTML = `🦆 You bet on: <span class="text-primary fs-5">${currentDuckNames[selectedDuck]}</span>. Good luck! 🦆`;
 
             startRaceAnimation();
         });
@@ -150,6 +151,10 @@ function startRaceAnimation() {
     ducks.forEach(duck => {
         duck.style.bottom = "10px";
     });
+
+    // Start water animation
+    const waterBackground = document.querySelector('.water-background');
+    if (waterBackground) waterBackground.classList.add('active');
 
     raceInterval = setInterval(() => {
         let raceFinished = false;
@@ -207,6 +212,9 @@ function announceWinner() {
     if (selectedDuck === winningDuck) {
         resultAlert.classList.add("alert-success");
         resultAlert.innerHTML = `🎉 Congratulations! ${winningName} won the race! You won ${wonPoints} points! 🎉`;
+
+        // Trigger victory sprinkles
+        showVictorySprinkles();
     } else {
         resultAlert.classList.add("alert-danger");
         resultAlert.innerHTML = `😢 Oh no! ${winningName} won the race. You LOST! 😢`;
@@ -250,6 +258,43 @@ function resetGame() {
         if (duck) duck.style.bottom = "10px";
     });
 
+    // Stop water animation
+    const waterBackground = document.querySelector('.water-background');
+    if (waterBackground) waterBackground.classList.remove('active');
+
     // Assign new names for the next race
     assignDuckNames();
+}
+
+function showVictorySprinkles() {
+    const track = document.querySelector('.race-track');
+    if (!track) return;
+
+    // Create 80 sprinkles
+    for (let i = 0; i < 80; i++) {
+        const sprinkle = document.createElement('div');
+        sprinkle.className = 'sprinkle';
+
+        // Random horizontal position
+        sprinkle.style.left = Math.random() * 100 + '%';
+
+        // Random colors: Gold, Red, Green, Blue, Purple
+        const colors = ['#ffd700', '#ff4d4d', '#33cc33', '#3399ff', '#cc33ff', '#ff9900'];
+        sprinkle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+        // Random fall duration between 1s and 2.5s
+        sprinkle.style.animationDuration = (Math.random() * 1.5 + 1) + 's';
+
+        // Random delay up to 0.5s so they don't all fall exactly at once
+        sprinkle.style.animationDelay = (Math.random() * 0.5) + 's';
+
+        track.appendChild(sprinkle);
+
+        // Clean up the sprinkle element after it falls
+        setTimeout(() => {
+            if (sprinkle.parentNode) {
+                sprinkle.remove();
+            }
+        }, 3000); // 3s is enough for the longest animation (2.5s + 0.5s delay)
+    }
 }

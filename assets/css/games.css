@@ -14,8 +14,11 @@
     height: 200%;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
     background-size: 100% 50px;
-    animation: flowWater 2s linear infinite;
     pointer-events: none;
+}
+
+.water-background.active {
+    animation: flowWater 2s linear infinite;
 }
 
 @keyframes flowWater {
@@ -101,4 +104,32 @@
     color: #000;
     border-color: #0dcaf0;
     box-shadow: 0 0 10px #0dcaf0;
+}
+
+/* Victory Sprinkle Animation */
+.sprinkle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 100;
+    top: -10px;
+    animation: sprinkleFall linear forwards;
+}
+
+@keyframes sprinkleFall {
+    0% {
+        transform: translateY(0) rotate(0deg) scale(1);
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(80vh) rotate(360deg) scale(0.5);
+        opacity: 0;
+    }
 }
