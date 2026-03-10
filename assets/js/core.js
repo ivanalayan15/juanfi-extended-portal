@@ -208,7 +208,7 @@ function renderView() {
         if (announcementText) {
             var announcement = $("#announcement");
             announcement.removeClass("hide");
-            announcement.html(announcementText);
+            $("#announcementText").html(announcementText);
         }
         // handle the data if needed
         $("#saveVoucherButton").prop('disabled', true);

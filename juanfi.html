@@ -11,17 +11,17 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <title>JuanFi Extended</title>
 
-    <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-f3s13ald18">
-    <link rel="stylesheet" href="assets/css/core.css?v=$(ip)-$(mac)-f3s13ald18">
-    <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)-f3s13ald18">
-    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)-f3s13ald18">
-    <link rel="stylesheet" href="assets/css/toast.min.css?v=$(ip)-$(mac)-f3s13ald18">
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-9d1z83h">
+    <link rel="stylesheet" href="assets/css/core.css?v=$(ip)-$(mac)-9d1z83h">
+    <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)-9d1z83h">
+    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)-9d1z83h">
+    <link rel="stylesheet" href="assets/css/toast.min.css?v=$(ip)-$(mac)-9d1z83h">
 
     <script>
         var loginError = "";
         var mac = "$(mac)";
         var uIp = "$(ip)";
-        var appendUrl = "$(ip)-$(mac)-f3s13ald18";
+        var appendUrl = "$(ip)-$(mac)-9d1z83h";
         var hotspotAddress = "$(server-address)";
         var interfaceName = "$(interface-name)";
         var remainingTimer = null;
@@ -31,13 +31,13 @@
             isLoggedIn = parseInt(sessiontimeInSecs) > 0;
         $(endif)
     </script>
-    <script src="assets/js/signalr.min.js?v=$(ip)-$(mac)-f3s13ald18" defer></script>
-    <script src="assets/js/jquery.min.js?v=$(ip)-$(mac)-f3s13ald18" defer></script>
-    <script src="assets/js/eload.js?v=$(ip)-$(mac)-f3s13ald18" defer></script>
-    <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)-f3s13ald18" defer></script>
-    <script src="assets/js/cache.js?v=$(ip)-$(mac)-f3s13ald18" defer></script>
-    <script src="assets/js/core.js?v=$(ip)-$(mac)-f3s13ald18" defer></script>
-    <script src="assets/js/pako.min.js?v=$(ip)-$(mac)-f3s13ald18" defer></script>
+    <script src="assets/js/signalr.min.js?v=$(ip)-$(mac)-9d1z83h" defer></script>
+    <script src="assets/js/jquery.min.js?v=$(ip)-$(mac)-9d1z83h" defer></script>
+    <script src="assets/js/eload.js?v=$(ip)-$(mac)-9d1z83h" defer></script>
+    <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)-9d1z83h" defer></script>
+    <script src="assets/js/cache.js?v=$(ip)-$(mac)-9d1z83h" defer></script>
+    <script src="assets/js/core.js?v=$(ip)-$(mac)-9d1z83h" defer></script>
+    <script src="assets/js/pako.min.js?v=$(ip)-$(mac)-9d1z83h" defer></script>
 </head>
 
 <body class="col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2 ">
@@ -53,7 +53,7 @@
 
     <div id="headerContainer" class="d-flex justify-content-between align-items-center container">
         <div class="d-flex flex-column gap-0 align-items-center">
-            <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-f3s13ald18" class="img-fluid banner"/>
+            <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-9d1z83h" class="img-fluid banner"/>
         </div>
         <div class="d-flex flex-column gap-3 text-end">
             <small id="ipInfo" class="juanfi-default-text small">Loading</small>
@@ -92,7 +92,10 @@
     <div id="serverStatus" class="small py-0 bg-danger text-white container text-center hide">
         Offline
     </div>
-    <div id="announcement" class="small bg-white container text-black text-center hide">
+    <div id="announcement" class="small bg-info container text-black text-center hide">
+        <div class="marquee">
+            <span id="announcementText">Hello world!</span>
+        </div>
     </div>
     <div id="freeInternetContainer" class="hide container d-flex justify-content-between align-items-center gap-2">
         <button type="button" id="claimFreeInternetBtn" class="btn btn-success w-100">
