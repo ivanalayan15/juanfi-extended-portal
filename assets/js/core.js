@@ -760,6 +760,7 @@ memberLoginExecuteBtn.onclick = function () {
                 });
                 $('#memberModal').modal('hide');
                 newLogin();
+                RefreshPortal();
             } else {
                 message = "Username or password is incorrect.";
                 $("#errorMsg").text(message).removeClass("d-none");
