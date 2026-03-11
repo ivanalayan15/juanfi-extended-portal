@@ -60,7 +60,7 @@ if (isTestMode) {
 }
 
 try {
-    setTimeout(function (){
+    setTimeout(function () {
         var url = new URL(window.location.href);
         url.pathname = "/";
         url.search = '';
@@ -422,6 +422,9 @@ function renderView() {
             if (time === 0) {
                 time = timeRemaining;
             }
+            if (timeRemaining === 0)
+                time = timeRemaining;
+
             $("#remainTime").html(secondsToDhms(time));
             if (remainingTimer != null) {
                 clearInterval(remainingTimer);
@@ -434,7 +437,7 @@ function renderView() {
             if (time > 0) {
                 $("#insertBtn").html("EXTEND");
             }
-
+            isOnline = time > 0;
             if (isOnline) {
                 $("#connectionStatus").html("Connected");
                 $("#connectionStatus").attr("class", "blinking2");
@@ -1841,17 +1844,44 @@ function fetchServerData() {
     var maxRetries = 5;
     var retryDelay = 2000;
     var attempt = 1;
+    var storageKey = 'juanfi_extended_data';
+    var expiryKey = 'juanfi_extended_data_expiry';
 
     return new Promise(function (resolve, reject) {
-        function doFetch() {
-            if (isTestMode)
+        if (isTestMode)
+            return;
+
+        var cachedData = localStorage.getItem(storageKey);
+        var cachedExpiry = localStorage.getItem(expiryKey);
+        var now = new Date().getTime();
+
+        if (cachedData && cachedExpiry && now < parseInt(cachedExpiry)) {
+            try {
+                var parsedData = JSON.parse(cachedData);
+                console.log('JuanFi Extended Version (cached):', parsedData.version);
+                resolve(parsedData);
+                $("#serverStatus").addClass("hide");
+                $("#serverStatus").html(null);
                 return;
+            } catch (e) {
+                console.error('Failed to parse cached data, fetching new data');
+            }
+        }
+
+        function doFetch() {
             $.ajax({
                 url: '/juanfi-extended.json?t=' + new Date().getTime(),
                 method: 'GET',
                 dataType: 'json',
                 success: function (data) {
                     console.log('JuanFi Extended Version:', data.version);
+                    try {
+                        localStorage.setItem(storageKey, JSON.stringify(data));
+                        // 5 minutes expiration
+                        localStorage.setItem(expiryKey, (new Date().getTime() + 5 * 60 * 1000).toString());
+                    } catch (e) {
+                        console.error('Failed to save to localStorage:', e);
+                    }
                     resolve(data);
                     $("#serverStatus").addClass("hide");
                     $("#serverStatus").html(null);
@@ -2085,6 +2115,7 @@ function onRedeemRewardPtsConfirmBtnEvt(macNoColon) {
                         setTimeout(function () {
                             newLogin();
                             removeLoader('confirmRedeemBtn');
+                            RefreshPortal();
                         }, 1000);
                     }
                 },
