@@ -517,8 +517,26 @@ function renderView() {
             setInterval(updateDeviceDateTime, 1000);
 
             if (isMember) {
+                $("#networkStatusContainer").addClass("hide");
+                $("#remainingTimeContainer").addClass("hide");
+                $("#serverStatus").addClass("hide");
+                $("#freeInternetContainer").addClass("hide");
+                $("#gamesContainer").addClass("hide");
+
                 $("#insertBtnContainer").addClass("hide");
                 $("#vendoSelectDiv").addClass("hide");
+                
+                // Keep the member dashboard and hide everything else inside tabs
+                $("#myTab").addClass("hide");
+                $("#myTabContent").addClass("hide");
+                $("#memberDashboardContainer").removeClass("hide");
+                
+                // Show the voucher code or some identifier in the Dashboard
+                var displayUsername = userData?.username || voucherCode;
+                $("#memberUI_Username").text(displayUsername);
+
+                $("#refreshBtn").addClass("hide"); // Hide default refresh
+
                 $("#historyTab").addClass("hide");
                 $("#rewardDtlsBtn").addClass("hide");
                 $("#resumeTimeBtn").addClass("hide");
