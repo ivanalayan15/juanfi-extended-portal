@@ -560,7 +560,7 @@ function renderView() {
 
 function RefreshPortal() {
     setTimeout(function () {
-        window.location.href = "/login";
+        window.location.href = "/login?vc=" + voucher;
     }, 1500);
 }
 

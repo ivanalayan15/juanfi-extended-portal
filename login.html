@@ -2,6 +2,17 @@ $(error)
 <script>location.replace('/juanfi.html?v=' + Date.now());</script>
 $(if chap-id)
 <script>
+    function getUrlParameter(name) {
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        var results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    }
+    var vc = "$(username)";
+    if (!vc || vc.trim() === "") {
+        vc = getUrlParameter("vc");
+    }
+
     function executeLogin() {
         document.sendin.username.value = vc;
         document.sendin.password.value = hexMD5('$(chap-id)' + "" + '$(chap-challenge)');
