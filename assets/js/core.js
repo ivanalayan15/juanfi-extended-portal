@@ -455,6 +455,7 @@ function renderView() {
                         showResumeButton();
                     }
                     if (time <= 0 && !isMember) {
+                        localStorage.clear();
                         clearInterval(remainingTimer);
                         setTimeout(function () {
                             renderView();
@@ -1911,6 +1912,30 @@ function fetchServerData() {
 }
 
 function fetchPortalConfig(cb) {
+    var storageKey = 'juanfi_portal_config';
+    var appendKey = 'juanfi_portal_config_append';
+    if (typeof append !== 'undefined') {
+        var cachedAppend = localStorage.getItem(appendKey);
+        if (cachedAppend === append) {
+            var cachedData = localStorage.getItem(storageKey);
+            if (cachedData) {
+                try {
+                    var data = JSON.parse(cachedData);
+                    var output = {};
+                    for (var key in data) {
+                        if (data.hasOwnProperty(key)) {
+                            output[key] = data[key];
+                        }
+                    }
+                    cb(output, null);
+                    return;
+                } catch (e) {
+                    console.error('Failed to parse cached config, fetching new data');
+                }
+            }
+        }
+    }
+
     fetchPortalAPI("/config", "GET", null, null)
         .then(function (result) {
             if ((!result) || (!result.success)) {
@@ -1922,6 +1947,16 @@ function fetchPortalConfig(cb) {
                 cb(null, null);
                 return;
             }
+
+            if (typeof append !== 'undefined') {
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify(data));
+                    localStorage.setItem(appendKey, append);
+                } catch (e) {
+                    console.error('Failed to save config to localStorage:', e);
+                }
+            }
+
             var output = {};
             for (var key in data) {
                 if (data.hasOwnProperty(key)) {
