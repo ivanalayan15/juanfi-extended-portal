@@ -19,7 +19,7 @@ function fetchUserPoints() {
         }
         if (userData) {
             const totalPoints = Number(userData.totalPoints) || 0;
-            currentPoints = totalPoints;
+            currentPoints = getWholeNumber(totalPoints);
             
             // Sync with core.js points and spin wheel display
             if (typeof rewardPointsBalance !== 'undefined') {
@@ -44,8 +44,10 @@ function fetchUserPoints() {
                 if (startBtn) startBtn.disabled = true;
                 if (resultAlert) {
                     resultAlert.classList.remove("d-none");
-                    resultAlert.className = "alert mt-3 fw-bold text-center shadow alert-warning";
-                    resultAlert.innerHTML = `⚠️ You don't have enough points to join the race. Drop a coin first! ⚠️`;
+                    if(!isRacing){
+                        resultAlert.className = "alert mt-3 fw-bold text-center shadow alert-warning";
+                        resultAlert.innerHTML = `⚠️ You don't have enough points to join the race. Drop a coin first! ⚠️`;
+                    }
                 }
             } else if (selectedDuck && currentPoints > 0 && !isRacing) {
                 if (startBtn) startBtn.disabled = false;
@@ -125,14 +127,12 @@ document.addEventListener("DOMContentLoaded", () => {
             selectedDuck = parseInt(btn.getAttribute("data-duck"));
 
             // Enable start button if points > 0
-            if (currentPoints > 0) {
+            if (getWholeNumber(currentPoints) > 0) {
                 startBtn.disabled = false;
                 resultAlert.classList.add("d-none");
             } else {
                 startBtn.disabled = true;
                 resultAlert.classList.remove("d-none");
-                resultAlert.className = "alert mt-3 fw-bold text-center shadow alert-warning";
-                resultAlert.innerHTML = `⚠️ You don't have enough points to join the race. Drop a coin first! ⚠️`;
             }
         });
     });
@@ -143,6 +143,8 @@ document.addEventListener("DOMContentLoaded", () => {
         addLoader('duckRaceStartBtn');
         fetchDuckRaceReward(serverIp, macNoColon, selectedDuck).then(function (result) {
             if (!result) return;
+            fetchUserPoints();
+
             winningDuck = result.winningDuck;
             wonPoints = result.wonPoints;
 
@@ -160,7 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
             resultAlert.classList.remove("d-none");
             resultAlert.className = "alert mt-3 fw-bold text-center shadow alert-info";
             resultAlert.innerHTML = `🦆 You bet on: <span class="text-primary fs-5">${currentDuckNames[selectedDuck]}</span>. Good luck! 🦆`;
-
             startRaceAnimation();
         });
     });

@@ -441,7 +441,7 @@ function renderView() {
             if (time > 0) {
                 $("#insertBtn").html("EXTEND");
             }
-            
+
             if (isOnline) {
                 $("#connectionStatus").html("Connected");
                 $("#connectionStatus").attr("class", "blinking2");
@@ -3198,3 +3198,7 @@ $.toast = function (options) {
 };
 
 createToastContainer();
+
+function getWholeNumber(num){
+    return Math.trunc(num);
+}
