@@ -462,6 +462,7 @@ function renderView() {
                         localStorage.clear();
                         clearInterval(remainingTimer);
                         setTimeout(function () {
+                            isOnline = false;
                             renderView();
                         }, 1000);
                     }
@@ -1606,7 +1607,7 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
                 return;
             }
 
-            var isOnline = isLoggedIn;
+            var isOnline = data.isOnline;
             var isMember = data.isMember;
             var voucherCode = data.code;
             var totalPoints = data.totalPoints;

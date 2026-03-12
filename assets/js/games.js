@@ -76,6 +76,8 @@ var wonPoints = 0;
 var selectedDuck = null;
 var isRacing = false;
 var currentPoints = 0;
+var raceMusic = new Audio('assets/insertcoinbg.mp3'); // Default music, can be replaced
+raceMusic.loop = true;
 
 const duckNamesPool = ["Herbie", "Allan", "Jenyl", "Arkie", "Charlie"];
 let currentDuckNames = {}; // Map of duck ID (1-5) to Name
@@ -206,9 +208,14 @@ function startRaceAnimation() {
         if (duck) duck.style.bottom = "10px";
     });
 
-    // Start water animation
+    // Start water animation and music
     const waterBackground = document.querySelector('.water-background');
     if (waterBackground) waterBackground.classList.add('active');
+
+    if (raceMusic) {
+        raceMusic.currentTime = 0;
+        raceMusic.play().catch(err => console.error("Audio playback error:", err));
+    }
 
     raceInterval = setInterval(() => {
         let raceFinished = false;
@@ -269,6 +276,11 @@ function startRaceAnimation() {
 
 function announceWinner() {
     isRacing = false;
+    // Stop music
+    if (raceMusic) {
+        raceMusic.pause();
+        raceMusic.currentTime = 0;
+    }
     const resultAlert = document.getElementById("raceResult");
     const startBtn = document.getElementById("duckRaceStartBtn");
     const betButtons = document.querySelectorAll(".duck-bet-btn");
@@ -329,6 +341,12 @@ function resetGame() {
     // Stop water animation
     const waterBackground = document.querySelector('.water-background');
     if (waterBackground) waterBackground.classList.remove('active');
+
+    // Ensure music is stopped if reset during race
+    if (raceMusic) {
+        raceMusic.pause();
+        raceMusic.currentTime = 0;
+    }
 
     // Assign new names for the next race
     assignDuckNames();
