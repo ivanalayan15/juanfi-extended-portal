@@ -1,1 +1,50 @@
-<script>location.replace('/juanfi.html?v=' + Date.now());</script>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Loading</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="refresh" content="1; url=$(link-status)">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)-bac312">
+    <script src="assets/js/core.js?v=$(ip)-$(mac)" defer></script>
+
+    <script>
+        var error = "$(error)";
+        if (error == "customer $(username) has reached uptime limit") {
+            window.location.href = "/login.html" + Date.now();
+        }
+    </script>
+
+    $(if chap-id)
+    <form name="sendin" action="$(link-login-only)" method="post">
+        <input type="hidden" name="username" />
+        <input type="hidden" name="password" />
+        <input type="hidden" name="dst" value="$(link-orig)" />
+        <input type="hidden" name="popup" value="true" />
+    </form>
+
+    <script type="text/javascript" src="assets/js/md5.js"></script>
+    <script type="text/javascript">
+        function doLogin() {
+            document.sendin.username.value = document.login.username.value;
+            document.sendin.password.value = hexMD5('$(chap-id)' + document.login.password.value + '$(chap-challenge)');
+            document.sendin.submit();
+            return false;
+        }
+        doLogin();
+    </script>
+    $(endif)
+</head>
+<body>
+<div class="d-flex flex-column align-items-center justify-content-center">
+    <div id="loaderDiv" class="spinner-border" role="status">
+        <span class="sr-only"></span>
+    </div>
+</div>
+
+</body>
+</html>

@@ -133,3 +133,24 @@
         opacity: 0;
     }
 }
+
+/* Header Points Display Styles */
+.header-points-container {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    padding: 8px 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    min-width: 140px;
+}
+
+.header-points-container .small {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.points-icon {
+    filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.5));
+}

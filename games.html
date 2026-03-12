@@ -5,23 +5,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JuanFi - Games</title>
-
-    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
-    <link rel="stylesheet" href="assets/css/core.css">
-    <link rel="stylesheet" href="assets/css/JuanFi.css">
-    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css">
-    <link rel="stylesheet" href="assets/css/games.css">
+    <script>
+        var loginError = "";
+        var mac = "$(mac)";
+        var uIp = "$(ip)";
+        var append = "$(ip)-$(mac)-abc1234";
+        var hotspotAddress = "$(server-address)";
+        var interfaceName = "$(interface-name)";
+        var remainingTimer = null;
+        var sessiontimeInSecs = "$(session-time-left-secs)";
+        var isLoggedIn = false;
+        $(if logged-in)
+            isLoggedIn = parseInt(sessiontimeInSecs) > 0;
+        $(endif)
+    </script>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=$(ip)-$(mac)">
+    <link rel="stylesheet" href="assets/css/core.css?v=$(ip)-$(mac)">
+    <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)">
+    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)">
+    <link rel="stylesheet" href="assets/css/games.css?v=$(ip)-$(mac)">
+    <script src="assets/js/eload.js?v=$(ip)-$(mac)" defer></script>
 </head>
 
 <body class="col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2">
     <div id="containerDiv" class="d-flex flex-column gap-2">
         <div id="headerContainer" class="d-flex justify-content-between align-items-center container">
-            <div class="d-flex flex-column gap-0 align-items-center">
-                <img src="assets/MainPic.PNG" class="img-fluid banner" />
-            </div>
             <button class="btn btn-outline-danger btn-sm" onclick="RefreshPortal()">
                 <i class="bi bi-arrow-left"></i> BACK
             </button>
+            <div class="header-points-container d-flex flex-column align-items-center justify-content-center">
+                <div class="text-white small mb-1 fw-bold">AVAILABLE POINTS</div>
+                <div class="d-flex align-items-center gap-2">
+                    <img src="assets/img/coin.png" width="24" height="24" class="points-icon" />
+                    <span id="headerPointsDisplay" class="fw-bold fs-4 text-warning">--</span>
+                </div>
+            </div>
+
         </div>
 
         <div class="container text-center mt-3">
@@ -38,6 +57,19 @@
                             line.</p>
                         <button class="btn btn-warning w-100 fw-bold mt-auto" data-bs-toggle="modal"
                             data-bs-target="#duckRaceModal">
+                            PLAY NOW
+                        </button>
+                    </div>
+                </div>
+
+                <div id="spinWheelCard" class="col-12 col-md-5 card bg-dark text-white border-warning p-0">
+                    <div class="card-body d-flex flex-column align-items-center">
+                        <h4 class="card-title text-warning fw-bold mb-3">Spin the Wheel</h4>
+                        <img src="assets/img/coin.png" alt="Spin the Wheel" class="mb-3"
+                            style="width: 80px; height: 80px; filter: drop-shadow(0 0 5px gold);"
+                            onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'><text x=\'50%\' y=\'50%\' font-size=\'50\' text-anchor=\'middle\' dominant-baseline=\'middle\'>🎡</text></svg>'">
+                        <p class="card-text small">Spin the lucky wheel to redeem your points for exciting rewards! Every spin is a chance to win.</p>
+                        <button class="btn btn-warning w-100 fw-bold mt-auto" id="spinRedeemBtn">
                             PLAY NOW
                         </button>
                     </div>
@@ -107,10 +139,57 @@
                 </div>
             </div>
         </div>
+
+        <!-- Spin to Redeem Modal -->
+        <div class="modal fade" id="redeemBySpinModal" tabindex="-1" role="dialog"
+            aria-labelledby="redeemBySpinModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content bg-dark text-white border-warning">
+                    <div class="modal-header border-warning pb-2">
+                        <h5 class="modal-title text-warning fw-bold" id="redeemBySpinModalLabel">Spin to Redeem</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row mb-3">
+                                <div class="col-12 text-center">
+                                    <div class="small text-white">Reward Point Balance</div>
+                                    <div class="d-flex align-items-center justify-content-center gap-1">
+                                        <img src="assets/img/coin.png" width="20px" height="20px" />
+                                        <span class="availablePointsDisplay text-warning fw-bold fs-4">0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 text-center">
+                                    <small class="text-white-50">Redemption rule: <span class="redeemRatio"
+                                            id="redeemRatio2">1</span> point
+                                        = 1 spin</small>
+                                </div>
+                            </div>
+                            <div class="spinner-wrapper my-3 text-center d-flex justify-content-center">
+                                <canvas id="wheelCanvas" aria-label="Prize wheel" style="width: auto; height: 45dvh;"></canvas>
+                            </div>
+                            <div id="redeemedValueWrapper" class="row mb-3 d-none">
+                                <div class="col-12 text-center">
+                                    <div id="selectedReward" class="alert alert-success fw-bold"></div>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-column gap-2">
+                                <button type="button" id="spinBtn" class="btn btn-warning fw-bold">SPIN</button>
+                                <button id="spinCancelBtn" type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"
+                                    aria-label="Close">CLOSE
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script src="assets/js/jquery.min.js"></script>
-    <script src="assets/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/jquery.min.js?v=$(ip)-$(mac)"></script>
+    <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)"></script>
     <script>
         function getUrlParameter(name) {
             name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
@@ -123,8 +202,8 @@
         var interfaceName = "";
         var isLoggedIn = true;
     </script>
-    <script src="assets/js/core.js"></script>
-    <script src="assets/js/games.js"></script>
+    <script src="assets/js/core.js?v=$(ip)-$(mac)"></script>
+    <script src="assets/js/games.js?v=$(ip)-$(mac)"></script>
 </body>
 
 </html>

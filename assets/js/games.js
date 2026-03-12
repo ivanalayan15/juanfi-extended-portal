@@ -20,9 +20,21 @@ function fetchUserPoints() {
         if (userData) {
             const totalPoints = Number(userData.totalPoints) || 0;
             currentPoints = totalPoints;
+            
+            // Sync with core.js points and spin wheel display
+            if (typeof rewardPointsBalance !== 'undefined') {
+                rewardPointsBalance = totalPoints;
+            }
+            $(".availablePointsDisplay").html(totalPoints.toFixed(2));
+
             const pointsDisplay = document.getElementById('userPointsDisplay');
             if (pointsDisplay) {
                 pointsDisplay.textContent = totalPoints.toFixed(2);
+            }
+
+            const headerPointsDisplay = document.getElementById('headerPointsDisplay');
+            if (headerPointsDisplay) {
+                headerPointsDisplay.textContent = totalPoints.toFixed(2);
             }
 
             // Re-check start button state based on new points

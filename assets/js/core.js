@@ -216,8 +216,8 @@ function renderView() {
         $("#saveVoucherButton").prop('disabled', true);
         hideDoneButton();
         $("#cncl").prop('disabled', false);
-        $('#coinToast').toast({ delay: 1000, animation: true });
-        $('#coinSlotError').toast({ delay: 5000, animation: true });
+        $('#coinToast').toast({delay: 1000, animation: true});
+        $('#coinSlotError').toast({delay: 5000, animation: true});
 
         if (!dataRateOption) {
             $("#dataInfoDiv").addClass("hide");
@@ -227,14 +227,28 @@ function renderView() {
         if (!showMemberLogin) {
             $("#memberBtn").addClass("hide");
         }
-        if (!data.showInsertCoin) {
-            $("#insertBtnContainer").addClass("hide");
-        } else {
-            $("#insertBtnContainer").removeClass("hide");
+        if(data){
+            if (!data.showInsertCoin) {
+                $("#insertBtnContainer").addClass("hide");
+            } else {
+                $("#insertBtnContainer").removeClass("hide");
+            }
+            if (!data.showPauseTime) {
+                $("#pauseBtnContainer").addClass("hide");
+            }
+            if (!data.showPortalHistory) {
+                $("#historyContainer").addClass("hide");
+                $("#historyTab").addClass("hide");
+                $("#history").addClass("hide");
+            }
+
+            if (!data.showPortalHeader) {
+                $("#headerContainer").addClass("hide");
+            } else {
+                $("#headerContainer").removeClass("hide");
+            }
         }
-        if (!data.showPauseTime) {
-            $("#pauseBtnContainer").addClass("hide");
-        }
+
 
         if (qrCodeVoucherPurchase) {
             $("#scanQrBtn").attr("style", "display: block");
@@ -242,17 +256,7 @@ function renderView() {
         if (disableVoucherInput) {
             $("#useVoucherContainer").addClass("hide");
         }
-        if (!data.showPortalHistory) {
-            $("#historyContainer").addClass("hide");
-            $("#historyTab").addClass("hide");
-            $("#history").addClass("hide");
-        }
 
-        if (!data.showPortalHeader) {
-            $("#headerContainer").addClass("hide");
-        } else {
-            $("#headerContainer").removeClass("hide");
-        }
 
         // if (data.hideRates) {
         //     $("#rateTable").addClass("hide");
@@ -437,7 +441,7 @@ function renderView() {
             if (time > 0) {
                 $("#insertBtn").html("EXTEND");
             }
-            isOnline = time > 0;
+            
             if (isOnline) {
                 $("#connectionStatus").html("Connected");
                 $("#connectionStatus").attr("class", "blinking2");
@@ -525,12 +529,12 @@ function renderView() {
 
                 $("#insertBtnContainer").addClass("hide");
                 $("#vendoSelectDiv").addClass("hide");
-                
+
                 // Keep the member dashboard and hide everything else inside tabs
                 $("#myTab").addClass("hide");
                 $("#myTabContent").addClass("hide");
                 $("#memberDashboardContainer").removeClass("hide");
-                
+
                 // Show the voucher code or some identifier in the Dashboard
                 var displayUsername = userData?.username || voucherCode;
                 $("#memberUI_Username").text(displayUsername);
@@ -699,96 +703,103 @@ $('#redeemBySpinModal').on('hidden.bs.modal', function () {
 $("#pauseTimeBtn").addClass("hide");
 $("#resumeTimeBtn").addClass("hide");
 var pauseTimeBtn = document.getElementById('pauseTimeBtn');
-pauseTimeBtn.onclick = function () {
-    pause(macNoColon);
-    isLoggedIn = false;
+if (pauseTimeBtn) {
+    pauseTimeBtn.onclick = function () {
+        pause(macNoColon);
+        isLoggedIn = false;
+    }
 }
+
 
 var memberLoginExecuteBtn = document.getElementById('memberLoginExecuteBtn');
-memberLoginExecuteBtn.onclick = function () {
-    var username = $("#inputMemberUsername").val().trim();
-    var password = $("#inputMemberPassword").val().trim();
-    var isValid = true;
-    var message = "";
+if (memberLoginExecuteBtn) {
+    memberLoginExecuteBtn.onclick = function () {
+        var username = $("#inputMemberUsername").val().trim();
+        var password = $("#inputMemberPassword").val().trim();
+        var isValid = true;
+        var message = "";
 
-    if (username === "") {
-        isValid = false;
-        message = "Username is required";
-        $("#inputMemberUsername").addClass("is-invalid");
-    } else {
-        $("#inputMemberUsername").removeClass("is-invalid");
-    }
+        if (username === "") {
+            isValid = false;
+            message = "Username is required";
+            $("#inputMemberUsername").addClass("is-invalid");
+        } else {
+            $("#inputMemberUsername").removeClass("is-invalid");
+        }
 
-    if (password === "") {
-        isValid = false;
-        message = message || "Password is required";
-        $("#inputMemberPassword").addClass("is-invalid");
-    } else {
-        $("#inputMemberPassword").removeClass("is-invalid");
-    }
+        if (password === "") {
+            isValid = false;
+            message = message || "Password is required";
+            $("#inputMemberPassword").addClass("is-invalid");
+        } else {
+            $("#inputMemberPassword").removeClass("is-invalid");
+        }
 
-    if (!isValid) {
-        $("#errorMsg").text(message).removeClass("d-none");
-        return;
-    }
-
-    $("#errorMsg").addClass("d-none");
-    addLoader('memberLoginExecuteBtn');
-    var old_mac = getStorageValue('activeVoucher')
-
-    fetchPortalAPI("/member-login", "POST", vendorIpAddress, {
-        mac: mac,
-        old_mac: old_mac,
-        username: username,
-        password: password
-    })
-        .then(function (result) {
-            if ((!result) || (!result.success)) {
-                message = "Username or password is incorrect.";
-                $("#errorMsg").text(message).removeClass("d-none");
-                removeLoader('pauseTimeBtn');
-                return;
-            }
-
-            var data = result.data;
-            if ((!!data) || (data && data.status === "success")) {
-                $.toast({
-                    title: 'Success',
-                    content: data.message,
-                    type: 'success',
-                    delay: 3000
-                });
-                $('#memberModal').modal('hide');
-                newLogin();
-                RefreshPortal();
-            } else {
-                message = "Username or password is incorrect.";
-                $("#errorMsg").text(message).removeClass("d-none");
-            }
-        })
-        .catch(function (error) {
-            message = JSON.stringify(error);
+        if (!isValid) {
             $("#errorMsg").text(message).removeClass("d-none");
+            return;
+        }
 
-            removeLoader('memberLoginExecuteBtn');
-        });
+        $("#errorMsg").addClass("d-none");
+        addLoader('memberLoginExecuteBtn');
+        var old_mac = getStorageValue('activeVoucher')
+
+        fetchPortalAPI("/member-login", "POST", vendorIpAddress, {
+            mac: mac,
+            old_mac: old_mac,
+            username: username,
+            password: password
+        })
+            .then(function (result) {
+                if ((!result) || (!result.success)) {
+                    message = "Username or password is incorrect.";
+                    $("#errorMsg").text(message).removeClass("d-none");
+                    removeLoader('pauseTimeBtn');
+                    return;
+                }
+
+                var data = result.data;
+                if ((!!data) || (data && data.status === "success")) {
+                    $.toast({
+                        title: 'Success',
+                        content: data.message,
+                        type: 'success',
+                        delay: 3000
+                    });
+                    $('#memberModal').modal('hide');
+                    newLogin();
+                    RefreshPortal();
+                } else {
+                    message = "Username or password is incorrect.";
+                    $("#errorMsg").text(message).removeClass("d-none");
+                }
+            })
+            .catch(function (error) {
+                message = JSON.stringify(error);
+                $("#errorMsg").text(message).removeClass("d-none");
+
+                removeLoader('memberLoginExecuteBtn');
+            });
+    }
 }
 
-
 var resumeTimeBtn = document.getElementById('resumeTimeBtn');
-resumeTimeBtn.onclick = function () {
-    addLoader('resumeTimeBtn');
-    setStorageValue("isPaused", "0");
-    loginVoucher(macNoColon, function (success) {
-        isLoggedIn = success;
-        if (success) {
-            checkIsLoggedIn(macNoColon);
-            newLogin();
-        } else {
-            removeLoader('resumeTimeBtn');
-        }
-    });
-};
+if (resumeTimeBtn) {
+    resumeTimeBtn.onclick = function () {
+        addLoader('resumeTimeBtn');
+        setStorageValue("isPaused", "0");
+        loginVoucher(macNoColon, function (success) {
+            isLoggedIn = success;
+            if (success) {
+                checkIsLoggedIn(macNoColon);
+                newLogin();
+            } else {
+                removeLoader('resumeTimeBtn');
+            }
+        });
+    };
+}
+
 
 function replaceAll(str, rep) {
     var aa = str;
@@ -2035,23 +2046,25 @@ function updateRedeemRewardPtsUI(from) {
 
 function onRedeemRewardPtsEvt(macNoColon, wheelConfig) {
     var redeemPtsBtn = document.getElementById("redeemPtsBtn");
-    redeemPtsBtn.onclick = function (e) {
-        e.preventDefault();
-        var avail = parseInt(rewardPointsBalance) || 0;
-        if (avail <= 0) {
-            $.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000 });
-            return;
-        }
+    if (redeemPtsBtn) {
+        redeemPtsBtn.onclick = function (e) {
+            e.preventDefault();
+            var avail = parseInt(rewardPointsBalance) || 0;
+            if (avail <= 0) {
+                $.toast({title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000});
+                return;
+            }
 
-        var min = parseInt($('#redeemSlider').attr('min')) || 0;
-        $(".availablePointsDisplay").html((!!rewardPointsBalance) ? rewardPointsBalance.toFixed(2) : "0.00");
-        $('#redeemSlider').attr('max', parseInt(avail));
-        $('#redeemSlider').val(min);
-        $('#selectedPointsInput').attr('max', avail);
-        $('#selectedPointsInput').val(min);
-        updateRedeemRewardPtsUI('input');
-        $('#redeemModal').modal('show');
-    };
+            var min = parseInt($('#redeemSlider').attr('min')) || 0;
+            $(".availablePointsDisplay").html((!!rewardPointsBalance) ? rewardPointsBalance.toFixed(2) : "0.00");
+            $('#redeemSlider').attr('max', parseInt(avail));
+            $('#redeemSlider').val(min);
+            $('#selectedPointsInput').attr('max', avail);
+            $('#selectedPointsInput').val(min);
+            updateRedeemRewardPtsUI('input');
+            $('#redeemModal').modal('show');
+        };
+    }
 
     if (!!wheelConfig) {
         var spinRedeemBtn = document.getElementById("spinRedeemBtn");
@@ -2118,85 +2131,88 @@ function onRedeemRewardPtsSliderChangeEvt() {
 
 function onRedeemRewardPtsConfirmBtnEvt(macNoColon) {
     var confirmRedeemBtn = document.getElementById("confirmRedeemBtn");
-    confirmRedeemBtn.onclick = function () {
-        var selected = parseInt($('#selectedPointsInput').val(), 10) || 0;
-        if (selected <= 0) {
-            $.toast({
-                title: 'Warning',
-                content: 'Please select at least 1 point to redeem.',
-                type: 'warning',
-                delay: 2500
-            });
-            return;
-        }
-        var estimatedPhp = (selected * redeemRatioValue).toFixed(2);
+    if(confirmRedeemBtn){
+        confirmRedeemBtn.onclick = function () {
+            var selected = parseInt($('#selectedPointsInput').val(), 10) || 0;
+            if (selected <= 0) {
+                $.toast({
+                    title: 'Warning',
+                    content: 'Please select at least 1 point to redeem.',
+                    type: 'warning',
+                    delay: 2500
+                });
+                return;
+            }
+            var estimatedPhp = (selected * redeemRatioValue).toFixed(2);
 
-        try {
-            addLoader('confirmRedeemBtn');
-            $.ajax({
-                type: "POST",
-                url: "http://" + vendorIpAddress + "/redeemPoints?mac=" + macNoColon + "&points=" + selected,
-                success: function (result) {
-                    if (!result) {
-                        $.toast({
-                            title: 'Failed',
-                            content: 'Request failed. Please try again.',
-                            type: 'error',
-                            delay: 4000
-                        });
-                        removeLoader('confirmRedeemBtn');
-                        return;
-                    }
-
-                    if (result.status === "false") {
-                        $.toast({
-                            title: 'Failed',
-                            content: 'Failed to redeem points.',
-                            type: 'error',
-                            delay: 4000
-                        });
-                        removeLoader('confirmRedeemBtn');
-                        return;
-                    } else {
-                        var timeAdded = parseInt(result.timeAdded);
-                        $('#redeemModal').modal('hide');
-                        $.toast({
-                            title: 'Success',
-                            content: 'Redeemed ' + selected + ' points (PHP ' + estimatedPhp + '). Added ' + secondsToDhms(timeAdded * 60) + ' time to current voucher.',
-                            type: 'success',
-                            delay: 4000
-                        });
-                        setTimeout(function () {
-                            newLogin();
+            try {
+                addLoader('confirmRedeemBtn');
+                $.ajax({
+                    type: "POST",
+                    url: "http://" + vendorIpAddress + "/redeemPoints?mac=" + macNoColon + "&points=" + selected,
+                    success: function (result) {
+                        if (!result) {
+                            $.toast({
+                                title: 'Failed',
+                                content: 'Request failed. Please try again.',
+                                type: 'error',
+                                delay: 4000
+                            });
                             removeLoader('confirmRedeemBtn');
-                            RefreshPortal();
-                        }, 1000);
+                            return;
+                        }
+
+                        if (result.status === "false") {
+                            $.toast({
+                                title: 'Failed',
+                                content: 'Failed to redeem points.',
+                                type: 'error',
+                                delay: 4000
+                            });
+                            removeLoader('confirmRedeemBtn');
+                            return;
+                        } else {
+                            var timeAdded = parseInt(result.timeAdded);
+                            $('#redeemModal').modal('hide');
+                            $.toast({
+                                title: 'Success',
+                                content: 'Redeemed ' + selected + ' points (PHP ' + estimatedPhp + '). Added ' + secondsToDhms(timeAdded * 60) + ' time to current voucher.',
+                                type: 'success',
+                                delay: 4000
+                            });
+                            setTimeout(function () {
+                                newLogin();
+                                removeLoader('confirmRedeemBtn');
+                                RefreshPortal();
+                            }, 1000);
+                        }
+                    },
+                    error: function (d) {
+                        $.toast({
+                            title: 'Failed',
+                            content: 'Failed to connect to server. Try again later.',
+                            type: 'error',
+                            delay: 4000
+                        });
+                        removeLoader('confirmRedeemBtn');
+                    },
+                    complete: function () {
+
                     }
-                },
-                error: function (d) {
-                    $.toast({
-                        title: 'Failed',
-                        content: 'Failed to connect to server. Try again later.',
-                        type: 'error',
-                        delay: 4000
-                    });
-                    removeLoader('confirmRedeemBtn');
-                },
-                complete: function () {
+                });
+            } catch (e) {
 
-                }
-            });
-        } catch (e) {
+                $.toast({
+                    title: 'Failed',
+                    content: 'Runtime error. Contact vendo owner.',
+                    type: 'error',
+                    delay: 4000
+                });
+                removeLoader('confirmRedeemBtn');
+            }
+        };
+    }
 
-            $.toast({
-                title: 'Failed',
-                content: 'Runtime error. Contact vendo owner.',
-                type: 'error',
-                delay: 4000
-            });
-            removeLoader('confirmRedeemBtn');
-        }
-    };
 }
 
 function showPauseButton() {
@@ -2210,7 +2226,7 @@ function showResumeButton() {
 }
 
 function logoutVoucher(macNoColon) {
-    fetchPortalAPI("/logout", "POST", vendorIpAddress, { mac: macNoColon })
+    fetchPortalAPI("/logout", "POST", vendorIpAddress, {mac: macNoColon})
         .then(function (result) {
             if ((!result) || (!result.success)) {
                 $.toast({
@@ -2250,7 +2266,7 @@ function logoutVoucher(macNoColon) {
 }
 
 function loginVoucher(macNoColon, cb) {
-    fetchPortalAPI("/login", "POST", vendorIpAddress, { mac: macNoColon })
+    fetchPortalAPI("/login", "POST", vendorIpAddress, {mac: macNoColon})
         .then(function (result) {
             if ((!result) || (!result.success)) {
                 $.toast({
@@ -2288,7 +2304,7 @@ function loginVoucher(macNoColon, cb) {
 
 
 function claimFreeInternetFetch(macNoColon, cb) {
-    fetchPortalAPI("/claim-free-internet", "POST", vendorIpAddress, { mac: macNoColon })
+    fetchPortalAPI("/claim-free-internet", "POST", vendorIpAddress, {mac: macNoColon})
         .then(function (result) {
             if ((!result) || (!result.success)) {
                 $.toast({
@@ -2359,7 +2375,7 @@ function fetchSpinWheelReward(mac, cb) {
         removeLoader('spinBtn');
         return;
     }
-    fetchPortalAPI("/promo/spin-wheel", "POST", vendorIpAddress, JSON.stringify({ mac: mac }), {
+    fetchPortalAPI("/promo/spin-wheel", "POST", vendorIpAddress, JSON.stringify({mac: mac}), {
         contentType: 'application/json; charset=utf-8',
         dataType: "json"
     })
@@ -2379,6 +2395,7 @@ function fetchSpinWheelReward(mac, cb) {
             cb(null, error);
         });
 }
+
 function fetchDuckRaceReward(serverIp, mac, betNumber) {
     vendorIpAddress = serverIp;
     if (parseInt(rewardPointsBalance) < 0) {
@@ -2397,7 +2414,7 @@ function fetchDuckRaceReward(serverIp, mac, betNumber) {
         "/race-duck",
         "POST",
         vendorIpAddress,
-        JSON.stringify({ mac: mac, betNumber: betNumber }),
+        JSON.stringify({mac: mac, betNumber: betNumber}),
         {
             contentType: 'application/json; charset=utf-8',
             dataType: "json"
@@ -2512,7 +2529,7 @@ function drawSpinWheel(mac, prizes, colors) {
     var displaySize = 460;
     var wheelSize = 520;
     var dpr = Math.max(window.devicePixelRatio || 1, 1);
-    var center = { x: 0, y: 0 };
+    var center = {x: 0, y: 0};
     var radius = 0;
     var currentRotation = 0; // radians
     var spinning = false;
@@ -2747,6 +2764,11 @@ function drawSpinWheel(mac, prizes, colors) {
                 if (parseInt(rewardPointsBalance) <= 0) {
                     $('#redeemBySpinModal').modal('hide');
                 }
+
+                // Refresh points on games page if function exists
+                if (typeof fetchUserPoints === 'function') {
+                    fetchUserPoints();
+                }
             });
         }
 
@@ -2794,21 +2816,26 @@ function drawSpinWheel(mac, prizes, colors) {
         window.addEventListener('resize', function () {
             resizeAll();
         });
-        spinBtn.onclick = function () {
-            var avail = parseInt(rewardPointsBalance) || 0;
-            if (avail <= 0) {
-                $.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000 });
-                $('#redeemBySpinModal').modal('hide');
-                return;
-            }
-            addLoader('spinBtn');
-            isSpinTriggered = true;
-            shufflePrizes();
-            spinWheel();
-        };
-        spinCancelBtn.onclick = function (e) {
-            newLogin();
-        };
+        if(spinBtn){
+            spinBtn.onclick = function () {
+                var avail = parseInt(rewardPointsBalance) || 0;
+                if (avail <= 0) {
+                    $.toast({title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000});
+                    $('#redeemBySpinModal').modal('hide');
+                    return;
+                }
+                addLoader('spinBtn');
+                isSpinTriggered = true;
+                shufflePrizes();
+                spinWheel();
+            };
+        }
+        if(spinCancelBtn){
+            spinCancelBtn.onclick = function (e) {
+                newLogin();
+            };
+        }
+
     }
 
     generateExpandedPrizes(); // generate expanded prizes based on winning percentages
@@ -2864,72 +2891,75 @@ function drawSpinWheel(mac, prizes, colors) {
 
 function useVoucherBtnEvt() {
     var connectBtn = document.getElementById('connectBtn');
-    connectBtn.onclick = function (e) {
-        e.preventDefault();
-        var input = document.getElementById('voucherInput');
-        // Clear previous custom validity
-        input.setCustomValidity('');
+    if (connectBtn) {
+        connectBtn.onclick = function (e) {
+            e.preventDefault();
+            var input = document.getElementById('voucherInput');
+            // Clear previous custom validity
+            input.setCustomValidity('');
 
-        // Trim the value to catch empty or whitespace-only input
-        if (!input.value || input.value.trim() === '') {
-            input.setCustomValidity('Please input a valid voucher');
-            input.reportValidity();
-            return;
-        }
-
-        // Optional: check HTML5 constraints
-        if (!input.checkValidity()) {
-            input.setCustomValidity('Please input a valid voucher');
-            input.reportValidity();
-            return;
-        }
-
-        // Check other variables
-        if (!macNoColon || macNoColon.trim() === '') {
-            input.setCustomValidity('Please input a valid voucher');
-            input.reportValidity();
-            return;
-        }
-
-        if (!vendorIpAddress || vendorIpAddress.trim() === '') {
-            input.setCustomValidity('Please input a valid voucher');
-            input.reportValidity();
-            return;
-        }
-
-        addLoader('connectBtn')
-
-        var voucherCode = $("#voucherInput").val();
-        if (!voucherCode) {
-            $.toast({ title: 'Failed', content: 'Voucher code is required.', type: 'error', delay: 3000 });
-            removeLoader('connectBtn')
-            return;
-        }
-
-        fetchUseVoucher(macNoColon, vendorIpAddress, voucherCode, function (success, error) {
-            if (success) {
-                $.toast({
-                    title: 'Success',
-                    content: "Voucher successfully consumed.",
-                    type: 'success',
-                    delay: 3000
-                });
-                setTimeout(function () {
-                    newLogin();
-                    removeLoader('connectBtn')
-                }, 3000);
-            } else {
-                removeLoader('connectBtn')
-                $.toast({ title: 'Failed', content: error || "Server request failed.", type: 'error', delay: 3000 });
-
+            // Trim the value to catch empty or whitespace-only input
+            if (!input.value || input.value.trim() === '') {
+                input.setCustomValidity('Please input a valid voucher');
+                input.reportValidity();
                 return;
             }
-        });
+
+            // Optional: check HTML5 constraints
+            if (!input.checkValidity()) {
+                input.setCustomValidity('Please input a valid voucher');
+                input.reportValidity();
+                return;
+            }
+
+            // Check other variables
+            if (!macNoColon || macNoColon.trim() === '') {
+                input.setCustomValidity('Please input a valid voucher');
+                input.reportValidity();
+                return;
+            }
+
+            if (!vendorIpAddress || vendorIpAddress.trim() === '') {
+                input.setCustomValidity('Please input a valid voucher');
+                input.reportValidity();
+                return;
+            }
+
+            addLoader('connectBtn')
+
+            var voucherCode = $("#voucherInput").val();
+            if (!voucherCode) {
+                $.toast({title: 'Failed', content: 'Voucher code is required.', type: 'error', delay: 3000});
+                removeLoader('connectBtn')
+                return;
+            }
+
+            fetchUseVoucher(macNoColon, vendorIpAddress, voucherCode, function (success, error) {
+                if (success) {
+                    $.toast({
+                        title: 'Success',
+                        content: "Voucher successfully consumed.",
+                        type: 'success',
+                        delay: 3000
+                    });
+                    setTimeout(function () {
+                        newLogin();
+                        removeLoader('connectBtn')
+                    }, 3000);
+                } else {
+                    removeLoader('connectBtn')
+                    $.toast({title: 'Failed', content: error || "Server request failed.", type: 'error', delay: 3000});
+
+                    return;
+                }
+            });
+        }
     }
+
 }
 
 function fetchUseVoucher(macNoColon, vendorIpAddress, voucherCode, cb) {
-    fetchPortalAPI("/use-voucher", "POST", vendorIpAddress, { mac: macNoColon, code: voucherCode })
+    fetchPortalAPI("/use-voucher", "POST", vendorIpAddress, {mac: macNoColon, code: voucherCode})
         .then(function (result) {
             if ((!result) || (!result.success)) {
                 cb(null, (result && result.error) || "Server request failed.");
@@ -2976,7 +3006,7 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
                 var finalUrl = juanfiExtendedServerUrl + apiUrl + separator + "t=" + timestamp;
 
                 var headers = vendorIpAddress
-                    ? { 'X-IP': vendorIpAddress }
+                    ? {'X-IP': vendorIpAddress}
                     : undefined;
 
                 var ajaxOptions = {
@@ -3040,25 +3070,30 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
 
 function showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig) {
     $("#rewardBtnWrapper").addClass("hide");
-    if (pointsEnabled && totalPoints > 0) {
+    if (pointsEnabled) {
         $("#redeemWrapper").removeClass("hide");
         if ((!!wheelConfig) && wheelConfig.length > 0) {
             $("#spinWrapper").removeClass("hide");
+            $("#spinWheelCard").removeClass("hide");
             $("#spinWrapper").removeClass("col-sm-12");
             $("#spinWrapper").addClass("col-sm-6");
             $("#redeemWrapper").removeClass("col-sm-12");
             $("#redeemWrapper").addClass("col-sm-6");
         } else {
             $("#spinWrapper").addClass("hide");
+            $("#spinWheelCard").addClass("hide");
             $("#spinWrapper").removeClass("col-sm-6");
             $("#spinWrapper").addClass("col-sm-12");
             $("#redeemWrapper").removeClass("col-sm-6");
             $("#redeemWrapper").addClass("col-sm-12");
         }
-        $("#rewardBtnWrapper").removeClass("hide");
+        if (totalPoints > 0) {
+            $("#rewardBtnWrapper").removeClass("hide");
+        }
     } else {
         $("#redeemWrapper").addClass("hide");
         $("#spinWrapper").addClass("hide");
+        $("#spinWheelCard").addClass("hide");
         $("#rewardBtnWrapper").addClass("hide");
     }
 
@@ -3154,7 +3189,7 @@ $.toast = function (options) {
 
     container.appendChild(toastEl);
 
-    var toast = new bootstrap.Toast(toastEl, { delay: delay, autohide: true });
+    var toast = new bootstrap.Toast(toastEl, {delay: delay, autohide: true});
     toast.show();
 
     toastEl.addEventListener('hidden.bs.toast', function () {
