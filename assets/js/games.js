@@ -20,7 +20,7 @@ function fetchUserPoints() {
         if (userData) {
             const totalPoints = Number(userData.totalPoints) || 0;
             currentPoints = getWholeNumber(totalPoints);
-            
+
             // Sync with core.js points and spin wheel display
             if (typeof rewardPointsBalance !== 'undefined') {
                 rewardPointsBalance = totalPoints;
@@ -44,7 +44,7 @@ function fetchUserPoints() {
                 if (startBtn) startBtn.disabled = true;
                 if (resultAlert) {
                     resultAlert.classList.remove("d-none");
-                    if(!isRacing){
+                    if (!isRacing) {
                         resultAlert.className = "alert mt-3 fw-bold text-center shadow alert-warning";
                         resultAlert.innerHTML = `⚠️ You don't have enough points to join the race. Drop a coin first! ⚠️`;
                     }
@@ -133,6 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 startBtn.disabled = true;
                 resultAlert.classList.remove("d-none");
+                resultAlert.innerHTML = `⚠️ You don't have enough points to join the race. Drop a coin first! ⚠️`;
             }
         });
     });
@@ -143,7 +144,6 @@ document.addEventListener("DOMContentLoaded", () => {
         addLoader('duckRaceStartBtn');
         fetchDuckRaceReward(serverIp, macNoColon, selectedDuck).then(function (result) {
             if (!result) return;
-            fetchUserPoints();
 
             winningDuck = result.winningDuck;
             wonPoints = result.wonPoints;
@@ -186,15 +186,24 @@ document.addEventListener("DOMContentLoaded", () => {
 function startRaceAnimation() {
     const ducks = [1, 2, 3, 4, 5].map(id => document.getElementById(`duck-${id}`));
     const trackHeight = document.querySelector('.race-track').offsetHeight;
-    // Finish line is top 20px, duck is bottom 10px. Walk distance ~ (trackHeight - 80px)
     const finishDistance = trackHeight - 80;
 
     let positions = [0, 0, 0, 0, 0];
     let raceInterval;
 
+    // Pick 2 random ducks (not the winner) to be "unlucky" and slow down
+    const otherDucks = [1, 2, 3, 4, 5].filter(id => id !== winningDuck);
+    const unluckyDucks = [];
+    while (unluckyDucks.length < 2) {
+        const randomDuck = otherDucks[Math.floor(Math.random() * otherDucks.length)];
+        if (!unluckyDucks.includes(randomDuck)) {
+            unluckyDucks.push(randomDuck);
+        }
+    }
+
     // Reset ducks to start
     ducks.forEach(duck => {
-        duck.style.bottom = "10px";
+        if (duck) duck.style.bottom = "10px";
     });
 
     // Start water animation
@@ -203,24 +212,37 @@ function startRaceAnimation() {
 
     raceInterval = setInterval(() => {
         let raceFinished = false;
+        const anyNearFinish = positions.some(pos => pos >= finishDistance * 0.65);
 
         ducks.forEach((duck, index) => {
             const duckId = index + 1;
+            const completion = positions[index] / finishDistance;
 
-            // Increment position randomly
             let speed = Math.random() * 2 + 1;
 
-            // Give the winning duck a slight advantage so it always wins
             if (duckId === winningDuck) {
-                // Ensure it stays slightly ahead but looks random
-                let maxOtherPos = Math.max(...positions.filter((_, i) => i !== index));
-                if (positions[index] < maxOtherPos) {
-                    speed += 0.00005; // Catch up boost
+                // Winner Logic
+                if (anyNearFinish) {
+                    // Sprint Phase: Catch up and pass everyone
+                    const maxOtherPos = Math.max(...positions.filter((_, i) => i !== index));
+                    if (positions[index] < maxOtherPos) {
+                        speed = 4 + Math.random() * 2; // Super boost
+                    } else {
+                        speed = 3 + Math.random() * 1; // High lead speed
+                    }
+                } else if (completion > 0.1 && completion < 0.6) {
+                    // Slowdown Phase: Keep it competitive but not "very slow"
+                    speed = 1.0 + Math.random() * 0.5;
                 } else {
-                    speed += 0.000000001; // Normal winning speed
+                    // Normal Phase
+                    speed += 0.5;
                 }
+            } else if (unluckyDucks.includes(duckId)) {
+                // Unlucky Ducks: Slow down randomly
+                if (Math.random() > 0.6) speed = speed * 0.3;
+                if (Math.random() > 0.85) speed = 0;
             } else {
-                // Occasional slowdown for losing ducks
+                // Regular Ducks
                 if (Math.random() > 0.8) speed = 0;
             }
 
@@ -229,19 +251,20 @@ function startRaceAnimation() {
             // Check for finish
             if (positions[index] >= finishDistance) {
                 positions[index] = finishDistance;
+                // Only the winningDuck can finish first to trigger the end
                 if (duckId === winningDuck) {
                     raceFinished = true;
                 }
             }
 
-            duck.style.bottom = `${10 + positions[index]}px`;
+            if (duck) duck.style.bottom = `${10 + positions[index]}px`;
         });
 
         if (raceFinished) {
             clearInterval(raceInterval);
             announceWinner();
         }
-    }, 50); // 20fps for smooth random movement
+    }, 50);
 }
 
 function announceWinner() {
