@@ -1892,6 +1892,7 @@ function fetchServerData() {
     var attempt = 1;
     var storageKey = 'juanfi_extended_data';
     var expiryKey = 'juanfi_extended_data_expiry';
+    var appendKey = 'juanfi_extended_data_append';
 
     return new Promise(function (resolve, reject) {
         if (isTestMode)
@@ -1901,7 +1902,13 @@ function fetchServerData() {
         var cachedExpiry = localStorage.getItem(expiryKey);
         var now = new Date().getTime();
 
-        if (cachedData && cachedExpiry && now < parseInt(cachedExpiry)) {
+        var isAppendValid = true;
+        if (typeof append !== 'undefined') {
+            var cachedAppend = localStorage.getItem(appendKey);
+            isAppendValid = (cachedAppend === append);
+        }
+
+        if (isAppendValid && cachedData && cachedExpiry && now < parseInt(cachedExpiry)) {
             try {
                 var parsedData = JSON.parse(cachedData);
                 juanfiExtendedIp = parsedData.ip;
@@ -1926,8 +1933,13 @@ function fetchServerData() {
                         localStorage.setItem(storageKey, JSON.stringify(data));
                         // 5 minutes expiration
                         localStorage.setItem(expiryKey, (new Date().getTime() + 5 * 60 * 1000).toString());
-                        if(parsedData){
-                            juanfiExtendedIp = parsedData.ip;
+                        
+                        if (typeof append !== 'undefined') {
+                            localStorage.setItem(appendKey, append);
+                        }
+
+                        if(data){
+                            juanfiExtendedIp = data.ip;
                         }
                     } catch (e) {
                         console.error('Failed to save to localStorage:', e);
@@ -2242,6 +2254,45 @@ function showPauseButton() {
 function showResumeButton() {
     $("#resumeTimeBtn").removeClass("hide");
     $("#pauseTimeBtn").addClass("hide");
+}
+
+function logoutMember(macNoColon) {
+    fetchPortalAPI("/logout-member", "POST", vendorIpAddress, {mac: macNoColon})
+        .then(function (result) {
+            if ((!result) || (!result.success)) {
+                $.toast({
+                    title: 'Failed',
+                    content: (result && result.error) || 'Request failed. Please try again.',
+                    type: 'error',
+                    delay: 4000
+                });
+                removeLoader('logoutMemberBtn');
+                return;
+            }
+
+            var data = result.data;
+            if ((!!data) || (data && data.status === "success")) {
+                setTimeout(function () {
+                    RefreshPortal();
+                }, 1500);
+            } else {
+                $.toast({
+                    title: 'Failed',
+                    content: 'Failed to disconnect device.',
+                    type: 'error',
+                    delay: 4000
+                });
+            }
+        })
+        .catch(function (error) {
+            $.toast({
+                title: 'Failed',
+                content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
+                type: 'error',
+                delay: 4000
+            });
+            removeLoader('logoutMemberBtn');
+        });
 }
 
 function logoutVoucher(macNoColon) {
