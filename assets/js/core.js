@@ -34,6 +34,7 @@ var spinEventsCreated = false;
 var rewardPointsBalance = 0;
 //DO NOT UPDATE - END
 
+var juanfiExtendedIp = "";
 var isMultiVendo;
 var multiVendoOption;
 var multiVendoAddresses = [];
@@ -48,6 +49,8 @@ var isPaused;
 var hasWiFree = false;
 var announcementText = '';
 var isTestMode = !window.location.href.startsWith("http");
+var buttonEffect;
+
 if (isTestMode) {
     $('#loaderDiv').addClass("hide");
     var containerDiv = $('#containerDiv');
@@ -154,11 +157,23 @@ function initValues() {
 $(document).ready(function () {
     fetchServerData().then(function (server) {
         juanfiExtendedServerUrl = "http://" + server.ip + ":8080/api/portal";
+        buttonEffect = new Audio(`http://${server.ip}:8080/sounds/button.mp3`);
         $('#displayVersion').html("v" + server.version);
         if (!initLoad) {
             initValues();
             renderView();
             useVoucherBtnEvt();
+        }
+    });
+
+    // Global click listener for UI interaction sounds
+    $(document).on('click', 'button, .btn, a.btn', function() {
+        if (typeof buttonEffect !== 'undefined' && buttonEffect) {
+            if(buttonEffect){
+                buttonEffect.currentTime = 0;
+                buttonEffect.play().catch(e => console.error("Audio playback error:", e));
+            }
+
         }
     });
 });
@@ -223,7 +238,6 @@ function renderView() {
             $("#dataInfoDiv").addClass("hide");
             $("#dataInfoDiv2").addClass("hide");
         }
-
         if (!showMemberLogin) {
             $("#memberBtn").addClass("hide");
         }
@@ -1890,6 +1904,7 @@ function fetchServerData() {
         if (cachedData && cachedExpiry && now < parseInt(cachedExpiry)) {
             try {
                 var parsedData = JSON.parse(cachedData);
+                juanfiExtendedIp = parsedData.ip;
                 console.log('JuanFi Extended Version (cached):', parsedData.version);
                 resolve(parsedData);
                 $("#serverStatus").addClass("hide");
@@ -1911,6 +1926,9 @@ function fetchServerData() {
                         localStorage.setItem(storageKey, JSON.stringify(data));
                         // 5 minutes expiration
                         localStorage.setItem(expiryKey, (new Date().getTime() + 5 * 60 * 1000).toString());
+                        if(parsedData){
+                            juanfiExtendedIp = parsedData.ip;
+                        }
                     } catch (e) {
                         console.error('Failed to save to localStorage:', e);
                     }

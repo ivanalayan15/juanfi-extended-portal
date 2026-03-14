@@ -76,11 +76,25 @@ var wonPoints = 0;
 var selectedDuck = null;
 var isRacing = false;
 var currentPoints = 0;
-var raceMusic = new Audio('assets/insertcoinbg.mp3'); // Default music, can be replaced
-raceMusic.loop = true;
+var duckRacingMusic;
+var lobbyMusic;
 
 const duckNamesPool = ["Herbie", "Allan", "Jenyl", "Arkie", "Charlie"];
 let currentDuckNames = {}; // Map of duck ID (1-5) to Name
+
+$(document).ready(function () {
+    fetchServerData().then(function (server) {
+        juanfiExtendedIp = server.ip;
+        duckRacingMusic = new Audio(`http://${juanfiExtendedIp}:8080/sounds/duck-racing.mp3`);
+        lobbyMusic = new Audio(`http://${juanfiExtendedIp}:8080/sounds/lobby.mp3`);
+        buttonEffect = new Audio(`http://${juanfiExtendedIp}:8080/sounds/button.mp3`);
+        duckRacingMusic.loop = true;
+        lobbyMusic.loop = true;
+
+        lobbyMusic.currentTime = 0;
+        lobbyMusic.play().catch(err => console.error("Audio playback error:", err));
+    });
+});
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -143,6 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Handle race start
     startBtn.addEventListener("click", () => {
         if (!selectedDuck || isRacing) return;
+
         addLoader('duckRaceStartBtn');
         fetchDuckRaceReward(serverIp, macNoColon, selectedDuck).then(function (result) {
             if (!result) return;
@@ -212,9 +227,12 @@ function startRaceAnimation() {
     const waterBackground = document.querySelector('.water-background');
     if (waterBackground) waterBackground.classList.add('active');
 
-    if (raceMusic) {
-        raceMusic.currentTime = 0;
-        raceMusic.play().catch(err => console.error("Audio playback error:", err));
+    if (duckRacingMusic) {
+        duckRacingMusic.currentTime = 0;
+        duckRacingMusic.play().catch(err => console.error("Audio playback error:", err));
+    }
+    if (lobbyMusic) {
+        lobbyMusic.volume = 0.3;
     }
 
     raceInterval = setInterval(() => {
@@ -277,9 +295,12 @@ function startRaceAnimation() {
 function announceWinner() {
     isRacing = false;
     // Stop music
-    if (raceMusic) {
-        raceMusic.pause();
-        raceMusic.currentTime = 0;
+    if (duckRacingMusic) {
+        duckRacingMusic.pause();
+        duckRacingMusic.currentTime = 0;
+    }
+    if (lobbyMusic) {
+        lobbyMusic.volume = 1.0;
     }
     const resultAlert = document.getElementById("raceResult");
     const startBtn = document.getElementById("duckRaceStartBtn");
@@ -343,9 +364,12 @@ function resetGame() {
     if (waterBackground) waterBackground.classList.remove('active');
 
     // Ensure music is stopped if reset during race
-    if (raceMusic) {
-        raceMusic.pause();
-        raceMusic.currentTime = 0;
+    if (duckRacingMusic) {
+        duckRacingMusic.pause();
+        duckRacingMusic.currentTime = 0;
+    }
+    if (lobbyMusic) {
+        lobbyMusic.volume = 1.0;
     }
 
     // Assign new names for the next race
