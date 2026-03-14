@@ -167,9 +167,9 @@ $(document).ready(function () {
     });
 
     // Global click listener for UI interaction sounds
-    $(document).on('click', 'button, .btn, a.btn', function() {
+    $(document).on('click', 'button, .btn, a.btn', function () {
         if (typeof buttonEffect !== 'undefined' && buttonEffect) {
-            if(buttonEffect){
+            if (buttonEffect) {
                 buttonEffect.currentTime = 0;
                 buttonEffect.play().catch(e => console.error("Audio playback error:", e));
             }
@@ -231,8 +231,8 @@ function renderView() {
         $("#saveVoucherButton").prop('disabled', true);
         hideDoneButton();
         $("#cncl").prop('disabled', false);
-        $('#coinToast').toast({delay: 1000, animation: true});
-        $('#coinSlotError').toast({delay: 5000, animation: true});
+        $('#coinToast').toast({ delay: 1000, animation: true });
+        $('#coinSlotError').toast({ delay: 5000, animation: true });
 
         if (!dataRateOption) {
             $("#dataInfoDiv").addClass("hide");
@@ -241,7 +241,7 @@ function renderView() {
         if (!showMemberLogin) {
             $("#memberBtn").addClass("hide");
         }
-        if(data){
+        if (data) {
             if (!data.showInsertCoin) {
                 $("#insertBtnContainer").addClass("hide");
             } else {
@@ -583,6 +583,13 @@ function renderView() {
                         RefreshPortal();
                     });
                 }
+                var confirmLogoutMemberBtn = document.getElementById('confirmLogoutMemberBtn');
+                if (confirmLogoutMemberBtn) {
+                    confirmLogoutMemberBtn.addEventListener('click', function () {
+                        addLoader('confirmLogoutMemberBtn');
+                        logoutMember();
+                    });
+                }
             }
             if (!initLoad) {
                 $('#loaderDiv').addClass("hide");
@@ -597,6 +604,7 @@ function renderView() {
 }
 
 function RefreshPortal() {
+    localStorage.clear();
     setTimeout(function () {
         window.location.href = "/login?vc=" + voucher;
     }, 1500);
@@ -1933,12 +1941,12 @@ function fetchServerData() {
                         localStorage.setItem(storageKey, JSON.stringify(data));
                         // 5 minutes expiration
                         localStorage.setItem(expiryKey, (new Date().getTime() + 5 * 60 * 1000).toString());
-                        
+
                         if (typeof append !== 'undefined') {
                             localStorage.setItem(appendKey, append);
                         }
 
-                        if(data){
+                        if (data) {
                             juanfiExtendedIp = data.ip;
                         }
                     } catch (e) {
@@ -2082,7 +2090,7 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig) {
             e.preventDefault();
             var avail = parseInt(rewardPointsBalance) || 0;
             if (avail <= 0) {
-                $.toast({title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000});
+                $.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000 });
                 return;
             }
 
@@ -2162,7 +2170,7 @@ function onRedeemRewardPtsSliderChangeEvt() {
 
 function onRedeemRewardPtsConfirmBtnEvt(macNoColon) {
     var confirmRedeemBtn = document.getElementById("confirmRedeemBtn");
-    if(confirmRedeemBtn){
+    if (confirmRedeemBtn) {
         confirmRedeemBtn.onclick = function () {
             var selected = parseInt($('#selectedPointsInput').val(), 10) || 0;
             if (selected <= 0) {
@@ -2256,8 +2264,8 @@ function showResumeButton() {
     $("#pauseTimeBtn").addClass("hide");
 }
 
-function logoutMember(macNoColon) {
-    fetchPortalAPI("/logout-member", "POST", vendorIpAddress, {mac: macNoColon})
+function logoutMember() {
+    fetchPortalAPI("/logout-member", "POST", vendorIpAddress, { mac: voucher })
         .then(function (result) {
             if ((!result) || (!result.success)) {
                 $.toast({
@@ -2266,7 +2274,8 @@ function logoutMember(macNoColon) {
                     type: 'error',
                     delay: 4000
                 });
-                removeLoader('logoutMemberBtn');
+                removeLoader('confirmLogoutMemberBtn');
+                $('#logoutMemberModal').modal('hide');
                 return;
             }
 
@@ -2282,6 +2291,8 @@ function logoutMember(macNoColon) {
                     type: 'error',
                     delay: 4000
                 });
+                removeLoader('confirmLogoutMemberBtn');
+                $('#logoutMemberModal').modal('hide');
             }
         })
         .catch(function (error) {
@@ -2291,12 +2302,13 @@ function logoutMember(macNoColon) {
                 type: 'error',
                 delay: 4000
             });
-            removeLoader('logoutMemberBtn');
+            removeLoader('confirmLogoutMemberBtn');
+            $('#logoutMemberModal').modal('hide');
         });
 }
 
 function logoutVoucher(macNoColon) {
-    fetchPortalAPI("/logout", "POST", vendorIpAddress, {mac: macNoColon})
+    fetchPortalAPI("/logout", "POST", vendorIpAddress, { mac: macNoColon })
         .then(function (result) {
             if ((!result) || (!result.success)) {
                 $.toast({
@@ -2336,7 +2348,7 @@ function logoutVoucher(macNoColon) {
 }
 
 function loginVoucher(macNoColon, cb) {
-    fetchPortalAPI("/login", "POST", vendorIpAddress, {mac: macNoColon})
+    fetchPortalAPI("/login", "POST", vendorIpAddress, { mac: macNoColon })
         .then(function (result) {
             if ((!result) || (!result.success)) {
                 $.toast({
@@ -2374,7 +2386,7 @@ function loginVoucher(macNoColon, cb) {
 
 
 function claimFreeInternetFetch(macNoColon, cb) {
-    fetchPortalAPI("/claim-free-internet", "POST", vendorIpAddress, {mac: macNoColon})
+    fetchPortalAPI("/claim-free-internet", "POST", vendorIpAddress, { mac: macNoColon })
         .then(function (result) {
             if ((!result) || (!result.success)) {
                 $.toast({
@@ -2445,7 +2457,7 @@ function fetchSpinWheelReward(mac, cb) {
         removeLoader('spinBtn');
         return;
     }
-    fetchPortalAPI("/promo/spin-wheel", "POST", vendorIpAddress, JSON.stringify({mac: mac}), {
+    fetchPortalAPI("/promo/spin-wheel", "POST", vendorIpAddress, JSON.stringify({ mac: mac }), {
         contentType: 'application/json; charset=utf-8',
         dataType: "json"
     })
@@ -2484,7 +2496,7 @@ function fetchDuckRaceReward(serverIp, mac, betNumber) {
         "/race-duck",
         "POST",
         vendorIpAddress,
-        JSON.stringify({mac: mac, betNumber: betNumber}),
+        JSON.stringify({ mac: mac, betNumber: betNumber }),
         {
             contentType: 'application/json; charset=utf-8',
             dataType: "json"
@@ -2599,7 +2611,7 @@ function drawSpinWheel(mac, prizes, colors) {
     var displaySize = 460;
     var wheelSize = 520;
     var dpr = Math.max(window.devicePixelRatio || 1, 1);
-    var center = {x: 0, y: 0};
+    var center = { x: 0, y: 0 };
     var radius = 0;
     var currentRotation = 0; // radians
     var spinning = false;
@@ -2886,11 +2898,11 @@ function drawSpinWheel(mac, prizes, colors) {
         window.addEventListener('resize', function () {
             resizeAll();
         });
-        if(spinBtn){
+        if (spinBtn) {
             spinBtn.onclick = function () {
                 var avail = parseInt(rewardPointsBalance) || 0;
                 if (avail <= 0) {
-                    $.toast({title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000});
+                    $.toast({ title: 'Info', content: 'No reward points available to redeem.', type: 'error', delay: 3000 });
                     $('#redeemBySpinModal').modal('hide');
                     return;
                 }
@@ -2900,7 +2912,7 @@ function drawSpinWheel(mac, prizes, colors) {
                 spinWheel();
             };
         }
-        if(spinCancelBtn){
+        if (spinCancelBtn) {
             spinCancelBtn.onclick = function (e) {
                 newLogin();
             };
@@ -2999,7 +3011,7 @@ function useVoucherBtnEvt() {
 
             var voucherCode = $("#voucherInput").val();
             if (!voucherCode) {
-                $.toast({title: 'Failed', content: 'Voucher code is required.', type: 'error', delay: 3000});
+                $.toast({ title: 'Failed', content: 'Voucher code is required.', type: 'error', delay: 3000 });
                 removeLoader('connectBtn')
                 return;
             }
@@ -3018,7 +3030,7 @@ function useVoucherBtnEvt() {
                     }, 3000);
                 } else {
                     removeLoader('connectBtn')
-                    $.toast({title: 'Failed', content: error || "Server request failed.", type: 'error', delay: 3000});
+                    $.toast({ title: 'Failed', content: error || "Server request failed.", type: 'error', delay: 3000 });
 
                     return;
                 }
@@ -3029,7 +3041,7 @@ function useVoucherBtnEvt() {
 }
 
 function fetchUseVoucher(macNoColon, vendorIpAddress, voucherCode, cb) {
-    fetchPortalAPI("/use-voucher", "POST", vendorIpAddress, {mac: macNoColon, code: voucherCode})
+    fetchPortalAPI("/use-voucher", "POST", vendorIpAddress, { mac: macNoColon, code: voucherCode })
         .then(function (result) {
             if ((!result) || (!result.success)) {
                 cb(null, (result && result.error) || "Server request failed.");
@@ -3076,7 +3088,7 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
                 var finalUrl = juanfiExtendedServerUrl + apiUrl + separator + "t=" + timestamp;
 
                 var headers = vendorIpAddress
-                    ? {'X-IP': vendorIpAddress}
+                    ? { 'X-IP': vendorIpAddress }
                     : undefined;
 
                 var ajaxOptions = {
@@ -3259,7 +3271,7 @@ $.toast = function (options) {
 
     container.appendChild(toastEl);
 
-    var toast = new bootstrap.Toast(toastEl, {delay: delay, autohide: true});
+    var toast = new bootstrap.Toast(toastEl, { delay: delay, autohide: true });
     toast.show();
 
     toastEl.addEventListener('hidden.bs.toast', function () {
@@ -3269,6 +3281,6 @@ $.toast = function (options) {
 
 createToastContainer();
 
-function getWholeNumber(num){
+function getWholeNumber(num) {
     return Math.trunc(num);
 }
