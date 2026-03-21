@@ -50,6 +50,8 @@ var hasWiFree = false;
 var announcementText = '';
 var isTestMode = window.location.href.indexOf("http") !== 0;
 var buttonEffect;
+var pauseAwaitingUserInfoResponse = false;
+var pauseRequestInFlight = false;
 var resumeRequestInFlight = false;
 
 function patchPromiseCatch(promise) {
@@ -419,6 +421,12 @@ function renderView() {
             ignoreSaveCode = "0";
         }
         fetchUserInfo(macNoColon, pointsEnabled, function (userData, error) {
+            if (pauseAwaitingUserInfoResponse) {
+                removeLoader('pauseTimeBtn');
+                pauseAwaitingUserInfoResponse = false;
+                pauseRequestInFlight = false;
+            }
+
             if (!!error) {
 
                 $.toast({
@@ -839,8 +847,13 @@ $("#resumeTimeBtn").addClass("hide");
 var pauseTimeBtn = document.getElementById('pauseTimeBtn');
 if (pauseTimeBtn) {
     pauseTimeBtn.onclick = function () {
+        if (pauseRequestInFlight) {
+            return false;
+        }
+
         pause(macNoColon);
         isLoggedIn = false;
+        return false;
     }
 }
 
@@ -1662,21 +1675,24 @@ function clearStorageValues() {
 }
 
 function pause(macNoColon) {
+    if (pauseRequestInFlight) {
+        return;
+    }
+
+    pauseRequestInFlight = true;
     addLoader('pauseTimeBtn');
     setStorageValue("isPaused", "1");
-    logoutVoucher(macNoColon, function () {
-        removeLoader('pauseTimeBtn');
-    });
-    fetchUserInfo(macNoColon, null, function (userData, error) {
-        if (!!error) {
-            return;
-        }
-        var isOnline = userData.isOnline;
-        sessiontimeInSecs = userData.timeRemaining;
-        if (isOnline) {
-            showPauseButton();
-        } else {
+    logoutVoucher(macNoColon, function (success) {
+        if (success) {
             showResumeButton();
+            pauseAwaitingUserInfoResponse = true;
+            setTimeout(function () {
+                newLogin();
+            }, 1500);
+        } else {
+            removeLoader('pauseTimeBtn');
+            pauseAwaitingUserInfoResponse = false;
+            pauseRequestInFlight = false;
         }
     });
 }
@@ -2513,7 +2529,7 @@ function logoutMember() {
         });
 }
 
-function logoutVoucher(macNoColon) {
+function logoutVoucher(macNoColon, cb) {
     fetchPortalAPI("/logout", "POST", vendorIpAddress, { mac: macNoColon })
         .then(function (result) {
             if ((!result) || (!result.success)) {
@@ -2524,15 +2540,13 @@ function logoutVoucher(macNoColon) {
                     delay: 4000
                 });
                 removeLoader('pauseTimeBtn');
+                if (cb) cb(false);
                 return;
             }
 
             var data = result.data;
             if ((!!data) || (data && data.status === "success")) {
-                setTimeout(function () {
-                    showResumeButton();
-                    newLogin();
-                }, 1500);
+                if (cb) cb(true);
             } else {
                 $.toast({
                     title: 'Failed',
@@ -2540,6 +2554,7 @@ function logoutVoucher(macNoColon) {
                     type: 'error',
                     delay: 4000
                 });
+                if (cb) cb(false);
             }
         })
         .catch(function (error) {
@@ -2550,6 +2565,7 @@ function logoutVoucher(macNoColon) {
                 delay: 4000
             });
             removeLoader('pauseTimeBtn');
+            if (cb) cb(false);
         });
 }
 
