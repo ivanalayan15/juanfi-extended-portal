@@ -92,12 +92,6 @@
                 CLAIM FREE INTERNET
             </button>
         </div>
-        <div id="gamesContainer" class="container d-flex justify-content-between align-items-center gap-2 mt-2">
-            <button type="button" id="gamesBtn" class="btn btn-warning w-100 fw-bold"
-                onclick="addLoader('gamesBtn'); window.location.href='games.html?mac=' + macNoColon + '&ip=' + vendorIpAddress">
-                <i class="bi bi-controller me-2"></i>GAMES
-            </button>
-        </div>
         <div class="container main-panel d-flex flex-column gap-0">
             <!-- MEMBER DASHBOARD (Hidden by default, shown via core.js) -->
             <div id="memberDashboardContainer" class="hide mt-3 text-center">
@@ -126,27 +120,31 @@
 
             <ul class="nav nav-tabs" id="myTab" role="tablist">
 
-                <li class="nav-item" role="presentation">
+                <li class="nav-item d-flex align-items-center" role="presentation">
                     <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home"
                         type="button" role="tab">
-                        <i class="bi bi-house-door me-1 juanfi-primary-text"></i>
-                        Home
+                        <span>Home</span>
                     </button>
                 </li>
 
-                <li id="rewardDtlsBtn" class="nav-item" role="presentation">
+                <li id="rewardDtlsBtn" class="nav-item d-flex align-items-center" role="presentation">
                     <button class="nav-link" id="points-tab" data-bs-toggle="tab" data-bs-target="#points" type="button"
                         role="tab">
-                        <i class="bi bi-heart me-1 juanfi-primary-text"></i>
-                        Points
+                        <span>Points</span>
                     </button>
                 </li>
 
-                <li class="nav-item" role="presentation" id="historyTab">
+                <li class="nav-item d-flex align-items-center" role="presentation" id="historyTab">
                     <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history"
                         type="button" role="tab">
-                        <i class="bi bi-clock-history me-1 juanfi-primary-text"></i>
-                        History
+                        <span>History</span>
+                    </button>
+                </li>
+
+                <li id="gamesContainer" class="nav-item" role="presentation">
+                    <button class="nav-link" id="gamesBtn" type="button"
+                        onclick="addLoader('gamesBtn'); window.location.href='games.html?mac=' + macNoColon + '&ip=' + vendorIpAddress">
+                        <span>Games</span>
                     </button>
                 </li>
             </ul>
@@ -166,17 +164,19 @@
                                     INSERT
                                 </button>
                             </div>
-                            <div class="action-stack d-flex flex-column gap-2 w-100">
-                                <button type="button" id="resumeTimeBtn" class="btn btn-success w-100 btn-sm-portal">
-                                    RESUME
-                                </button>
-                                <div id="pauseBtnContainer" class="d-flex w-100">
+                            <div class="action-stack align-self-center d-flex flex-column align-items-center gap-2 w-100">
+                                <div id="resumeBtnContainer" class="w-100">
+                                    <button type="button" id="resumeTimeBtn" class="btn btn-success w-100 btn-sm-portal">
+                                        RESUME
+                                    </button>
+                                </div>
+                                <div id="pauseBtnContainer" class="w-100">
                                     <button type="button" id="pauseTimeBtn" class="btn btn-danger w-100 btn-sm-portal">
                                         PAUSE
                                     </button>
                                 </div>
                                 <button type="button" id="btnPromoRates" onclick="promoBtnAction()"
-                                    class="btn btn-danger w-100 btn-sm-portal">
+                                    class="btn mt-1 btn-danger w-100 btn-sm-portal">
                                     RATES
                                 </button>
                             </div>
