@@ -48,8 +48,88 @@ var macNoColon;
 var isPaused;
 var hasWiFree = false;
 var announcementText = '';
-var isTestMode = !window.location.href.startsWith("http");
+var isTestMode = window.location.href.indexOf("http") !== 0;
 var buttonEffect;
+
+function patchPromiseCatch(promise) {
+    if (!promise || typeof promise.then !== 'function' || typeof promise.catch === 'function') {
+        return promise;
+    }
+
+    var originalThen = promise.then;
+    promise.then = function () {
+        return patchPromiseCatch(originalThen.apply(promise, arguments));
+    };
+    promise.catch = function (onRejected) {
+        return patchPromiseCatch(promise.then(null, onRejected));
+    };
+
+    return promise;
+}
+
+function createCompatPromise(executor) {
+    if (typeof Promise === 'function') {
+        return new Promise(executor);
+    }
+
+    var deferred = $.Deferred();
+    try {
+        executor(function (value) {
+            deferred.resolve(value);
+        }, function (reason) {
+            deferred.reject(reason);
+        });
+    } catch (e) {
+        deferred.reject(e);
+    }
+
+    return patchPromiseCatch(deferred.promise());
+}
+
+function resolveCompatPromise(value) {
+    if (typeof Promise === 'function' && typeof Promise.resolve === 'function') {
+        return Promise.resolve(value);
+    }
+
+    var deferred = $.Deferred();
+    deferred.resolve(value);
+    return patchPromiseCatch(deferred.promise());
+}
+
+function removeNode(node) {
+    if (node && node.parentNode) {
+        node.parentNode.removeChild(node);
+    }
+}
+
+function isArrayCompat(value) {
+    return Object.prototype.toString.call(value) === '[object Array]';
+}
+
+function safeAudioPlay(audio) {
+    if (!audio || typeof audio.play !== 'function') {
+        return;
+    }
+
+    try {
+        var playResult = audio.play();
+        if (playResult && typeof playResult.catch === 'function') {
+            playResult.catch(function (e) {
+                console.error("Audio playback error:", e);
+            });
+        }
+    } catch (e) {
+        console.error("Audio playback error:", e);
+    }
+}
+
+function getRootUrl() {
+    if (window.location.protocol && window.location.host) {
+        return window.location.protocol + "//" + window.location.host + "/";
+    }
+
+    return "/";
+}
 
 if (isTestMode) {
     $('#loaderDiv').addClass("hide");
@@ -64,11 +144,9 @@ if (isTestMode) {
 
 try {
     setTimeout(function () {
-        var url = new URL(window.location.href);
-        url.pathname = "/";
-        url.search = '';
-        url.hash = '';
-        window.history.replaceState({}, document.title, url.toString());
+        if (window.history && typeof window.history.replaceState === 'function') {
+            window.history.replaceState({}, document.title, getRootUrl());
+        }
     }, 100)
 } catch (e) {
 
@@ -157,7 +235,7 @@ function initValues() {
 $(document).ready(function () {
     fetchServerData().then(function (server) {
         juanfiExtendedServerUrl = "http://" + server.ip + ":8080/api/portal";
-        buttonEffect = new Audio(`http://${server.ip}:8080/sounds/button.mp3`);
+        buttonEffect = new Audio("http://" + server.ip + ":8080/sounds/button.mp3");
         $('#displayVersion').html("v" + server.version);
         if (!initLoad) {
             initValues();
@@ -169,11 +247,8 @@ $(document).ready(function () {
     // Global click listener for UI interaction sounds
     $(document).on('click', 'button, .btn, a.btn', function () {
         if (typeof buttonEffect !== 'undefined' && buttonEffect) {
-            if (buttonEffect) {
-                buttonEffect.currentTime = 0;
-                buttonEffect.play().catch(e => console.error("Audio playback error:", e));
-            }
-
+            buttonEffect.currentTime = 0;
+            safeAudioPlay(buttonEffect);
         }
     });
 });
@@ -182,6 +257,38 @@ function newLogin() {
     initValues();
     renderView();
 }
+
+function updateAnnouncementMarqueeSpeed() {
+    var announcement = document.getElementById("announcement");
+    var marquee = announcement ? announcement.querySelector(".marquee") : null;
+    var announcementSpan = document.getElementById("announcementText");
+
+    if (!announcement || !marquee || !announcementSpan) {
+        return;
+    }
+
+    if (announcement.className.indexOf("hide") !== -1) {
+        return;
+    }
+
+    var totalDistance = announcementSpan.offsetWidth;
+    if (!totalDistance || totalDistance <= 0) {
+        return;
+    }
+
+    var pixelsPerSecond = 65;
+    var durationInSeconds = totalDistance / pixelsPerSecond;
+
+    if (durationInSeconds < 12) {
+        durationInSeconds = 12;
+    }
+
+    announcementSpan.style.animationDuration = durationInSeconds + "s";
+}
+
+window.addEventListener("resize", function () {
+    updateAnnouncementMarqueeSpeed();
+});
 
 function renderView() {
     $("#voucherInput").val("");
@@ -226,6 +333,9 @@ function renderView() {
             var announcement = $("#announcement");
             announcement.removeClass("hide");
             $("#announcementText").html(announcementText);
+            setTimeout(function () {
+                updateAnnouncementMarqueeSpeed();
+            }, 0);
         }
         // handle the data if needed
         $("#saveVoucherButton").prop('disabled', true);
@@ -551,7 +661,7 @@ function renderView() {
                 $("#memberDashboardContainer").removeClass("hide");
 
                 // Show the voucher code or some identifier in the Dashboard
-                var displayUsername = userData?.username || voucherCode;
+                var displayUsername = (userData && userData.username) ? userData.username : voucherCode;
                 $("#memberUI_Username").text(displayUsername);
 
                 $("#refreshBtn").addClass("hide"); // Hide default refresh
@@ -890,9 +1000,117 @@ function chargingBtnAction() {
 
 var timer = null;
 
+function getPromoRatesStorageKey() {
+    if (vendorIpAddress == null) {
+        return null;
+    }
+
+    return vendorIpAddress + (typeof append !== 'undefined' ? append : "");
+}
+
+function getPersistedPromoRates() {
+    var storageKey = getPromoRatesStorageKey();
+    if (!storageKey) {
+        return null;
+    }
+
+    try {
+        var storedValue = localStorage.getItem(storageKey);
+        if (!storedValue) {
+            return null;
+        }
+
+        var parsedValue = JSON.parse(storedValue);
+        if (parsedValue && parsedValue.ratesByType) {
+            return parsedValue.ratesByType[rateType] || null;
+        }
+
+        return storedValue;
+    } catch (e) {
+        return null;
+    }
+}
+
+function persistPromoRates(data) {
+    var storageKey = getPromoRatesStorageKey();
+    if (!storageKey) {
+        return;
+    }
+
+    try {
+        var storedValue = localStorage.getItem(storageKey);
+        var parsedValue = {};
+
+        if (storedValue) {
+            parsedValue = JSON.parse(storedValue) || {};
+        }
+
+        if (!parsedValue.ratesByType) {
+            parsedValue.ratesByType = {};
+        }
+
+        parsedValue.ratesByType[rateType] = data;
+        localStorage.setItem(storageKey, JSON.stringify(parsedValue));
+    } catch (e) {
+        console.error("Failed to persist promo rates:", e);
+    }
+}
+
+function clearPersistedPromoRates() {
+    var storageKey = getPromoRatesStorageKey();
+    if (!storageKey) {
+        return;
+    }
+
+    try {
+        localStorage.removeItem(storageKey);
+    } catch (e) {
+        console.error("Failed to clear promo rates:", e);
+    }
+}
+
+function renderPromoRatesTable(data, tableBody) {
+    var allRows = data.split("|");
+    var rows = [];
+    for (var i = 0; i < allRows.length; i++) {
+        if (allRows[i].trim() !== "") {
+            rows.push(allRows[i]);
+        }
+    }
+
+    for (var j = 0; j < rows.length; j++) {
+        var row = rows[j];
+        var allParts = row.split("#");
+        var parts = [];
+        for (var k = 0; k < allParts.length; k++) {
+            if (allParts[k] !== "") {
+                parts.push(allParts[k]);
+            }
+        }
+
+        var plan = parts[0];
+        var price = parts[1];
+
+        var duration = minutesToTime(parts[2]);
+        var expiry = minutesToTime(parts[3]);
+
+        var tr = document.createElement("tr");
+
+        var values = [plan, price, duration, expiry];
+        for (var l = 0; l < values.length; l++) {
+            var td = document.createElement("td");
+            td.textContent = values[l].trim();
+            tr.appendChild(td);
+        }
+
+        tableBody.appendChild(tr);
+    }
+}
+
 function insertBtnAction() {
     removeStorageValue("ignoreSaveCode");
     setStorageValue('insertCoinRefreshed', "0");
+    clearPersistedPromoRates();
     $("#progressDiv").attr('style', 'width: 100%');
     $("#saveVoucherButton").prop('disabled', true);
     $("#cncl").prop('disabled', false);
@@ -914,6 +1132,15 @@ function insertBtnAction() {
 }
 
 $('#promoRatesModal').on('shown.bs.modal', function (e) {
+    var tableBody = document.querySelector("#rateTable tbody");
+    tableBody.innerHTML = "";
+
+    var persistedPromoRates = getPersistedPromoRates();
+    if (persistedPromoRates) {
+        renderPromoRatesTable(persistedPromoRates, tableBody);
+        return;
+    }
+
     populatePromoRates(0);
 })
 $('#promoRatesModal').on('hidden.bs.modal', function (e) {
@@ -947,41 +1174,8 @@ function populatePromoRates(retryCount) {
         crossOrigin: true,
         contentType: 'text/plain',
         success: function (data) {
-            var allRows = data.split("|");
-            var rows = [];
-            for (var i = 0; i < allRows.length; i++) {
-                if (allRows[i].trim() !== "") {
-                    rows.push(allRows[i]);
-                }
-            }
-
-            for (var j = 0; j < rows.length; j++) {
-                var row = rows[j];
-                var allParts = row.split("#");
-                var parts = [];
-                for (var k = 0; k < allParts.length; k++) {
-                    if (allParts[k] !== "") {
-                        parts.push(allParts[k]);
-                    }
-                }
-
-                var plan = parts[0];
-                var price = parts[1];
-
-                var duration = minutesToTime(parts[2]);
-                var expiry = minutesToTime(parts[3]);
-
-                var tr = document.createElement("tr");
-
-                var values = [plan, price, duration, expiry];
-                for (var l = 0; l < values.length; l++) {
-                    var td = document.createElement("td");
-                    td.textContent = values[l].trim();
-                    tr.appendChild(td);
-                }
-
-                tableBody.appendChild(tr);
-            }
+            persistPromoRates(data);
+            renderPromoRatesTable(data, tableBody);
         }, error: function (jqXHR, exception) {
             setTimeout(function () {
                 if (retryCount < 2) {
@@ -1693,7 +1887,7 @@ function renderHistories(data, containerId) {
     container.setAttribute("style", "overflow-y:scroll;max-height:60dvh;");
     container.className = "px-0 d-flex flex-column gap-2 pb-5";
 
-    if (!data || !Array.isArray(data.histories) || data.histories.length === 0) {
+    if (!data || !isArrayCompat(data.histories) || data.histories.length === 0) {
         container.innerHTML = "<div>No history available</div>";
         return;
     }
@@ -1888,7 +2082,7 @@ document.addEventListener('hidden.bs.modal', function () {
     for (var i = 0; i < buttons.length; i++) {
         var btn = buttons[i];
         var spinner = btn.querySelector('[data-spinner="true"]');
-        if (spinner) spinner.remove();
+        if (spinner) removeNode(spinner);
         btn.disabled = false;
         btn.removeAttribute('data-loading');
     }
@@ -1902,7 +2096,7 @@ function fetchServerData() {
     var expiryKey = 'juanfi_extended_data_expiry';
     var appendKey = 'juanfi_extended_data_append';
 
-    return new Promise(function (resolve, reject) {
+    return createCompatPromise(function (resolve, reject) {
         if (isTestMode)
             return;
 
@@ -2489,7 +2683,7 @@ function fetchDuckRaceReward(serverIp, mac, betNumber) {
         });
 
         removeLoader('duckRaceStartBtn');
-        return Promise.resolve(null);
+        return resolveCompatPromise(null);
     }
 
     return fetchPortalAPI(
@@ -3075,7 +3269,7 @@ function parseAjaxErrorResponse(jqXHR, textStatus, errorThrown) {
 }
 
 function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
-    return new Promise(function (resolve, reject) {
+    return createCompatPromise(function (resolve, reject) {
         var MAX_RETRIES = 3;
         var RETRY_DELAY = 1000; // 1 second
 
@@ -3083,7 +3277,7 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
 
         var attemptRequest = function () {
             try {
-                var timestamp = Date.now();
+                var timestamp = new Date().getTime();
                 var separator = apiUrl.indexOf("?") !== -1 ? "&" : "?";
                 var finalUrl = juanfiExtendedServerUrl + apiUrl + separator + "t=" + timestamp;
 
@@ -3275,12 +3469,12 @@ $.toast = function (options) {
     toast.show();
 
     toastEl.addEventListener('hidden.bs.toast', function () {
-        toastEl.remove();
+        removeNode(toastEl);
     });
 };
 
 createToastContainer();
 
 function getWholeNumber(num) {
-    return Math.trunc(num);
+    return num < 0 ? Math.ceil(num) : Math.floor(num);
 }

@@ -54,6 +54,19 @@
         <span class="sr-only"></span>
     </div>
 </div>
-
+<div id="networkStatusContainer"
+     class="container px-2 py-1 d-flex justify-content-around gap-2 align-items-center">
+    <div class="d-flex justify-content-between gap-2 align-items-center">
+        <i class="bi bi-cloud-download juanfi-primary-text"></i>
+        <small class="small">$(bytes-in-nice)</small>
+    </div>
+    <div>
+        <small class="blinking2" id="connectionStatus">Loading...</small>
+    </div>
+    <div class="d-flex justify-content-between gap-2 align-items-center">
+        <i class="bi bi-cloud-upload juanfi-primary-text"></i>
+        <small class="small">$(bytes-out-nice)</small>
+    </div>
+</div>
 </body>
 </html>

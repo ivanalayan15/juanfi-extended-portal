@@ -96,6 +96,11 @@ $(document).ready(function () {
     });
 });
 
+function goBackToPortal() {
+    addLoader('gamesBackBtn');
+    window.location.href = '/';
+}
+
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
