@@ -3,7 +3,8 @@
 .race-track {
     height: 400px;
     background-color: #4facfe;
-    border: 3px solid #f39c12;
+    border: 2px solid rgba(117, 143, 186, 0.3);
+    border-radius: 16px;
 }
 
 .water-background {
@@ -136,21 +137,40 @@
 
 /* Header Points Display Styles */
 .header-points-container {
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 193, 7, 0.3);
-    padding: 8px 15px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    min-width: 140px;
-}
-
-.header-points-container .small {
-    font-size: 0.65rem;
-    letter-spacing: 1px;
-    color: rgba(255, 255, 255, 0.8) !important;
+    background: rgba(7, 15, 28, 0.66);
+    border: 1px solid rgba(121, 146, 191, 0.15);
+    padding: 4px 10px;
+    border-radius: 10px;
 }
 
 .points-icon {
-    filter: drop-shadow(0 0 5px rgba(255, 193, 7, 0.5));
+    filter: drop-shadow(0 0 4px rgba(255, 191, 115, 0.5));
+}
+
+/* Force games header to stay horizontal on all screens */
+body.portal-body #headerContainer.p-0 {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    padding: 8px 12px !important;
+}
+
+/* Game cards */
+.game-card {
+    background: linear-gradient(135deg, rgba(16, 26, 47, 0.92) 0%, rgba(10, 18, 34, 0.96) 100%);
+    border: 1px solid rgba(117, 143, 186, 0.18);
+    border-radius: 16px;
+}
+
+body.portal-body .duck-bet-btn {
+    font-size: 0.7rem;
+    min-height: 30px;
+    padding: 4px 10px;
+    border-radius: 10px;
+}
+
+body.portal-body .duck-bet-btn.active {
+    background: linear-gradient(135deg, #66d9ff 0%, #2383ff 100%);
+    border-color: rgba(154, 221, 255, 0.4);
+    color: #fff;
+    box-shadow: 0 0 12px rgba(35, 131, 255, 0.3);
 }

@@ -40,7 +40,7 @@
     <script src="assets/js/pako.min.js?v=$(ip)-$(mac)-ef1sk15" defer></script>
 </head>
 
-<body class="col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2 ">
+<body class="portal-body col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2 ">
     <div class="d-flex flex-column align-items-center justify-content-center">
         <div id="loaderDiv" class="spinner-border" role="status">
             <span class="sr-only"></span>
@@ -48,33 +48,21 @@
     </div>
 
 
-    <div id="containerDiv" class="d-flex flex-column gap-2 hide">
-        <div class="juanfi-default-text small" id="displayVersion"></div>
+    <div id="connectionDot" class="connection-dot blinking-dot-green" title="Loading..."></div>
+
+    <div id="containerDiv" class="portal-shell d-flex flex-column gap-2 hide">
+        
 
         <div id="headerContainer" class="d-flex justify-content-between align-items-center container">
             <div class="d-flex flex-column gap-0 align-items-center">
                 <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-ef1sk15" class="img-fluid banner" />
             </div>
-            <div class="d-flex flex-column gap-3 text-end">
+            <div class="header-meta d-flex justify-content-between gap-1">
+                <div class="juanfi-default-text small" id="displayVersion"></div>
                 <small id="ipInfo" class="juanfi-default-text small">Loading</small>
                 <small id="macInfo" class="juanfi-default-text small">Loading</small>
-                <small id="voucherCode" class="juanfi-default-text small">Loading</small>
             </div>
 
-        </div>
-        <div id="networkStatusContainer"
-            class="container px-2 py-1 d-flex justify-content-around gap-2 align-items-center">
-            <div class="d-flex justify-content-between gap-2 align-items-center">
-                <i class="bi bi-cloud-download juanfi-primary-text"></i>
-                <small class="small">$(bytes-in-nice)</small>
-            </div>
-            <div>
-                <small class="blinking2" id="connectionStatus">Loading...</small>
-            </div>
-            <div class="d-flex justify-content-between gap-2 align-items-center">
-                <i class="bi bi-cloud-upload juanfi-primary-text"></i>
-                <small class="small">$(bytes-out-nice)</small>
-            </div>
         </div>
         <div id="remainingTimeContainer"
             class="container text-center px-2 py-1 d-flex flex-column gap-1 align-items-center">
@@ -110,7 +98,7 @@
                 <i class="bi bi-controller me-2"></i>GAMES
             </button>
         </div>
-        <div class="container d-flex flex-column gap-0">
+        <div class="container main-panel d-flex flex-column gap-0">
             <!-- MEMBER DASHBOARD (Hidden by default, shown via core.js) -->
             <div id="memberDashboardContainer" class="hide mt-3 text-center">
                 <div class="card bg-dark text-white border-warning shadow-lg" style="border-radius: 15px;">
@@ -170,25 +158,25 @@
                             <select class="form-control fullwidth" name="vendoSelected" id="vendoSelected">
                             </select>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center gap-3">
+                        <div class="action-stage d-flex justify-content-between align-items-center gap-3">
                             <div id="insertBtnContainer">
-                                <button style="min-height: 120px;min-width: 120px; border-radius: 100%" type="button"
+                                <button type="button"
                                     id="insertBtn" onclick="insertBtnAction(); return false"
-                                    class="btn btn-primary w-100 w-100" data-insert-type="extend" data-toggle="modal">
+                                    class="btn btn-primary" data-insert-type="extend" data-toggle="modal">
                                     INSERT
                                 </button>
                             </div>
-                            <div class="d-flex flex-column gap-2 w-100">
-                                <button type="button" id="resumeTimeBtn" class="btn btn-success w-100">
+                            <div class="action-stack d-flex flex-column gap-2 w-100">
+                                <button type="button" id="resumeTimeBtn" class="btn btn-success w-100 btn-sm-portal">
                                     RESUME
                                 </button>
-                                <div id="pauseBtnContainer" class="d-flex w-100 mb-3">
-                                    <button type="button" id="pauseTimeBtn" class="btn btn-danger w-100">
+                                <div id="pauseBtnContainer" class="d-flex w-100">
+                                    <button type="button" id="pauseTimeBtn" class="btn btn-danger w-100 btn-sm-portal">
                                         PAUSE
                                     </button>
                                 </div>
                                 <button type="button" id="btnPromoRates" onclick="promoBtnAction()"
-                                    class="btn btn-danger w-100">
+                                    class="btn btn-danger w-100 btn-sm-portal">
                                     RATES
                                 </button>
                             </div>
@@ -210,7 +198,7 @@
                         <button onclick="clearAllData();" type="button" id="refreshBtn" class="btn btn-dark mt-3 w-100">
                             REFRESH
                         </button>
-                        <div class="d-flex justify-content-between mt-3 gap-2">
+                        <div class="utility-row d-flex justify-content-between mt-3 gap-2">
                             <button type="button" id="chargingBtn" onclick="chargingBtnAction(); return false"
                                 class="btn btn-primary w-100">
                                 CHARGING STATION

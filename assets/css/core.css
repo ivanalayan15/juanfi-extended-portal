@@ -1,9 +1,9 @@
 :root {
-	--bs-backdrop-opacity: 0.9; /* Darker backdrop */
+	--bs-backdrop-opacity: 0.4;
 }
 .modal-backdrop.show {
-	opacity: 0.9; /* Keep some darkness */
-	backdrop-filter: blur(15px); /* Add the glass/blur effect */
+	opacity: 0.4;
+	backdrop-filter: blur(4px);
 }
 .toast-container {
 	/* Ensure it is above everything (Modals are ~1055) */
