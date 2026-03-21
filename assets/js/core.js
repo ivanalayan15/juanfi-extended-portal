@@ -126,6 +126,56 @@ function safeAudioPlay(audio) {
     }
 }
 
+function bindEvent(target, eventName, handler) {
+    if (!target) {
+        return;
+    }
+
+    if (target.addEventListener) {
+        target.addEventListener(eventName, handler);
+    } else if (target.attachEvent) {
+        target.attachEvent('on' + eventName, handler);
+    } else {
+        target['on' + eventName] = handler;
+    }
+}
+
+function addClassCompat(element, className) {
+    if (!element) {
+        return;
+    }
+
+    if (element.classList) {
+        element.classList.add(className);
+    } else if ((" " + element.className + " ").indexOf(" " + className + " ") === -1) {
+        element.className = element.className ? (element.className + " " + className) : className;
+    }
+}
+
+function removeClassCompat(element, className) {
+    if (!element) {
+        return;
+    }
+
+    if (element.classList) {
+        element.classList.remove(className);
+    } else {
+        element.className = (" " + element.className + " ").replace(" " + className + " ", " ").replace(/^\s+|\s+$/g, "");
+    }
+}
+
+function prependNode(parent, child) {
+    if (!parent || !child) {
+        return;
+    }
+
+    if (parent.firstChild) {
+        parent.insertBefore(child, parent.firstChild);
+    } else {
+        parent.appendChild(child);
+    }
+}
+
 function getRootUrl() {
     if (window.location.protocol && window.location.host) {
         return window.location.protocol + "//" + window.location.host + "/";
@@ -289,7 +339,7 @@ function updateAnnouncementMarqueeSpeed() {
     announcementSpan.style.animationDuration = durationInSeconds + "s";
 }
 
-window.addEventListener("resize", function () {
+bindEvent(window, "resize", function () {
     updateAnnouncementMarqueeSpeed();
 });
 
@@ -697,14 +747,14 @@ function renderView() {
                 checkInternet();
                 var connectVoucherBtn = document.getElementById('connectVoucherBtn');
                 if (connectVoucherBtn) {
-                    connectVoucherBtn.addEventListener('click', function () {
+                    bindEvent(connectVoucherBtn, 'click', function () {
                         addLoader('connectVoucherBtn');
                         RefreshPortal();
                     });
                 }
                 var confirmLogoutMemberBtn = document.getElementById('confirmLogoutMemberBtn');
                 if (confirmLogoutMemberBtn) {
-                    confirmLogoutMemberBtn.addEventListener('click', function () {
+                    bindEvent(confirmLogoutMemberBtn, 'click', function () {
                         addLoader('confirmLogoutMemberBtn');
                         logoutMember();
                     });
@@ -1974,12 +2024,12 @@ function onPurchaseClicked(item) {
     var inputMobileNumber = document.getElementById('inputMobileNumber');
     var mobileError = document.getElementById('mobileError');
 
-    payNowBtn.addEventListener('click', function (e) {
+    bindEvent(payNowBtn, 'click', function (e) {
         var mobileValue = inputMobileNumber.value.trim();
         var onlyNumbers = /^\d+$/;
 
-        inputMobileNumber.classList.remove('is-invalid');
-        inputMobileNumber.classList.remove('is-valid');
+        removeClassCompat(inputMobileNumber, 'is-invalid');
+        removeClassCompat(inputMobileNumber, 'is-valid');
         var errorMessage = "";
 
         if (mobileValue === "") {
@@ -1992,9 +2042,9 @@ function onPurchaseClicked(item) {
 
         if (errorMessage) {
             mobileError.textContent = errorMessage;
-            inputMobileNumber.classList.add('is-invalid');
+            addClassCompat(inputMobileNumber, 'is-invalid');
         } else {
-            inputMobileNumber.classList.add('is-valid');
+            addClassCompat(inputMobileNumber, 'is-valid');
 
             addLoader('payNowBtn');
 
@@ -2041,8 +2091,8 @@ function onPurchaseClicked(item) {
         }
     });
 
-    inputMobileNumber.addEventListener('input', function () {
-        inputMobileNumber.classList.remove('is-invalid');
+    bindEvent(inputMobileNumber, 'input', function () {
+        removeClassCompat(inputMobileNumber, 'is-invalid');
     });
 
 }
@@ -2105,7 +2155,7 @@ function renderWifreeList() {
         });
 }
 
-document.addEventListener('hidden.bs.modal', function () {
+bindEvent(document, 'hidden.bs.modal', function () {
     var buttons = document.querySelectorAll('button[data-loading="true"]');
     for (var i = 0; i < buttons.length; i++) {
         var btn = buttons[i];
@@ -2331,7 +2381,7 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig) {
         var spinRedeemBtn = document.getElementById("spinRedeemBtn");
 
         if (spinRedeemBtn) {
-            spinRedeemBtn.addEventListener("click", function (e) {
+            bindEvent(spinRedeemBtn, "click", function (e) {
                 e.preventDefault();
 
                 var avail = parseInt(rewardPointsBalance) || 0;
@@ -2861,7 +2911,7 @@ function drawSpinWheel(mac, prizes, colors) {
     }
 
     if (!spinEventsCreated) {
-        window.addEventListener('resize', resizeAll);
+        bindEvent(window, 'resize', resizeAll);
     }
     resizeAll();
 
@@ -3117,7 +3167,7 @@ function drawSpinWheel(mac, prizes, colors) {
 
     if (!spinEventsCreated) {
         /* ===== events & init ===== */
-        window.addEventListener('resize', function () {
+        bindEvent(window, 'resize', function () {
             resizeAll();
         });
         if (spinBtn) {
@@ -3185,7 +3235,7 @@ function drawSpinWheel(mac, prizes, colors) {
     };
 
     if (!spinEventsCreated) {
-        window.addEventListener('resize', resizeAll);
+        bindEvent(window, 'resize', resizeAll);
     }
 
     // ensure initial sizes are correct:
@@ -3418,31 +3468,31 @@ function addLoader(buttonId) {
     var btn = document.getElementById(buttonId);
     if (!btn) return;
 
-    if (btn.dataset.loading === "true") return;
+    if (btn.getAttribute('data-loading') === "true") return;
 
     var spinner = document.createElement('span');
     spinner.className = 'spinner-border spinner-border-sm me-2'; // small spinner with margin
     spinner.role = 'status';
     spinner.ariaHidden = true;
-    spinner.dataset.spinner = "true"; // mark it for removal later
+    spinner.setAttribute('data-spinner', "true"); // mark it for removal later
 
-    btn.prepend(spinner);
+    prependNode(btn, spinner);
 
     btn.disabled = true;
-    btn.dataset.loading = "true";
+    btn.setAttribute('data-loading', "true");
 
     lastButtonId = buttonId;
 }
 
 function removeLoader(buttonId) {
     var btn = document.getElementById(buttonId);
-    if (!btn || btn.dataset.loading !== "true") return;
+    if (!btn || btn.getAttribute('data-loading') !== "true") return;
 
     var spinner = btn.querySelector('span[data-spinner="true"]');
     if (spinner) btn.removeChild(spinner);
 
     btn.disabled = false;
-    btn.dataset.loading = "false";
+    btn.setAttribute('data-loading', "false");
 
     if (lastButtonId === buttonId) lastButtonId = null;
 }
@@ -3496,7 +3546,7 @@ $.toast = function (options) {
     var toast = new bootstrap.Toast(toastEl, { delay: delay, autohide: true });
     toast.show();
 
-    toastEl.addEventListener('hidden.bs.toast', function () {
+    bindEvent(toastEl, 'hidden.bs.toast', function () {
         removeNode(toastEl);
     });
 };
