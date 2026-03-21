@@ -24,7 +24,7 @@ $(if var == bytes-in)
         }
     </style>
 </head>
-<body>$(bytes-in-nice)</body>
+<body data-bytes="$(bytes-in)">$(bytes-in-nice)</body>
 </html>
 $(elif var == bytes-out)
 <!DOCTYPE html>
@@ -52,7 +52,7 @@ $(elif var == bytes-out)
         }
     </style>
 </head>
-<body>$(bytes-out-nice)</body>
+<body data-bytes="$(bytes-out)">$(bytes-out-nice)</body>
 </html>
 $(else)
 <!DOCTYPE html>
