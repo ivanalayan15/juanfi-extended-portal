@@ -545,3 +545,524 @@ body {
 		transform: translateX(-100%);
 	}
 }
+
+/* scoped portal refresh */
+body.portal-body {
+	background-color: #07111f;
+	background-image:
+		radial-gradient(circle at top left, rgba(255, 160, 67, 0.22), transparent 34%),
+		radial-gradient(circle at top right, rgba(54, 215, 183, 0.16), transparent 30%),
+		linear-gradient(180deg, #0a1220 0%, #07111f 55%, #050c17 100%);
+	color: #ecf3ff;
+	font-family: "Trebuchet MS", "Segoe UI", Verdana, sans-serif;
+	min-height: 100vh;
+	overflow-x: hidden;
+}
+
+body.portal-body #loaderDiv,
+body.portal-body #containerDiv {
+	position: relative;
+	z-index: 1;
+}
+
+body.portal-body #loaderDiv {
+	color: #ff9b54;
+	border-width: 0.35rem;
+	filter: drop-shadow(0 0 18px rgba(255, 155, 84, 0.35));
+}
+
+body.portal-body .portal-shell {
+	gap: 14px !important;
+	padding-bottom: 28px;
+}
+
+body.portal-body .container {
+	background: linear-gradient(180deg, rgba(18, 30, 53, 0.94) 0%, rgba(10, 19, 35, 0.96) 100%);
+	border: 1px solid rgba(117, 143, 186, 0.22);
+	border-radius: 24px;
+	box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+	padding: 14px 16px;
+}
+
+body.portal-body .juanfi-primary-text {
+	color: #ff9b54;
+}
+
+body.portal-body .juanfi-default-text {
+	color: #cad6ef;
+}
+
+body.portal-body #displayVersion {
+	display: inline-block;
+	align-self: flex-end;
+	background: rgba(8, 15, 28, 0.72);
+	border: 1px solid rgba(128, 149, 192, 0.18);
+	border-radius: 999px;
+	color: #90a6cf !important;
+	font-size: 10px !important;
+	letter-spacing: 0.08em;
+	padding: 6px 12px;
+	text-transform: uppercase;
+}
+
+body.portal-body #headerContainer {
+	align-items: center !important;
+	flex-wrap: wrap;
+	gap: 18px;
+	padding: 18px 20px;
+}
+
+body.portal-body #headerContainer > div:first-child {
+	flex: 1 1 220px;
+}
+
+body.portal-body .header-meta {
+	flex: 1 1 250px;
+}
+
+body.portal-body .header-meta small {
+	background: rgba(6, 14, 27, 0.64);
+	border: 1px solid rgba(125, 151, 196, 0.14);
+	border-radius: 16px;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+	display: block;
+	padding: 11px 14px;
+}
+
+body.portal-body .banner {
+	display: block;
+	margin-bottom: 0;
+	max-height: 86px;
+	width: auto;
+}
+
+body.portal-body #networkStatusContainer {
+	gap: 12px !important;
+	padding: 12px !important;
+}
+
+body.portal-body #networkStatusContainer .status-pill {
+	background: rgba(7, 15, 28, 0.66);
+	border: 1px solid rgba(121, 146, 191, 0.15);
+	border-radius: 18px;
+	flex: 1 1 0;
+	min-height: 54px;
+	padding: 10px 12px;
+}
+
+body.portal-body #networkStatusContainer .status-pill-center {
+	align-items: center;
+	display: flex;
+	justify-content: center;
+	text-align: center;
+}
+
+body.portal-body #networkStatusContainer .small,
+body.portal-body #connectionStatus {
+	color: #eef4ff;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+}
+
+body.portal-body #remainingTimeContainer {
+	background:
+		linear-gradient(135deg, rgba(255, 154, 79, 0.16) 0%, rgba(255, 154, 79, 0.06) 25%, rgba(10, 19, 35, 0.98) 100%);
+	border-color: rgba(255, 165, 98, 0.26);
+	padding: 20px 18px !important;
+}
+
+body.portal-body #remainTime {
+	color: #fff5e8 !important;
+	font-size: 2.45rem;
+	letter-spacing: 0.08em;
+	text-shadow: 0 10px 25px rgba(0, 0, 0, 0.28);
+}
+
+body.portal-body #expirationTime {
+	color: #9fb3d8;
+	font-size: 0.88rem;
+}
+
+body.portal-body #useVoucherContainer,
+body.portal-body #freeInternetContainer,
+body.portal-body #gamesContainer {
+	gap: 12px !important;
+	padding: 12px;
+}
+
+body.portal-body #voucherInput,
+body.portal-body .form-control,
+body.portal-body select.form-control,
+body.portal-body #vendoSelected {
+	background-color: #091120;
+	border: 1px solid rgba(123, 149, 195, 0.18);
+	border-radius: 16px;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+	color: #eef4ff;
+	min-height: 50px;
+}
+
+body.portal-body #voucherInput {
+	font-size: 1rem;
+	font-weight: 700;
+	padding-left: 16px;
+}
+
+body.portal-body .form-control::placeholder,
+body.portal-body #voucherInput::placeholder {
+	color: #7f95bd;
+}
+
+body.portal-body .form-control:focus,
+body.portal-body #voucherInput:focus,
+body.portal-body #vendoSelected:focus {
+	background-color: #0c1628;
+	border-color: rgba(255, 163, 98, 0.62);
+	box-shadow: 0 0 0 0.18rem rgba(255, 155, 84, 0.16);
+	color: #ffffff;
+}
+
+body.portal-body label,
+body.portal-body #vendoSelectDiv label {
+	color: #a9bcdf;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	margin-bottom: 8px;
+	text-transform: uppercase;
+}
+
+body.portal-body .main-panel {
+	padding: 18px;
+}
+
+body.portal-body .nav-tabs {
+	background: rgba(7, 13, 26, 0.74);
+	border: 1px solid rgba(117, 142, 186, 0.16);
+	border-radius: 20px;
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 6px;
+	overflow-x: auto;
+	padding: 6px;
+}
+
+body.portal-body .nav-tabs .nav-item {
+	flex: 1 1 0;
+	min-width: 0;
+}
+
+body.portal-body .nav-tabs .nav-link {
+	background: transparent;
+	border: none;
+	border-radius: 14px;
+	color: #8ea4cd;
+	font-size: 0.95rem;
+	font-weight: 700;
+	padding: 12px 10px;
+	transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+	width: 100%;
+}
+
+body.portal-body .nav-tabs .nav-link:hover,
+body.portal-body .nav-tabs .nav-link:focus {
+	background: rgba(255, 255, 255, 0.05);
+	border: none;
+	box-shadow: none;
+	color: #eef4ff;
+	transform: translateY(-1px);
+}
+
+body.portal-body .nav-tabs .nav-link.active {
+	background: linear-gradient(135deg, #ff9a4f 0%, #e66a1f 100%);
+	border: none;
+	box-shadow: 0 12px 24px rgba(230, 106, 31, 0.28);
+	color: #fff7ef;
+}
+
+body.portal-body .nav-tabs .nav-link.active i,
+body.portal-body .nav-tabs .nav-link:hover i {
+	color: inherit;
+}
+
+body.portal-body .tab-content {
+	background: rgba(7, 13, 25, 0.55);
+	border: 1px solid rgba(117, 142, 186, 0.12);
+	border-radius: 24px;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+	margin-top: 18px !important;
+	padding: 10px;
+}
+
+body.portal-body .tab-pane {
+	padding: 4px;
+}
+
+body.portal-body .action-stage {
+	align-items: stretch !important;
+}
+
+body.portal-body .action-stack {
+	gap: 10px !important;
+}
+
+body.portal-body .btn {
+	border-radius: 16px;
+	border-width: 1px;
+	box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+	font-size: 0.92rem;
+	font-weight: 800;
+	letter-spacing: 0.05em;
+	min-height: 50px;
+	text-transform: uppercase;
+	transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+body.portal-body .btn:hover,
+body.portal-body .btn:focus {
+	box-shadow: 0 16px 26px rgba(0, 0, 0, 0.28);
+	filter: brightness(1.04);
+	transform: translateY(-1px);
+}
+
+body.portal-body .btn-primary {
+	background: linear-gradient(135deg, #ff9d58 0%, #d85d10 100%) !important;
+	border-color: rgba(255, 181, 122, 0.38) !important;
+}
+
+body.portal-body .btn-success {
+	background: linear-gradient(135deg, #36cfa2 0%, #138e78 100%) !important;
+	border-color: rgba(108, 239, 204, 0.32) !important;
+}
+
+body.portal-body .btn-danger {
+	background: linear-gradient(135deg, #ff6b6b 0%, #cf3f5e 100%) !important;
+	border-color: rgba(255, 164, 181, 0.28) !important;
+}
+
+body.portal-body .btn-warning {
+	background: linear-gradient(135deg, #ffd56a 0%, #ff9a3f 100%) !important;
+	border-color: rgba(255, 227, 158, 0.38) !important;
+	color: #321a00;
+}
+
+body.portal-body .btn-info {
+	background: linear-gradient(135deg, #66d9ff 0%, #2383ff 100%) !important;
+	border-color: rgba(154, 221, 255, 0.28) !important;
+	color: #f6fbff;
+}
+
+body.portal-body .btn-dark,
+body.portal-body .btn-outline-secondary {
+	background: linear-gradient(135deg, #24334f 0%, #121d31 100%) !important;
+	border-color: rgba(144, 165, 207, 0.18) !important;
+	color: #edf4ff;
+}
+
+body.portal-body #gamesBtn {
+	background: linear-gradient(135deg, #ffd96a 0%, #ff9543 100%) !important;
+	border-color: rgba(255, 216, 128, 0.42) !important;
+	color: #371f00;
+}
+
+body.portal-body #wifreeBtn {
+	background: linear-gradient(135deg, #53d7d5 0%, #1d9ed1 100%) !important;
+	border-color: rgba(136, 230, 228, 0.32) !important;
+}
+
+body.portal-body #memberBtn {
+	background: linear-gradient(135deg, #ffd363 0%, #f59c2c 100%) !important;
+	border-color: rgba(255, 215, 126, 0.34) !important;
+	color: #342000;
+}
+
+body.portal-body #insertBtn {
+	background: radial-gradient(circle at 30% 30%, #ffbd80 0%, #ff8d3f 35%, #d8540c 100%) !important;
+	border: 1px solid rgba(255, 212, 177, 0.42) !important;
+	box-shadow: 0 20px 36px rgba(216, 84, 12, 0.32), inset 0 2px 0 rgba(255, 255, 255, 0.18);
+	font-size: 1.15rem;
+	letter-spacing: 0.12em;
+	min-height: 132px !important;
+	min-width: 132px !important;
+}
+
+body.portal-body #resumeTimeBtn,
+body.portal-body #pauseTimeBtn,
+body.portal-body #btnPromoRates {
+	min-height: 54px;
+}
+
+body.portal-body #serverStatus {
+	background: linear-gradient(135deg, #cc314b 0%, #911c2e 100%) !important;
+	border-color: rgba(255, 149, 167, 0.22);
+	color: #fff5f6 !important;
+	font-size: 0.84rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	padding-bottom: 11px;
+	padding-top: 11px;
+	text-transform: uppercase;
+}
+
+body.portal-body #announcement {
+	background: linear-gradient(135deg, rgba(26, 108, 166, 0.92) 0%, rgba(17, 62, 102, 0.96) 100%) !important;
+	border-color: rgba(126, 196, 255, 0.24);
+	color: #f3f9ff !important;
+	padding: 12px 16px;
+}
+
+body.portal-body #announcementText {
+	color: #f3f9ff;
+	font-size: 0.92rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+body.portal-body #rewardDtls,
+body.portal-body #historyContainer {
+	background: linear-gradient(180deg, rgba(16, 26, 47, 0.88) 0%, rgba(8, 15, 28, 0.94) 100%);
+	border: 1px solid rgba(120, 145, 190, 0.14);
+	border-radius: 20px;
+	padding: 18px;
+}
+
+body.portal-body #rewardPoints {
+	color: #ffbf73;
+	font-size: 2.45rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	margin-bottom: 0;
+	text-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+}
+
+body.portal-body #historyContainer h6 {
+	color: #eef4ff;
+	font-size: 1rem;
+	font-weight: 800;
+	margin-bottom: 4px;
+}
+
+body.portal-body #historyContainer p {
+	color: #8fa7d3;
+	margin-bottom: 0;
+}
+
+body.portal-body hr {
+	border-color: rgba(125, 148, 190, 0.16);
+	opacity: 1;
+}
+
+body.portal-body .modal-content {
+	background: linear-gradient(180deg, #101a30 0%, #0a1220 100%);
+	border: 1px solid rgba(126, 152, 197, 0.22);
+	border-radius: 26px;
+	box-shadow: 0 22px 54px rgba(0, 0, 0, 0.34);
+	color: #eff5ff;
+}
+
+body.portal-body .modal-header,
+body.portal-body .modal-footer {
+	background: rgba(255, 255, 255, 0.02);
+	padding: 18px 22px;
+}
+
+body.portal-body .modal-header {
+	border-bottom: 1px solid rgba(126, 152, 197, 0.12);
+}
+
+body.portal-body .modal-footer {
+	border-top: 1px solid rgba(126, 152, 197, 0.12);
+}
+
+body.portal-body .modal-title {
+	font-weight: 800;
+	letter-spacing: 0.03em;
+}
+
+body.portal-body .table,
+body.portal-body #rateTable {
+	color: #eef4ff;
+}
+
+body.portal-body #rateTable {
+	border-collapse: separate;
+	border-spacing: 0;
+	overflow: hidden;
+}
+
+body.portal-body #rateTable th,
+body.portal-body #rateTable td {
+	border-color: rgba(126, 152, 197, 0.16);
+	padding: 10px 8px;
+}
+
+body.portal-body #rateTable th {
+	background: rgba(255, 255, 255, 0.06);
+	font-size: 11px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+body.portal-body #rateTable tbody tr:nth-child(odd) {
+	background: rgba(255, 255, 255, 0.025);
+}
+
+body.portal-body #memberDashboardContainer .card {
+	background: linear-gradient(135deg, #10192f 0%, #172846 100%) !important;
+	border: 1px solid rgba(255, 201, 90, 0.32) !important;
+	border-radius: 26px !important;
+	box-shadow: 0 20px 46px rgba(0, 0, 0, 0.34) !important;
+}
+
+body.portal-body #memberDashboardContainer .badge {
+	background: rgba(8, 14, 27, 0.72) !important;
+	border-color: rgba(126, 152, 197, 0.18) !important;
+	color: #f6fbff;
+}
+
+body.portal-body #memberDashboardContainer p {
+	color: #a9bcdf !important;
+}
+
+@media screen and (max-width: 768px) {
+	body.portal-body {
+		padding-left: 12px !important;
+		padding-right: 12px !important;
+	}
+
+	body.portal-body #headerContainer,
+	body.portal-body #networkStatusContainer,
+	body.portal-body #useVoucherContainer,
+	body.portal-body .action-stage,
+	body.portal-body .utility-row {
+		flex-direction: column !important;
+	}
+
+	body.portal-body .header-meta {
+		text-align: left !important;
+		width: 100%;
+	}
+
+	body.portal-body #networkStatusContainer .status-pill,
+	body.portal-body #useVoucherContainer > div,
+	body.portal-body .utility-row > button {
+		width: 100%;
+	}
+
+	body.portal-body #connectBtn {
+		width: 100%;
+	}
+
+	body.portal-body #remainTime {
+		font-size: 2rem;
+	}
+
+	body.portal-body .nav-tabs .nav-link {
+		font-size: 0.84rem;
+		padding: 11px 8px;
+	}
+
+	body.portal-body #insertBtn {
+		min-height: 138px !important;
+		min-width: 138px !important;
+	}
+}
