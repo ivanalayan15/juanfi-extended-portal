@@ -550,8 +550,63 @@ body.portal-body #historyContainer.history-list {
 	color: white !important;
 }
 
-.toast-body{
-	color: #fff !important;
+/* portal-scoped toast styling */
+body.portal-body .toast-container {
+	padding: 10px;
+}
+
+body.portal-body .toast-container > .toast {
+	background: linear-gradient(180deg, rgba(16, 26, 47, 0.97) 0%, rgba(10, 18, 34, 0.98) 100%) !important;
+	border: 1px solid rgba(117, 143, 186, 0.22) !important;
+	border-radius: 16px !important;
+	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4) !important;
+	backdrop-filter: blur(12px);
+	overflow: hidden;
+}
+
+body.portal-body .toast-container > .toast > .toast-header {
+	border-bottom: none !important;
+	padding: 10px 14px !important;
+}
+
+body.portal-body .toast-container > .toast > .toast-header.bg-success {
+	background: linear-gradient(135deg, #36cfa2 0%, #138e78 100%) !important;
+}
+
+body.portal-body .toast-container > .toast > .toast-header.bg-danger {
+	background: linear-gradient(135deg, #ff6b6b 0%, #cf3f5e 100%) !important;
+}
+
+body.portal-body .toast-container > .toast > .toast-header.bg-info {
+	background: linear-gradient(135deg, #66d9ff 0%, #2383ff 100%) !important;
+}
+
+body.portal-body .toast-container > .toast > .toast-header.bg-warning {
+	background: linear-gradient(135deg, #ffd56a 0%, #ff9a3f 100%) !important;
+}
+
+body.portal-body .toast-container > .toast > .toast-header strong {
+	color: #eef4ff !important;
+	font-size: 0.82rem;
+	font-weight: 800;
+	letter-spacing: 0.03em;
+}
+
+body.portal-body .toast-container > .toast > .toast-header small {
+	color: rgba(255, 255, 255, 0.7) !important;
+}
+
+body.portal-body .toast-container > .toast > .toast-header .close,
+body.portal-body .toast-container > .toast > .toast-header .close span {
+	color: rgba(255, 255, 255, 0.8) !important;
+	text-shadow: none !important;
+}
+
+body.portal-body .toast-container > .toast > .toast-body {
+	background: linear-gradient(180deg, rgba(16, 26, 47, 0.97) 0%, rgba(10, 18, 34, 0.98) 100%) !important;
+	color: #cad6ef !important;
+	font-size: 0.78rem;
+	padding: 10px 14px !important;
 }
 
 #displayVersion{
@@ -801,9 +856,18 @@ body.portal-body .nav-tabs {
 	border-radius: 20px;
 	display: flex;
 	flex-wrap: nowrap;
-	gap: 6px;
+	gap: 4px;
 	overflow-x: auto;
-	padding: 6px;
+	padding: 4px;
+}
+
+body.portal-body .nav-tabs.nav-tabs-fullwidth {
+	width: 100vw;
+	margin-left: calc(-50vw + 50%);
+	border-radius: 0;
+	border-left: none;
+	border-right: none;
+	padding: 4px 8px;
 }
 
 body.portal-body .nav-tabs .nav-item {
@@ -816,11 +880,19 @@ body.portal-body .nav-tabs .nav-link {
 	border: none;
 	border-radius: 12px;
 	color: #8ea4cd;
-	font-size: 0.78rem;
+	font-size: 0.68rem;
 	font-weight: 700;
-	padding: 8px 8px;
+	padding: 6px 4px;
 	transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+}
+
+body.portal-body .nav-tabs .nav-link i {
+	font-size: 1.1rem;
 }
 
 body.portal-body .nav-tabs .nav-link:hover,
@@ -949,12 +1021,12 @@ body.portal-body #insertBtn {
 	box-shadow: 0 14px 28px rgba(216, 84, 12, 0.32), inset 0 2px 0 rgba(255, 255, 255, 0.18);
 	font-size: 0.82rem;
 	letter-spacing: 0.1em;
-	width: 90px;
-	height: 90px;
-	min-height: 90px !important;
-	min-width: 90px !important;
-	max-width: 90px;
-	max-height: 90px;
+	width: 110px;
+	height: 110px;
+	min-height: 110px !important;
+	min-width: 110px !important;
+	max-width: 110px;
+	max-height: 110px;
 	padding: 0;
 	display: flex;
 	align-items: center;
@@ -1106,7 +1178,6 @@ body.portal-body #memberDashboardContainer p {
 	}
 
 	body.portal-body #headerContainer,
-	body.portal-body #useVoucherContainer,
 	body.portal-body .utility-row {
 		flex-direction: column !important;
 	}
@@ -1117,12 +1188,7 @@ body.portal-body #memberDashboardContainer p {
 	}
 
 	body.portal-body #networkStatusContainer .status-pill,
-	body.portal-body #useVoucherContainer > div,
 	body.portal-body .utility-row > button {
-		width: 100%;
-	}
-
-	body.portal-body #connectBtn {
 		width: 100%;
 	}
 
@@ -1131,17 +1197,17 @@ body.portal-body #memberDashboardContainer p {
 	}
 
 	body.portal-body .nav-tabs .nav-link {
-		font-size: 0.72rem;
-		padding: 7px 6px;
+		font-size: 0.62rem;
+		padding: 5px 2px;
 	}
 
 	body.portal-body #insertBtn {
-		width: 80px;
-		height: 80px;
-		min-height: 80px !important;
-		min-width: 80px !important;
-		max-width: 80px;
-		max-height: 80px;
-		font-size: 0.75rem;
+		width: 95px;
+		height: 95px;
+		min-height: 95px !important;
+		min-width: 95px !important;
+		max-width: 95px;
+		max-height: 95px;
+		font-size: 0.78rem;
 	}
 }

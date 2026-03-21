@@ -734,8 +734,8 @@ function renderView() {
 
                 $("#historyTab").addClass("hide");
                 $("#rewardDtlsBtn").addClass("hide");
-                $("#resumeTimeBtn").addClass("hide");
-                $("#pauseTimeBtn").addClass("hide");
+                $("#resumeBtnContainer").addClass("hide");
+                $("#pauseBtnContainer").addClass("hide");
                 $("#pauseBtnContainer").addClass("hide");
                 $("#rateTable").addClass("hide");
                 $("#chargingBtn").addClass("hide");
@@ -904,8 +904,8 @@ $('#redeemBySpinModal').on('hidden.bs.modal', function () {
         renderView();
     }
 });
-$("#pauseTimeBtn").addClass("hide");
-$("#resumeTimeBtn").addClass("hide");
+$("#pauseBtnContainer").addClass("hide");
+$("#resumeBtnContainer").addClass("hide");
 var pauseTimeBtn = document.getElementById('pauseTimeBtn');
 if (pauseTimeBtn) {
     pauseTimeBtn.onclick = function () {
@@ -2539,13 +2539,13 @@ function onRedeemRewardPtsConfirmBtnEvt(macNoColon) {
 }
 
 function showPauseButton() {
-    $("#pauseTimeBtn").removeClass("hide");
-    $("#resumeTimeBtn").addClass("hide");
+    $("#pauseBtnContainer").removeClass("hide");
+    $("#resumeBtnContainer").addClass("hide");
 }
 
 function showResumeButton() {
-    $("#resumeTimeBtn").removeClass("hide");
-    $("#pauseTimeBtn").addClass("hide");
+    $("#resumeBtnContainer").removeClass("hide");
+    $("#pauseBtnContainer").addClass("hide");
 }
 
 function logoutMember() {
