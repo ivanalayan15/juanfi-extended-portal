@@ -184,6 +184,11 @@ function getRootUrl() {
     return "/";
 }
 
+function isGamesPageContext() {
+    var path = window.location.pathname || "";
+    return path.indexOf("games") !== -1;
+}
+
 if (isTestMode) {
     $('#loaderDiv').addClass("hide");
     var containerDiv = $('#containerDiv');
@@ -286,6 +291,18 @@ function initValues() {
 }
 
 $(document).ready(function () {
+    // Global click listener for UI interaction sounds
+    $(document).on('click', 'button, .btn, a.btn', function () {
+        if (typeof buttonEffect !== 'undefined' && buttonEffect) {
+            buttonEffect.currentTime = 0;
+            safeAudioPlay(buttonEffect);
+        }
+    });
+
+    if (isGamesPageContext()) {
+        return;
+    }
+
     fetchServerData().then(function (server) {
         juanfiExtendedServerUrl = "http://" + server.ip + ":8080/api/portal";
         buttonEffect = new Audio("http://" + server.ip + ":8080/sounds/button.mp3");
@@ -294,14 +311,6 @@ $(document).ready(function () {
             initValues();
             renderView();
             useVoucherBtnEvt();
-        }
-    });
-
-    // Global click listener for UI interaction sounds
-    $(document).on('click', 'button, .btn, a.btn', function () {
-        if (typeof buttonEffect !== 'undefined' && buttonEffect) {
-            buttonEffect.currentTime = 0;
-            safeAudioPlay(buttonEffect);
         }
     });
 });
@@ -890,7 +899,13 @@ $('#wifreeModal').on('show.bs.modal', function (e) {
 });
 
 $('#redeemBySpinModal').on('hidden.bs.modal', function () {
-    renderView();
+    if (isGamesPageContext()) {
+        if (typeof fetchUserPoints === 'function') {
+            fetchUserPoints();
+        }
+    } else {
+        renderView();
+    }
 });
 $("#pauseTimeBtn").addClass("hide");
 $("#resumeTimeBtn").addClass("hide");
