@@ -635,8 +635,7 @@ function renderView() {
             }
 
             if (isOnline) {
-                $("#connectionStatus").html("Connected");
-                $("#connectionStatus").attr("class", "blinking2");
+                $("#connectionDot").attr("class", "connection-dot blinking-dot-green").attr("title", "Connected");
                 $("#statusImg").attr("src", "assets/img/wifi.png");
                 $("#statusImg").removeClass("hide");
                 $("#statusImg").addClass("blinking2");
@@ -672,8 +671,7 @@ function renderView() {
                     $("#remainingTimeWrapper").addClass("hide");
                 }
 
-                $("#connectionStatus").html("Disconnected");
-                $("#connectionStatus").attr("class", "blinking1");
+                $("#connectionDot").attr("class", "connection-dot blinking-dot-red").attr("title", "Disconnected");
                 $("#statusImg").attr("src", "assets/img/off_wifi.png");
                 $("#statusImg").removeClass("hide");
                 $("#statusImg").addClass("blinking1");
@@ -748,8 +746,7 @@ function renderView() {
             }
 
             if (isOnline && isMember) {
-                $("#connectionStatus").html("MEMBER CONNECTED");
-                $("#connectionStatus").attr("class", "blinking2");
+                $("#connectionDot").attr("class", "connection-dot blinking-dot-green").attr("title", "Member Connected");
             }
             if (isOnline) {
                 $("#connectVoucherBtn").addClass("hide");
@@ -1923,7 +1920,7 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
             var timeRemainingStr = data.timeRemaining;
             var timeRemaining = data.timeRemainingInSeconds;
             var timeExpiry = data.timeExpiry;
-            $("#voucherCode").html(voucherCode);
+            // $("#voucherCode").html(voucherCode);
 
             if (data.hasFreeInternet) {
                 $("#freeInternetContainer").removeClass("hide");
@@ -1977,11 +1974,11 @@ function renderHistories(data, containerId) {
     if (!container) return;
 
     container.innerHTML = "";
-    container.setAttribute("style", "overflow-y:scroll;max-height:60dvh;");
-    container.className = "px-0 d-flex flex-column gap-2 pb-5";
+    container.setAttribute("style", "overflow-y:auto;max-height:60dvh;");
+    container.className = "history-list d-flex flex-column gap-2 pb-3";
 
     if (!data || !isArrayCompat(data.histories) || data.histories.length === 0) {
-        container.innerHTML = "<div>No history available</div>";
+        container.innerHTML = '<div class="text-center py-3" style="color:#7b93bf;font-size:0.82rem;">No history available</div>';
         return;
     }
 
@@ -1990,18 +1987,18 @@ function renderHistories(data, containerId) {
         div.className = "voucher-card";
 
         var date = new Date(item.date).toLocaleString();
-
         var amount = item.coin ? item.coin.toFixed(2) : "0.00";
+        var points = Number(item.pointsEarned.toFixed(2));
+
         div.innerHTML =
             '<div class="d-flex justify-content-between align-items-center">' +
-            '<div class="voucher-amount fw-bolder">₱ ' + amount + '</div>' +
-            '<small class="voucher-date">' +
-            item.activity +
-            '</small>' +
+                '<span class="voucher-amount">₱ ' + amount + '</span>' +
+                '<span class="voucher-activity">' + item.activity + '</span>' +
             '</div>' +
+            '<div class="voucher-divider"></div>' +
             '<div class="d-flex justify-content-between align-items-center">' +
-            '<div class="voucher-date">' + date + '</div>' +
-            '<small class="voucher-date">' + Number(item.pointsEarned.toFixed(2)) + ' pts.</small>' +
+                '<span class="voucher-date">' + date + '</span>' +
+                '<span class="voucher-points">' + points + ' pts</span>' +
             '</div>';
 
         container.appendChild(div);

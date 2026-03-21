@@ -499,6 +499,53 @@ body {
 	font-size: 11px;
 	color: #d0d0d0;
 }
+
+/* portal-scoped history cards */
+body.portal-body .voucher-card {
+	background: linear-gradient(135deg, rgba(16, 26, 47, 0.92) 0%, rgba(10, 18, 34, 0.96) 100%);
+	border: 1px solid rgba(117, 143, 186, 0.18);
+	border-radius: 14px;
+	padding: 10px 14px;
+	color: #eef4ff;
+}
+
+body.portal-body .voucher-card .voucher-amount {
+	font-size: 0.95rem;
+	font-weight: 800;
+	color: #ffbf73;
+}
+
+body.portal-body .voucher-card .voucher-activity {
+	font-size: 0.68rem;
+	font-weight: 700;
+	color: #8ea4cd;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+body.portal-body .voucher-card .voucher-date {
+	font-size: 0.68rem;
+	color: #7b93bf;
+}
+
+body.portal-body .voucher-card .voucher-points {
+	font-size: 0.68rem;
+	font-weight: 700;
+	color: #ff9b54;
+}
+
+body.portal-body .voucher-card .voucher-divider {
+	border: none;
+	height: 1px;
+	background: rgba(117, 143, 186, 0.14);
+	margin: 6px 0;
+}
+
+body.portal-body #historyContainer.history-list {
+	background: transparent;
+	border: none;
+	padding: 0;
+}
 .btn-close{
 	color: white !important;
 }
@@ -562,7 +609,6 @@ body.portal-body {
 body.portal-body #loaderDiv,
 body.portal-body #containerDiv {
 	position: relative;
-	z-index: 1;
 }
 
 body.portal-body #loaderDiv {
@@ -572,16 +618,16 @@ body.portal-body #loaderDiv {
 }
 
 body.portal-body .portal-shell {
-	gap: 14px !important;
-	padding-bottom: 28px;
+	gap: 8px !important;
+	padding-bottom: 18px;
 }
 
 body.portal-body .container {
 	background: linear-gradient(180deg, rgba(18, 30, 53, 0.94) 0%, rgba(10, 19, 35, 0.96) 100%);
 	border: 1px solid rgba(117, 143, 186, 0.22);
-	border-radius: 24px;
-	box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
-	padding: 14px 16px;
+	border-radius: 18px;
+	box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+	padding: 10px 12px;
 }
 
 body.portal-body .juanfi-primary-text {
@@ -607,87 +653,100 @@ body.portal-body #displayVersion {
 
 body.portal-body #headerContainer {
 	align-items: center !important;
-	flex-wrap: wrap;
-	gap: 18px;
-	padding: 18px 20px;
+	flex-wrap: nowrap;
+	gap: 10px;
+	padding: 8px 12px;
 }
 
 body.portal-body #headerContainer > div:first-child {
-	flex: 1 1 220px;
+	flex: 0 0 auto;
 }
 
 body.portal-body .header-meta {
-	flex: 1 1 250px;
+	flex: 1 1 0;
+	gap: 4px !important;
 }
 
 body.portal-body .header-meta small {
 	background: rgba(6, 14, 27, 0.64);
 	border: 1px solid rgba(125, 151, 196, 0.14);
-	border-radius: 16px;
+	border-radius: 10px;
 	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 	display: block;
-	padding: 11px 14px;
+	padding: 5px 10px;
+	font-size: 0.7rem;
 }
 
 body.portal-body .banner {
 	display: block;
 	margin-bottom: 0;
-	max-height: 86px;
+	max-height: 48px;
 	width: auto;
 }
 
-body.portal-body #networkStatusContainer {
-	gap: 12px !important;
-	padding: 12px !important;
+/* connection dot - fixed top right */
+body.portal-body .connection-dot {
+	position: fixed;
+	top: 12px;
+	right: 12px;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	z-index: 1060;
 }
-
-body.portal-body #networkStatusContainer .status-pill {
-	background: rgba(7, 15, 28, 0.66);
-	border: 1px solid rgba(121, 146, 191, 0.15);
-	border-radius: 18px;
-	flex: 1 1 0;
-	min-height: 54px;
-	padding: 10px 12px;
+body.portal-body .connection-dot-green {
+	background-color: #4cd137;
+	box-shadow: 0 0 6px rgba(76, 209, 55, 0.6);
 }
-
-body.portal-body #networkStatusContainer .status-pill-center {
-	align-items: center;
-	display: flex;
-	justify-content: center;
-	text-align: center;
+body.portal-body .connection-dot-red {
+	background-color: #ff4757;
+	box-shadow: 0 0 6px rgba(255, 71, 87, 0.6);
 }
-
-body.portal-body #networkStatusContainer .small,
-body.portal-body #connectionStatus {
-	color: #eef4ff;
-	font-weight: 700;
-	letter-spacing: 0.04em;
+body.portal-body .blinking-dot-green {
+	background-color: #4cd137;
+	box-shadow: 0 0 6px rgba(76, 209, 55, 0.6);
+	animation: blinkDotGreen 1.2s infinite;
+}
+body.portal-body .blinking-dot-red {
+	background-color: #ff4757;
+	box-shadow: 0 0 6px rgba(255, 71, 87, 0.6);
+	animation: blinkDotRed 1.2s infinite;
+}
+@keyframes blinkDotGreen {
+	0%, 49% { opacity: 1; }
+	60%, 99% { opacity: 0.2; }
+	100% { opacity: 1; }
+}
+@keyframes blinkDotRed {
+	0%, 49% { opacity: 1; }
+	60%, 99% { opacity: 0.2; }
+	100% { opacity: 1; }
 }
 
 body.portal-body #remainingTimeContainer {
 	background:
 		linear-gradient(135deg, rgba(255, 154, 79, 0.16) 0%, rgba(255, 154, 79, 0.06) 25%, rgba(10, 19, 35, 0.98) 100%);
 	border-color: rgba(255, 165, 98, 0.26);
-	padding: 20px 18px !important;
+	padding: 10px 14px !important;
 }
 
 body.portal-body #remainTime {
 	color: #fff5e8 !important;
-	font-size: 2.45rem;
+	font-size: 2rem;
 	letter-spacing: 0.08em;
 	text-shadow: 0 10px 25px rgba(0, 0, 0, 0.28);
 }
 
 body.portal-body #expirationTime {
 	color: #9fb3d8;
-	font-size: 0.88rem;
+	font-size: 0.78rem;
 }
 
 body.portal-body #useVoucherContainer,
 body.portal-body #freeInternetContainer,
 body.portal-body #gamesContainer {
-	gap: 12px !important;
-	padding: 12px;
+	gap: 8px !important;
+	padding: 8px 12px;
 }
 
 body.portal-body #voucherInput,
@@ -696,16 +755,17 @@ body.portal-body select.form-control,
 body.portal-body #vendoSelected {
 	background-color: #091120;
 	border: 1px solid rgba(123, 149, 195, 0.18);
-	border-radius: 16px;
+	border-radius: 12px;
 	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 	color: #eef4ff;
-	min-height: 50px;
+	min-height: 38px;
+	font-size: 0.85rem;
 }
 
 body.portal-body #voucherInput {
-	font-size: 1rem;
+	font-size: 0.85rem;
 	font-weight: 700;
-	padding-left: 16px;
+	padding-left: 14px;
 }
 
 body.portal-body .form-control::placeholder,
@@ -732,7 +792,7 @@ body.portal-body #vendoSelectDiv label {
 }
 
 body.portal-body .main-panel {
-	padding: 18px;
+	padding: 12px;
 }
 
 body.portal-body .nav-tabs {
@@ -754,11 +814,11 @@ body.portal-body .nav-tabs .nav-item {
 body.portal-body .nav-tabs .nav-link {
 	background: transparent;
 	border: none;
-	border-radius: 14px;
+	border-radius: 12px;
 	color: #8ea4cd;
-	font-size: 0.95rem;
+	font-size: 0.78rem;
 	font-weight: 700;
-	padding: 12px 10px;
+	padding: 8px 8px;
 	transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 	width: 100%;
 }
@@ -787,10 +847,10 @@ body.portal-body .nav-tabs .nav-link:hover i {
 body.portal-body .tab-content {
 	background: rgba(7, 13, 25, 0.55);
 	border: 1px solid rgba(117, 142, 186, 0.12);
-	border-radius: 24px;
+	border-radius: 18px;
 	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-	margin-top: 18px !important;
-	padding: 10px;
+	margin-top: 10px !important;
+	padding: 8px;
 }
 
 body.portal-body .tab-pane {
@@ -806,15 +866,22 @@ body.portal-body .action-stack {
 }
 
 body.portal-body .btn {
-	border-radius: 16px;
+	border-radius: 14px;
 	border-width: 1px;
-	box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
-	font-size: 0.92rem;
+	box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+	font-size: 0.78rem;
 	font-weight: 800;
 	letter-spacing: 0.05em;
-	min-height: 50px;
+	min-height: 38px;
+	padding: 6px 12px;
 	text-transform: uppercase;
 	transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+body.portal-body .btn-sm-portal {
+	min-height: 34px;
+	font-size: 0.72rem;
+	padding: 4px 10px;
 }
 
 body.portal-body .btn:hover,
@@ -878,17 +945,26 @@ body.portal-body #memberBtn {
 body.portal-body #insertBtn {
 	background: radial-gradient(circle at 30% 30%, #ffbd80 0%, #ff8d3f 35%, #d8540c 100%) !important;
 	border: 1px solid rgba(255, 212, 177, 0.42) !important;
-	box-shadow: 0 20px 36px rgba(216, 84, 12, 0.32), inset 0 2px 0 rgba(255, 255, 255, 0.18);
-	font-size: 1.15rem;
-	letter-spacing: 0.12em;
-	min-height: 132px !important;
-	min-width: 132px !important;
+	border-radius: 50% !important;
+	box-shadow: 0 14px 28px rgba(216, 84, 12, 0.32), inset 0 2px 0 rgba(255, 255, 255, 0.18);
+	font-size: 0.82rem;
+	letter-spacing: 0.1em;
+	width: 90px;
+	height: 90px;
+	min-height: 90px !important;
+	min-width: 90px !important;
+	max-width: 90px;
+	max-height: 90px;
+	padding: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 body.portal-body #resumeTimeBtn,
 body.portal-body #pauseTimeBtn,
 body.portal-body #btnPromoRates {
-	min-height: 54px;
+	min-height: 34px;
 }
 
 body.portal-body #serverStatus {
@@ -1030,9 +1106,7 @@ body.portal-body #memberDashboardContainer p {
 	}
 
 	body.portal-body #headerContainer,
-	body.portal-body #networkStatusContainer,
 	body.portal-body #useVoucherContainer,
-	body.portal-body .action-stage,
 	body.portal-body .utility-row {
 		flex-direction: column !important;
 	}
@@ -1053,16 +1127,21 @@ body.portal-body #memberDashboardContainer p {
 	}
 
 	body.portal-body #remainTime {
-		font-size: 2rem;
+		font-size: 1.6rem;
 	}
 
 	body.portal-body .nav-tabs .nav-link {
-		font-size: 0.84rem;
-		padding: 11px 8px;
+		font-size: 0.72rem;
+		padding: 7px 6px;
 	}
 
 	body.portal-body #insertBtn {
-		min-height: 138px !important;
-		min-width: 138px !important;
+		width: 80px;
+		height: 80px;
+		min-height: 80px !important;
+		min-width: 80px !important;
+		max-width: 80px;
+		max-height: 80px;
+		font-size: 0.75rem;
 	}
 }

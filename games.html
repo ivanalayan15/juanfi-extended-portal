@@ -27,58 +27,53 @@
     <script src="assets/js/eload.js?v=$(ip)-$(mac)" defer></script>
 </head>
 
-<body class="col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2">
+<body class="portal-body col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2">
     <div class="d-flex flex-column align-items-center justify-content-center">
-        <div id="loaderDiv" class="spinner-border text-warning mt-5" style="width: 3rem; height: 3rem;" role="status">
+        <div id="loaderDiv" class="spinner-border" role="status">
             <span class="sr-only"></span>
         </div>
     </div>
 
-    <div id="containerDiv" class="d-flex flex-column gap-2 hide">
-        <div id="headerContainer" class="d-flex justify-content-between align-items-center container">
-            <button id="gamesBackBtn" class="btn btn-outline-danger btn-sm" onclick="goBackToPortal()">
+    <div id="containerDiv" class="portal-shell d-flex flex-column gap-2 hide">
+        <div id="headerContainer" class="d-flex justify-content-between align-items-center container p-0">
+            <button id="gamesBackBtn" class="btn btn-dark btn-sm m-0" onclick="goBackToPortal()">
                 <i class="bi bi-arrow-left"></i> BACK
             </button>
-            <div class="header-points-container d-flex flex-column align-items-center justify-content-center">
-                <div class="text-white small mb-1 fw-bold">AVAILABLE POINTS</div>
-                <div class="d-flex align-items-center gap-2">
-                    <img src="assets/img/coin.png" width="24" height="24" class="points-icon" />
-                    <span id="headerPointsDisplay" class="fw-bold fs-4 text-warning">--</span>
-                </div>
+            <div class="header-points-container d-flex align-items-center gap-1 m-0">
+                <img src="assets/img/coin.png" width="14" height="14" class="points-icon" />
+                <span id="headerPointsDisplay" class="fw-bold" style="font-size:0.82rem;color:#ffbf73;">--</span>
             </div>
-
         </div>
 
-        <div class="container text-center mt-3">
-            <h2 class="text-white fw-bold mb-3" style="text-shadow: 2px 2px 4px #000;">GAMES</h2>
+        <div class="container text-center">
+            <h6 class="fw-bold mb-2" style="color:#eef4ff;letter-spacing:0.06em;">GAMES</h6>
 
-            <div class="row w-100 justify-content-center m-0 gap-3">
-                <div class="col-12 col-md-5 card bg-dark text-white border-warning p-0">
-                    <div class="card-body d-flex flex-column align-items-center">
-                        <h4 class="card-title text-warning fw-bold mb-3">Duck Race</h4>
-                        <img src="assets/img/duck.png" alt="Duck Race" class="mb-3"
-                            style="width: 80px; height: 80px; filter: drop-shadow(0 0 5px gold);"
-                            onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'><text x=\'50%\' y=\'50%\' font-size=\'50\' text-anchor=\'middle\' dominant-baseline=\'middle\'>🦆</text></svg>'">
-                        <p class="card-text small">Bet on your lucky duck and win points! Watch them race to the finish
-                            line.</p>
-                        <button class="btn btn-warning w-100 fw-bold mt-auto" data-bs-toggle="modal"
-                            data-bs-target="#duckRaceModal">
-                            PLAY NOW
-                        </button>
+            <div class="d-flex flex-column gap-2">
+                <div class="game-card d-flex align-items-center gap-3 p-3">
+                    <img src="assets/img/duck.png" alt="Duck Race"
+                        style="width: 48px; height: 48px; filter: drop-shadow(0 0 4px rgba(255,191,115,0.5));"
+                        onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><text x=\'50%\' y=\'50%\' font-size=\'30\' text-anchor=\'middle\' dominant-baseline=\'middle\'>🦆</text></svg>'">
+                    <div class="text-start flex-grow-1">
+                        <div class="fw-bold" style="font-size:0.88rem;color:#ffbf73;">Duck Race</div>
+                        <div style="font-size:0.7rem;color:#8ea4cd;">Bet on your lucky duck and win points!</div>
                     </div>
+                    <button class="btn btn-warning btn-sm fw-bold" data-bs-toggle="modal"
+                        data-bs-target="#duckRaceModal" style="white-space:nowrap;">
+                        PLAY
+                    </button>
                 </div>
 
-                <div id="spinWheelCard" class="col-12 col-md-5 card bg-dark text-white border-warning p-0">
-                    <div class="card-body d-flex flex-column align-items-center">
-                        <h4 class="card-title text-warning fw-bold mb-3">Spin the Wheel</h4>
-                        <img src="assets/img/coin.png" alt="Spin the Wheel" class="mb-3"
-                            style="width: 80px; height: 80px; filter: drop-shadow(0 0 5px gold);"
-                            onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'><text x=\'50%\' y=\'50%\' font-size=\'50\' text-anchor=\'middle\' dominant-baseline=\'middle\'>🎡</text></svg>'">
-                        <p class="card-text small">Spin the lucky wheel to redeem your points for exciting rewards! Every spin is a chance to win.</p>
-                        <button class="btn btn-warning w-100 fw-bold mt-auto" id="spinRedeemBtn">
-                            PLAY NOW
-                        </button>
+                <div id="spinWheelCard" class="game-card d-flex align-items-center gap-3 p-3">
+                    <img src="assets/img/coin.png" alt="Spin the Wheel"
+                        style="width: 48px; height: 48px; filter: drop-shadow(0 0 4px rgba(255,191,115,0.5));"
+                        onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><text x=\'50%\' y=\'50%\' font-size=\'30\' text-anchor=\'middle\' dominant-baseline=\'middle\'>🎡</text></svg>'">
+                    <div class="text-start flex-grow-1">
+                        <div class="fw-bold" style="font-size:0.88rem;color:#ffbf73;">Spin the Wheel</div>
+                        <div style="font-size:0.7rem;color:#8ea4cd;">Redeem points for exciting rewards!</div>
                     </div>
+                    <button class="btn btn-warning btn-sm fw-bold" id="spinRedeemBtn" style="white-space:nowrap;">
+                        PLAY
+                    </button>
                 </div>
             </div>
         </div>
@@ -87,18 +82,18 @@
         <div class="modal fade" id="duckRaceModal" tabindex="-1" aria-labelledby="duckRaceModalLabel" aria-hidden="true"
             data-bs-backdrop="static">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content bg-dark text-white border-warning">
-                    <div class="modal-header border-warning pb-2 align-items-center">
-                        <h5 class="modal-title text-warning fw-bold mb-0" id="duckRaceModalLabel">Duck Race</h5>
-                        <div class="ms-auto me-3 d-flex align-items-center text-white" style="font-size: 0.9rem;">
-                            <i class="bi bi-coin text-warning me-1"></i>
+                <div class="modal-content">
+                    <div class="modal-header pb-2 align-items-center">
+                        <h5 class="modal-title fw-bold mb-0" style="color:#ffbf73;" id="duckRaceModalLabel">Duck Race</h5>
+                        <div class="ms-auto me-3 d-flex align-items-center" style="font-size:0.78rem;color:#9fb3d8;">
+                            <i class="bi bi-coin me-1" style="color:#ffbf73;"></i>
                             <span id="userPointsDisplay" class="fw-bold me-1">--</span> pts
                         </div>
                         <button type="button" class="btn-close btn-close-white ms-0" data-bs-dismiss="modal"
                             aria-label="Close"></button>
                     </div>
                     <div class="modal-body pt-2 pb-3 px-3">
-                        <h6 class="text-success mb-2 text-center">1 point per race</h6>
+                        <div class="text-center mb-2" style="font-size:0.72rem;color:#36cfa2;font-weight:700;">1 point per race</div>
                         <div class="d-flex justify-content-center gap-2 flex-wrap mb-3" id="duckSelection">
                             <button class="btn btn-outline-info duck-bet-btn btn-sm" data-duck="1">Duck 1</button>
                             <button class="btn btn-outline-info duck-bet-btn btn-sm" data-duck="2">Duck 2</button>
@@ -111,7 +106,7 @@
                         </button>
 
                         <div id="raceResult" class="alert mt-3 d-none fw-bold text-center shadow" role="alert"
-                            style="font-size: 0.9rem;">
+                            style="font-size: 0.78rem;">
                             <!-- Result message will appear here -->
                         </div>
                         <button class="btn btn-success w-100 fw-bold my-2 d-none" id="raceAgainBtn">
@@ -150,25 +145,25 @@
         <div class="modal fade" id="redeemBySpinModal" tabindex="-1" role="dialog"
             aria-labelledby="redeemBySpinModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content bg-dark text-white border-warning">
-                    <div class="modal-header border-warning pb-2">
-                        <h5 class="modal-title text-warning fw-bold" id="redeemBySpinModalLabel">Spin to Redeem</h5>
+                <div class="modal-content">
+                    <div class="modal-header pb-2">
+                        <h5 class="modal-title fw-bold" style="color:#ffbf73;" id="redeemBySpinModalLabel">Spin to Redeem</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="container-fluid">
-                            <div class="row mb-3">
+                            <div class="row mb-2">
                                 <div class="col-12 text-center">
-                                    <div class="small text-white">Reward Point Balance</div>
+                                    <div class="small" style="color:#9fb3d8;font-size:0.72rem;">Reward Point Balance</div>
                                     <div class="d-flex align-items-center justify-content-center gap-1">
-                                        <img src="assets/img/coin.png" width="20px" height="20px" />
-                                        <span class="availablePointsDisplay text-warning fw-bold fs-4">0.00</span>
+                                        <img src="assets/img/coin.png" width="18px" height="18px" />
+                                        <span class="availablePointsDisplay fw-bold" style="font-size:1.4rem;color:#ffbf73;">0.00</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-12 text-center">
-                                    <small class="text-white-50">Redemption rule: <span class="redeemRatio"
+                                    <small style="color:#7b93bf;font-size:0.7rem;">Redemption rule: <span class="redeemRatio"
                                             id="redeemRatio2">1</span> point
                                         = 1 spin</small>
                                 </div>
@@ -183,7 +178,7 @@
                             </div>
                             <div class="d-flex flex-column gap-2">
                                 <button type="button" id="spinBtn" class="btn btn-warning fw-bold">SPIN</button>
-                                <button id="spinCancelBtn" type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"
+                                <button id="spinCancelBtn" type="button" class="btn btn-dark" data-bs-dismiss="modal"
                                     aria-label="Close">CLOSE
                                 </button>
                             </div>
