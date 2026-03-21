@@ -1,60 +1,3 @@
-$(if var == bytes-in)
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Bytes In</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta http-equiv="refresh" content="3; url=$(link-status)?var=bytes-in">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            background: transparent;
-            overflow: hidden;
-        }
-
-        body {
-            color: #b2b2b2;
-            font-size: 12px;
-            font-family: Arial, Helvetica, sans-serif;
-            line-height: 18px;
-            white-space: nowrap;
-        }
-    </style>
-</head>
-<body data-bytes="$(bytes-in)">$(bytes-in-nice)</body>
-</html>
-$(elif var == bytes-out)
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Bytes Out</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta http-equiv="refresh" content="3; url=$(link-status)?var=bytes-out">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            background: transparent;
-            overflow: hidden;
-        }
-
-        body {
-            color: #b2b2b2;
-            font-size: 12px;
-            font-family: Arial, Helvetica, sans-serif;
-            line-height: 18px;
-            white-space: nowrap;
-        }
-    </style>
-</head>
-<body data-bytes="$(bytes-out)">$(bytes-out-nice)</body>
-</html>
-$(else)
 <!DOCTYPE html>
 <html lang="en">
 
@@ -77,10 +20,10 @@ $(else)
 
         var sessionTimeLeft = "$(session-time-left-secs)"
         var time = parseInt(sessionTimeLeft);
-        if (time > 0) {
+        if(time > 0){
             window.location.href = "http://clients3.google.com/generate_204";
         }
-        setTimeout(function () {
+        setTimeout(function(){
             location.replace('/juanfi.html?v=' + Date.now());
         }, 1000)
     </script>
@@ -127,4 +70,3 @@ $(else)
 </div>
 </body>
 </html>
-$(endif)

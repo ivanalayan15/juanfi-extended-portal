@@ -50,14 +50,7 @@ var hasWiFree = false;
 var announcementText = '';
 var isTestMode = window.location.href.indexOf("http") !== 0;
 var buttonEffect;
-var trafficMonitorState = {
-    lastInBytes: null,
-    lastOutBytes: null,
-    lastInTime: null,
-    lastOutTime: null,
-    downloadRate: 0,
-    uploadRate: 0
-};
+var resumeRequestInFlight = false;
 
 function patchPromiseCatch(promise) {
     if (!promise || typeof promise.then !== 'function' || typeof promise.catch === 'function') {
@@ -259,125 +252,11 @@ $(document).ready(function () {
             safeAudioPlay(buttonEffect);
         }
     });
-
-    initTrafficMonitor();
 });
 
 function newLogin() {
     initValues();
     renderView();
-}
-
-function formatTrafficRate(bytesPerSecond) {
-    var units = ["B/s", "KB/s", "MB/s", "GB/s"];
-    var value = bytesPerSecond;
-    var unitIndex = 0;
-
-    if (!value || value < 0) {
-        return "0 B/s";
-    }
-
-    while (value >= 1024 && unitIndex < units.length - 1) {
-        value = value / 1024;
-        unitIndex++;
-    }
-
-    if (unitIndex === 0) {
-        return Math.round(value) + " " + units[unitIndex];
-    }
-
-    return value.toFixed(2) + " " + units[unitIndex];
-}
-
-function updateTrafficRateDisplay() {
-    var trafficRateLabel = document.getElementById("currentTrafficRate");
-    if (!trafficRateLabel) {
-        return;
-    }
-
-    trafficRateLabel.innerHTML = "D: " + formatTrafficRate(trafficMonitorState.downloadRate) + " | U: " + formatTrafficRate(trafficMonitorState.uploadRate);
-}
-
-function readTrafficFrameBytes(frameId) {
-    var frame = document.getElementById(frameId);
-    if (!frame) {
-        return null;
-    }
-
-    try {
-        var frameDocument = frame.contentWindow ? frame.contentWindow.document : frame.contentDocument;
-        if (!frameDocument || !frameDocument.body) {
-            return null;
-        }
-
-        var bytesValue = frameDocument.body.getAttribute("data-bytes");
-        var parsedBytes = parseInt(bytesValue, 10);
-        if (isNaN(parsedBytes)) {
-            return null;
-        }
-
-        return parsedBytes;
-    } catch (e) {
-        return null;
-    }
-}
-
-function updateTrafficRate(direction) {
-    var currentBytes = readTrafficFrameBytes(direction === "in" ? "bytesInFrame" : "bytesOutFrame");
-    var now = new Date().getTime();
-    var lastBytesKey = direction === "in" ? "lastInBytes" : "lastOutBytes";
-    var lastTimeKey = direction === "in" ? "lastInTime" : "lastOutTime";
-    var rateKey = direction === "in" ? "downloadRate" : "uploadRate";
-
-    if (currentBytes == null) {
-        return;
-    }
-
-    if (trafficMonitorState[lastBytesKey] != null && trafficMonitorState[lastTimeKey] != null) {
-        var elapsedSeconds = (now - trafficMonitorState[lastTimeKey]) / 1000;
-        var bytesDiff = currentBytes - trafficMonitorState[lastBytesKey];
-
-        if (elapsedSeconds > 0 && bytesDiff >= 0) {
-            trafficMonitorState[rateKey] = bytesDiff / elapsedSeconds;
-        }
-    }
-
-    trafficMonitorState[lastBytesKey] = currentBytes;
-    trafficMonitorState[lastTimeKey] = now;
-    updateTrafficRateDisplay();
-}
-
-function attachTrafficFrameListener(frame, direction) {
-    if (!frame) {
-        return;
-    }
-
-    var handler = function () {
-        updateTrafficRate(direction);
-    };
-
-    if (frame.addEventListener) {
-        frame.addEventListener("load", handler);
-    } else if (frame.attachEvent) {
-        frame.attachEvent("onload", handler);
-    }
-}
-
-function initTrafficMonitor() {
-    var bytesInFrame = document.getElementById("bytesInFrame");
-    var bytesOutFrame = document.getElementById("bytesOutFrame");
-
-    if (!bytesInFrame || !bytesOutFrame) {
-        return;
-    }
-
-    attachTrafficFrameListener(bytesInFrame, "in");
-    attachTrafficFrameListener(bytesOutFrame, "out");
-    updateTrafficRateDisplay();
-    setTimeout(function () {
-        updateTrafficRate("in");
-        updateTrafficRate("out");
-    }, 500);
 }
 
 function updateAnnouncementMarqueeSpeed() {
@@ -1041,17 +920,28 @@ if (memberLoginExecuteBtn) {
 var resumeTimeBtn = document.getElementById('resumeTimeBtn');
 if (resumeTimeBtn) {
     resumeTimeBtn.onclick = function () {
+        if (resumeRequestInFlight) {
+            return false;
+        }
+
+        resumeRequestInFlight = true;
         addLoader('resumeTimeBtn');
         setStorageValue("isPaused", "0");
         loginVoucher(macNoColon, function (success) {
             isLoggedIn = success;
             if (success) {
-                checkIsLoggedIn(macNoColon);
-                newLogin();
+                setTimeout(function () {
+                    sessiontimeInSecs = 0;
+                    removeLoader('resumeTimeBtn');
+                    newLogin();
+                    resumeRequestInFlight = false;
+                }, 1000);
             } else {
                 removeLoader('resumeTimeBtn');
+                resumeRequestInFlight = false;
             }
         });
+        return false;
     };
 }
 
