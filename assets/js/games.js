@@ -6,7 +6,7 @@ function getGamesUrlParameter(name) {
 }
 
 var serverIp = getGamesUrlParameter("ip");
-
+localStorage.setItem("vendorIpAddress", serverIp);
 var winningDuck = 0;
 var wonPoints = 0;
 var selectedDuck = null;
@@ -330,6 +330,30 @@ function fetchUserPoints(callback) {
     }
 
     gamesUserInfoRequestInFlight = true;
+
+    fetchPortalAPI("/login", "POST", serverIp, { mac: macNoColon })
+        .then(function (result) {
+            if ((!result) || (!result.success)) {
+                $.toast({
+                    title: 'Failed',
+                    content: (result && result.error) || 'Request failed. Please try again.',
+                    type: 'error',
+                    delay: 4000
+                });
+                cb(false);
+                return;
+            }
+
+        })
+        .catch(function (error) {
+            $.toast({
+                title: 'Failed',
+                content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
+                type: 'error',
+                delay: 4000
+            });
+            cb(false);
+        });
 
     fetchUserInfo(macNoColon, true, function (userData, error) {
         gamesUserInfoRequestInFlight = false;

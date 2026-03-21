@@ -391,6 +391,7 @@ function renderView() {
             hasWiFree = data.hasWiFree;
             announcementText = data.announcement;
         }
+        localStorage.setItem('vendorIpAddress', vendorIpAddress);
         if (announcementText) {
             var announcement = $("#announcement");
             announcement.removeClass("hide");
@@ -525,6 +526,7 @@ function renderView() {
                     if (!!dtls) {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
+                        localStorage.setItem('vendorIpAddress', vendorIpAddress);
                         multiVendoConfiguration(dtls, userData);
                     }
                 } else if (multiVendoOption == 2) {
@@ -539,6 +541,7 @@ function renderView() {
                     if (!!dtls) {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
+                        localStorage.setItem('vendorIpAddress', vendorIpAddress);
                         multiVendoConfiguration(dtls, userData);
                     }
                 } else {
@@ -562,6 +565,7 @@ function renderView() {
                     }
                     if (selectedVendo != null) {
                         vendorIpAddress = selectedVendo;
+                        localStorage.setItem('vendorIpAddress', vendorIpAddress);
                     }
 
                     $("#vendoSelected").val(vendorIpAddress);
@@ -569,6 +573,7 @@ function renderView() {
                     vendoSelectOption.onchange = function () {
                         vendorIpAddress = $("#vendoSelected").val();
                         setStorageValue('selectedVendo', vendorIpAddress);
+                        localStorage.setItem('vendorIpAddress', vendorIpAddress);
                         var dtls = null;
                         for (var i = 0; i < multiVendoAddresses.length; i++) {
                             if (multiVendoAddresses[i].vendoIp === vendorIpAddress) {
@@ -868,6 +873,7 @@ function multiVendoConfiguration(vendo, user) {
 }
 
 $('#insertCoinModal').on('hidden.bs.modal', function () {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     clearInterval(timer);
     timer = null;
     insertingCoin = false;
@@ -952,7 +958,7 @@ if (memberLoginExecuteBtn) {
         $("#errorMsg").addClass("d-none");
         addLoader('memberLoginExecuteBtn');
         var old_mac = getStorageValue('activeVoucher')
-
+        vendorIpAddress = localStorage.getItem("vendorIpAddress");
         fetchPortalAPI("/member-login", "POST", vendorIpAddress, {
             mac: mac,
             old_mac: old_mac,
@@ -1250,9 +1256,7 @@ function parseDuration(minutes) {
 }
 
 function populatePromoRates(retryCount) {
-    if (vendorIpAddress == null)
-        return;
-
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     var tableBody = document.querySelector("#rateTable tbody");
     tableBody.innerHTML = "";
     $.ajax({
@@ -1299,6 +1303,7 @@ function minutesToTime(totalMinutes) {
 }
 
 function populateChargingStations(retryCount) {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     clearInterval(chargerTimer);
     chargerTimer = setInterval(refreshChargerTimer, 1000);
     $.ajax({
@@ -1377,6 +1382,7 @@ function onRateTypeChange(evt) {
 }
 
 function addChargerTime(port, portName, retryCount) {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     topupMode = TOPUP_CHARGER;
     $.ajax({
         type: "POST",
@@ -1412,6 +1418,7 @@ function addChargerTime(port, portName, retryCount) {
 }
 
 function callTopupAPI(retryCount) {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     $('#cncl').html("CANCEL");
     $("#vcCodeDiv").attr('style', 'display: block');
     var type = $("#saveVoucherButton").attr('data-save-type');
@@ -1465,6 +1472,7 @@ function callTopupAPI(retryCount) {
 }
 
 function saveVoucherBtnAction() {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     addLoader('saveVoucherButton')
 
     if (topupMode == TOPUP_INTERNET) {
@@ -1539,6 +1547,7 @@ function saveVoucherBtnAction() {
 }
 
 function checkCoin() {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     $.ajax({
         type: "POST",
         url: "http://" + vendorIpAddress + "/checkCoin",
@@ -1889,6 +1898,7 @@ function getDeviceOS() {
 }
 
 function fetchUserInfo(macNoColon, pointsEnabled, cb) {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     var params = "mac=" + macNoColon + "&interfaceName=" + interfaceName;
     var old_mac = getStorageValue("activeVoucher");
     if (old_mac && old_mac !== "") {
@@ -2006,6 +2016,7 @@ function renderHistories(data, containerId) {
 }
 
 function onPurchaseClicked(item) {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     addLoader('wifreeBtn');
     $('#wifreeCheckOutModal').modal('show');
     $('#wifreeModal').modal('hide');
@@ -2453,6 +2464,7 @@ function onRedeemRewardPtsSliderChangeEvt() {
 }
 
 function onRedeemRewardPtsConfirmBtnEvt(macNoColon) {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     var confirmRedeemBtn = document.getElementById("confirmRedeemBtn");
     if (confirmRedeemBtn) {
         confirmRedeemBtn.onclick = function () {
@@ -2549,6 +2561,7 @@ function showResumeButton() {
 }
 
 function logoutMember() {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     fetchPortalAPI("/logout-member", "POST", vendorIpAddress, { mac: voucher })
         .then(function (result) {
             if ((!result) || (!result.success)) {
@@ -2592,6 +2605,7 @@ function logoutMember() {
 }
 
 function logoutVoucher(macNoColon, cb) {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     fetchPortalAPI("/logout", "POST", vendorIpAddress, { mac: macNoColon })
         .then(function (result) {
             if ((!result) || (!result.success)) {
@@ -2632,6 +2646,7 @@ function logoutVoucher(macNoColon, cb) {
 }
 
 function loginVoucher(macNoColon, cb) {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     fetchPortalAPI("/login", "POST", vendorIpAddress, { mac: macNoColon })
         .then(function (result) {
             if ((!result) || (!result.success)) {
@@ -2670,6 +2685,7 @@ function loginVoucher(macNoColon, cb) {
 
 
 function claimFreeInternetFetch(macNoColon, cb) {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     fetchPortalAPI("/claim-free-internet", "POST", vendorIpAddress, { mac: macNoColon })
         .then(function (result) {
             if ((!result) || (!result.success)) {
@@ -2731,6 +2747,7 @@ function checkIsLoggedIn(macNoColon) {
 }
 
 function fetchSpinWheelReward(mac, cb) {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
     if (parseInt(rewardPointsBalance) < 0) {
         $.toast({
             title: 'Failed',
