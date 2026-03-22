@@ -53,6 +53,37 @@ var buttonEffect;
 var pauseAwaitingUserInfoResponse = false;
 var pauseRequestInFlight = false;
 var resumeRequestInFlight = false;
+var announcementMarqueeState = {
+    announcement: null,
+    track: null,
+    text: null,
+    isBound: false,
+    animationFrameId: null,
+    measureRetryId: null,
+    lastFrameTime: 0,
+    hasMeasured: false,
+    currentOffset: 0,
+    startOffset: 0,
+    endOffset: 0,
+    speed: 0,
+    isPaused: false,
+    isDragging: false,
+    activePointerId: null,
+    dragStartClientX: 0,
+    dragStartOffset: 0
+};
+var requestCompatAnimationFrame = window.requestAnimationFrame ? function (callback) {
+    return window.requestAnimationFrame(callback);
+} : function (callback) {
+    return window.setTimeout(function () {
+        callback((new Date()).getTime());
+    }, 16);
+};
+var cancelCompatAnimationFrame = window.cancelAnimationFrame ? function (frameId) {
+    window.cancelAnimationFrame(frameId);
+} : function (frameId) {
+    window.clearTimeout(frameId);
+};
 
 function patchPromiseCatch(promise) {
     if (!promise || typeof promise.then !== 'function' || typeof promise.catch === 'function') {
@@ -138,6 +169,30 @@ function bindEvent(target, eventName, handler) {
     } else {
         target['on' + eventName] = handler;
     }
+}
+
+function getComputedStyleCompat(element) {
+    if (!element) {
+        return null;
+    }
+
+    if (window.getComputedStyle) {
+        return window.getComputedStyle(element);
+    }
+
+    return element.currentStyle || null;
+}
+
+function hasClassCompat(element, className) {
+    if (!element) {
+        return false;
+    }
+
+    if (element.classList) {
+        return element.classList.contains(className);
+    }
+
+    return (" " + element.className + " ").indexOf(" " + className + " ") !== -1;
 }
 
 function addClassCompat(element, className) {
@@ -303,6 +358,7 @@ $(document).ready(function () {
         return;
     }
 
+    initRemainTimeInteraction();
     fetchServerData().then(function (server) {
         juanfiExtendedServerUrl = "http://" + server.ip + ":8080/api/portal";
         buttonEffect = new Audio("http://" + server.ip + ":8080/sounds/button.mp3");
@@ -320,36 +376,421 @@ function newLogin() {
     renderView();
 }
 
-function updateAnnouncementMarqueeSpeed() {
+function updateRemainTimeExpandedSize() {
+    var remainTime = document.getElementById("remainTime");
+    var remainingTimeContainer = document.getElementById("remainingTimeContainer");
+    var containerStyle;
+    var availableWidth;
+    var baseFontSize;
+    var maxExpandedFontSize;
+    var expandedTextWidth;
+    var expandedFontSize;
+
+    if (!remainTime) {
+        return;
+    }
+
+    remainTime.style.fontSize = "";
+
+    if (!hasClassCompat(remainTime, "is-expanded") || !remainingTimeContainer) {
+        return;
+    }
+
+    containerStyle = getComputedStyleCompat(remainingTimeContainer);
+    if (!containerStyle) {
+        return;
+    }
+
+    availableWidth = remainingTimeContainer.clientWidth
+        - parseFloat(containerStyle.paddingLeft || 0)
+        - parseFloat(containerStyle.paddingRight || 0)
+        - 8;
+
+    if (availableWidth <= 0) {
+        return;
+    }
+
+    baseFontSize = parseFloat(getComputedStyleCompat(remainTime).fontSize);
+    if (!baseFontSize) {
+        return;
+    }
+
+    maxExpandedFontSize = baseFontSize * 1.3;
+    remainTime.style.fontSize = maxExpandedFontSize + "px";
+    expandedTextWidth = remainTime.scrollWidth || remainTime.offsetWidth;
+
+    if (!expandedTextWidth) {
+        remainTime.style.fontSize = "";
+        return;
+    }
+
+    expandedFontSize = maxExpandedFontSize;
+    if (expandedTextWidth > availableWidth) {
+        expandedFontSize = maxExpandedFontSize * (availableWidth / expandedTextWidth) * 0.98;
+    }
+
+    if (expandedFontSize < baseFontSize) {
+        expandedFontSize = baseFontSize;
+    }
+
+    remainTime.style.fontSize = expandedFontSize + "px";
+}
+
+function setRemainTimeExpanded(isExpanded) {
+    var remainTime = document.getElementById("remainTime");
+
+    if (!remainTime) {
+        return;
+    }
+
+    if (isExpanded) {
+        addClassCompat(remainTime, "is-expanded");
+    } else {
+        removeClassCompat(remainTime, "is-expanded");
+    }
+
+    remainTime.setAttribute("aria-pressed", isExpanded ? "true" : "false");
+    updateRemainTimeExpandedSize();
+}
+
+function setRemainingTimeConnectionState(isConnected) {
+    var remainingTimeContainer = document.getElementById("remainingTimeContainer");
+
+    if (!remainingTimeContainer) {
+        return;
+    }
+
+    if (isConnected) {
+        addClassCompat(remainingTimeContainer, "connection-state-green");
+        removeClassCompat(remainingTimeContainer, "connection-state-red");
+    } else {
+        addClassCompat(remainingTimeContainer, "connection-state-red");
+        removeClassCompat(remainingTimeContainer, "connection-state-green");
+    }
+}
+
+function initRemainTimeInteraction() {
+    var remainTime = document.getElementById("remainTime");
+
+    if (!remainTime || remainTime.getAttribute("data-expand-bound") === "true") {
+        return;
+    }
+
+    function toggleRemainTimeExpanded(event) {
+        if (event && event.preventDefault) {
+            event.preventDefault();
+        }
+
+        setRemainTimeExpanded(!hasClassCompat(remainTime, "is-expanded"));
+    }
+
+    bindEvent(remainTime, "click", toggleRemainTimeExpanded);
+    bindEvent(remainTime, "keydown", function (event) {
+        var key = event ? (event.key || event.keyCode) : null;
+
+        if (key === "Enter" || key === " " || key === "Spacebar" || key === 13 || key === 32) {
+            toggleRemainTimeExpanded(event);
+        }
+    });
+
+    remainTime.setAttribute("data-expand-bound", "true");
+}
+
+bindEvent(window, "resize", function () {
+    updateRemainTimeExpandedSize();
+});
+
+function cacheAnnouncementMarqueeElements() {
     var announcement = document.getElementById("announcement");
-    var marquee = announcement ? announcement.querySelector(".marquee") : null;
-    var announcementSpan = document.getElementById("announcementText");
+    announcementMarqueeState.announcement = announcement;
+    announcementMarqueeState.track = announcement ? announcement.querySelector(".marquee") : null;
+    announcementMarqueeState.text = document.getElementById("announcementText");
 
-    if (!announcement || !marquee || !announcementSpan) {
+    return !!(announcementMarqueeState.announcement && announcementMarqueeState.track && announcementMarqueeState.text);
+}
+
+function isAnnouncementMarqueeHidden() {
+    return !announcementMarqueeState.announcement || announcementMarqueeState.announcement.className.indexOf("hide") !== -1;
+}
+
+function stopAnnouncementMarqueeLoop() {
+    if (announcementMarqueeState.animationFrameId !== null) {
+        cancelCompatAnimationFrame(announcementMarqueeState.animationFrameId);
+        announcementMarqueeState.animationFrameId = null;
+    }
+}
+
+function clearAnnouncementMarqueeRetry() {
+    if (announcementMarqueeState.measureRetryId !== null) {
+        window.clearTimeout(announcementMarqueeState.measureRetryId);
+        announcementMarqueeState.measureRetryId = null;
+    }
+}
+
+function scheduleAnnouncementMarqueeRetry(resetPosition) {
+    if (announcementMarqueeState.measureRetryId !== null) {
         return;
     }
 
-    if (announcement.className.indexOf("hide") !== -1) {
+    announcementMarqueeState.measureRetryId = window.setTimeout(function () {
+        announcementMarqueeState.measureRetryId = null;
+        updateAnnouncementMarqueeSpeed(resetPosition);
+    }, 80);
+}
+
+function startAnnouncementMarqueeLoop() {
+    if (announcementMarqueeState.animationFrameId !== null) {
         return;
     }
 
-    var totalDistance = announcementSpan.offsetWidth;
-    if (!totalDistance || totalDistance <= 0) {
+    announcementMarqueeState.animationFrameId = requestCompatAnimationFrame(runAnnouncementMarqueeFrame);
+}
+
+function getAnnouncementClientX(event) {
+    if (!event) {
+        return 0;
+    }
+
+    if (event.touches && event.touches.length) {
+        return event.touches[0].clientX;
+    }
+
+    if (event.changedTouches && event.changedTouches.length) {
+        return event.changedTouches[0].clientX;
+    }
+
+    return typeof event.clientX === "number" ? event.clientX : 0;
+}
+
+function clampAnnouncementMarqueeOffset(offset) {
+    if (offset > announcementMarqueeState.startOffset) {
+        return announcementMarqueeState.startOffset;
+    }
+
+    if (offset < announcementMarqueeState.endOffset) {
+        return announcementMarqueeState.endOffset;
+    }
+
+    return offset;
+}
+
+function setAnnouncementMarqueeOffset(offset) {
+    if (!announcementMarqueeState.text) {
         return;
     }
 
-    var pixelsPerSecond = 65;
-    var durationInSeconds = totalDistance / pixelsPerSecond;
+    announcementMarqueeState.currentOffset = clampAnnouncementMarqueeOffset(offset);
+    announcementMarqueeState.text.style.transform = "translateX(" + announcementMarqueeState.currentOffset + "px)";
+}
+
+function setAnnouncementMarqueePaused(isPaused) {
+    announcementMarqueeState.isPaused = isPaused;
+    announcementMarqueeState.lastFrameTime = 0;
+
+    if (!announcementMarqueeState.track) {
+        return;
+    }
+
+    if (isPaused) {
+        addClassCompat(announcementMarqueeState.track, "is-paused");
+    } else {
+        removeClassCompat(announcementMarqueeState.track, "is-paused");
+    }
+}
+
+function getAnnouncementActivePointerId(event) {
+    if (typeof event.pointerId !== "undefined") {
+        return event.pointerId;
+    }
+
+    return event.type.indexOf("mouse") === 0 ? "mouse" : "touch";
+}
+
+function matchesAnnouncementActivePointer(event) {
+    if (announcementMarqueeState.activePointerId === null) {
+        return false;
+    }
+
+    if (typeof event.pointerId !== "undefined") {
+        return announcementMarqueeState.activePointerId === event.pointerId;
+    }
+
+    if (event.type.indexOf("mouse") === 0) {
+        return announcementMarqueeState.activePointerId === "mouse";
+    }
+
+    return announcementMarqueeState.activePointerId === "touch";
+}
+
+function finishAnnouncementMarqueeDrag(event) {
+    if (!announcementMarqueeState.isDragging || (event && !matchesAnnouncementActivePointer(event))) {
+        return;
+    }
+
+    announcementMarqueeState.isDragging = false;
+    announcementMarqueeState.activePointerId = null;
+    removeClassCompat(announcementMarqueeState.track, "is-dragging");
+    setAnnouncementMarqueePaused(false);
+
+    if (event && event.preventDefault) {
+        event.preventDefault();
+    }
+}
+
+function ensureAnnouncementMarqueeBindings() {
+    var supportsPointerEvents = typeof window.PointerEvent !== "undefined";
+
+    if (announcementMarqueeState.isBound || !cacheAnnouncementMarqueeElements()) {
+        return;
+    }
+
+    function startDrag(event) {
+        if (!cacheAnnouncementMarqueeElements() || isAnnouncementMarqueeHidden()) {
+            return;
+        }
+
+        if (event.type === "mousedown" && typeof event.button === "number" && event.button !== 0) {
+            return;
+        }
+
+        if (event.touches && event.touches.length > 1) {
+            return;
+        }
+
+        if (!announcementMarqueeState.hasMeasured) {
+            updateAnnouncementMarqueeSpeed(true);
+        }
+
+        announcementMarqueeState.isDragging = true;
+        announcementMarqueeState.activePointerId = getAnnouncementActivePointerId(event);
+        announcementMarqueeState.dragStartClientX = getAnnouncementClientX(event);
+        announcementMarqueeState.dragStartOffset = announcementMarqueeState.currentOffset;
+        addClassCompat(announcementMarqueeState.track, "is-dragging");
+        setAnnouncementMarqueePaused(true);
+
+        if (event.preventDefault) {
+            event.preventDefault();
+        }
+    }
+
+    function moveDrag(event) {
+        var deltaX;
+
+        if (!announcementMarqueeState.isDragging || !matchesAnnouncementActivePointer(event)) {
+            return;
+        }
+
+        deltaX = getAnnouncementClientX(event) - announcementMarqueeState.dragStartClientX;
+        setAnnouncementMarqueeOffset(announcementMarqueeState.dragStartOffset + deltaX);
+
+        if (event.preventDefault) {
+            event.preventDefault();
+        }
+    }
+
+    if (supportsPointerEvents) {
+        bindEvent(announcementMarqueeState.track, "pointerdown", startDrag);
+        bindEvent(document, "pointermove", moveDrag);
+        bindEvent(document, "pointerup", finishAnnouncementMarqueeDrag);
+        bindEvent(document, "pointercancel", finishAnnouncementMarqueeDrag);
+    } else {
+        bindEvent(announcementMarqueeState.track, "mousedown", startDrag);
+        bindEvent(document, "mousemove", moveDrag);
+        bindEvent(document, "mouseup", finishAnnouncementMarqueeDrag);
+        bindEvent(announcementMarqueeState.track, "touchstart", startDrag);
+        bindEvent(document, "touchmove", moveDrag);
+        bindEvent(document, "touchend", finishAnnouncementMarqueeDrag);
+        bindEvent(document, "touchcancel", finishAnnouncementMarqueeDrag);
+    }
+
+    announcementMarqueeState.isBound = true;
+}
+
+function runAnnouncementMarqueeFrame(timestamp) {
+    var elapsedSeconds;
+    var nextOffset;
+
+    announcementMarqueeState.animationFrameId = null;
+
+    if (!cacheAnnouncementMarqueeElements() || isAnnouncementMarqueeHidden() || !announcementMarqueeState.hasMeasured || announcementMarqueeState.speed <= 0) {
+        return;
+    }
+
+    if (announcementMarqueeState.isPaused || announcementMarqueeState.isDragging) {
+        announcementMarqueeState.lastFrameTime = timestamp;
+        startAnnouncementMarqueeLoop();
+        return;
+    }
+
+    if (!announcementMarqueeState.lastFrameTime) {
+        announcementMarqueeState.lastFrameTime = timestamp;
+        startAnnouncementMarqueeLoop();
+        return;
+    }
+
+    elapsedSeconds = (timestamp - announcementMarqueeState.lastFrameTime) / 1000;
+    announcementMarqueeState.lastFrameTime = timestamp;
+
+    if (elapsedSeconds > 0) {
+        nextOffset = announcementMarqueeState.currentOffset - (announcementMarqueeState.speed * elapsedSeconds);
+
+        if (nextOffset <= announcementMarqueeState.endOffset) {
+            nextOffset = announcementMarqueeState.startOffset;
+        }
+
+        setAnnouncementMarqueeOffset(nextOffset);
+    }
+
+    startAnnouncementMarqueeLoop();
+}
+
+function updateAnnouncementMarqueeSpeed(resetPosition) {
+    var containerWidth;
+    var textWidth;
+    var totalDistance;
+    var durationInSeconds;
+
+    ensureAnnouncementMarqueeBindings();
+
+    if (!cacheAnnouncementMarqueeElements() || isAnnouncementMarqueeHidden()) {
+        clearAnnouncementMarqueeRetry();
+        stopAnnouncementMarqueeLoop();
+        return;
+    }
+
+    containerWidth = announcementMarqueeState.track.offsetWidth;
+    textWidth = announcementMarqueeState.text.offsetWidth;
+
+    if (!containerWidth || !textWidth) {
+        scheduleAnnouncementMarqueeRetry(resetPosition);
+        return;
+    }
+
+    clearAnnouncementMarqueeRetry();
+    totalDistance = containerWidth + textWidth;
+    durationInSeconds = totalDistance / 65;
 
     if (durationInSeconds < 12) {
         durationInSeconds = 12;
     }
 
-    announcementSpan.style.animationDuration = durationInSeconds + "s";
+    announcementMarqueeState.startOffset = containerWidth;
+    announcementMarqueeState.endOffset = -textWidth;
+    announcementMarqueeState.speed = totalDistance / durationInSeconds;
+    announcementMarqueeState.hasMeasured = true;
+
+    if (resetPosition) {
+        setAnnouncementMarqueeOffset(announcementMarqueeState.startOffset);
+    } else {
+        setAnnouncementMarqueeOffset(announcementMarqueeState.currentOffset);
+    }
+
+    announcementMarqueeState.lastFrameTime = 0;
+    startAnnouncementMarqueeLoop();
 }
 
 bindEvent(window, "resize", function () {
-    updateAnnouncementMarqueeSpeed();
+    updateAnnouncementMarqueeSpeed(false);
 });
 
 function renderView() {
@@ -397,7 +838,7 @@ function renderView() {
             announcement.removeClass("hide");
             $("#announcementText").html(announcementText);
             setTimeout(function () {
-                updateAnnouncementMarqueeSpeed();
+                updateAnnouncementMarqueeSpeed(true);
             }, 0);
         }
         // handle the data if needed
@@ -627,6 +1068,7 @@ function renderView() {
                 time = timeRemaining;
 
             $("#remainTime").html(secondsToDhms(time));
+            updateRemainTimeExpandedSize();
             if (remainingTimer != null) {
                 clearInterval(remainingTimer);
                 remainingTimer = null;
@@ -641,6 +1083,7 @@ function renderView() {
 
             if (isOnline) {
                 $("#connectionDot").attr("class", "connection-dot blinking-dot-green").attr("title", "Connected");
+                setRemainingTimeConnectionState(true);
                 $("#statusImg").attr("src", "assets/img/wifi.png");
                 $("#statusImg").removeClass("hide");
                 $("#statusImg").addClass("blinking2");
@@ -649,6 +1092,7 @@ function renderView() {
                 remainingTimer = setInterval(function () {
                     time--;
                     $("#remainTime").html(secondsToDhms(time))
+                    updateRemainTimeExpandedSize();
                     if (isLoggedIn) {
                         showPauseButton();
                     } else {
@@ -677,6 +1121,7 @@ function renderView() {
                 }
 
                 $("#connectionDot").attr("class", "connection-dot blinking-dot-red").attr("title", "Disconnected");
+                setRemainingTimeConnectionState(false);
                 $("#statusImg").attr("src", "assets/img/off_wifi.png");
                 $("#statusImg").removeClass("hide");
                 $("#statusImg").addClass("blinking1");
@@ -752,6 +1197,7 @@ function renderView() {
 
             if (isOnline && isMember) {
                 $("#connectionDot").attr("class", "connection-dot blinking-dot-green").attr("title", "Member Connected");
+                setRemainingTimeConnectionState(true);
             }
             if (isOnline) {
                 $("#connectVoucherBtn").addClass("hide");
@@ -776,6 +1222,9 @@ function renderView() {
                 var containerDiv = $('#containerDiv');
                 containerDiv.removeClass("hide");
                 containerDiv.show();
+                setTimeout(function () {
+                    updateAnnouncementMarqueeSpeed(false);
+                }, 0);
             }
 
             initLoad = true;

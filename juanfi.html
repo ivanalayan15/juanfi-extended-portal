@@ -11,17 +11,17 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <title>JuanFi Portal</title>
 
-    <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-8x1eafyidgla1">
-    <link rel="stylesheet" href="assets/css/core.css?v=$(ip)-$(mac)-8x1eafyidgla1">
-    <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)-8x1eafyidgla1">
-    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)-8x1eafyidgla1">
-    <link rel="stylesheet" href="assets/css/toast.min.css?v=$(ip)-$(mac)-8x1eafyidgla1">
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-g6t2m8q4r1p5">
+    <link rel="stylesheet" href="assets/css/core.css?v=$(ip)-$(mac)-g6t2m8q4r1p5">
+    <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)-g6t2m8q4r1p5">
+    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)-g6t2m8q4r1p5">
+    <link rel="stylesheet" href="assets/css/toast.min.css?v=$(ip)-$(mac)-g6t2m8q4r1p5">
 
     <script>
         var loginError = "";
         var mac = "$(mac)";
         var uIp = "$(ip)";
-        var append = "$(ip)-$(mac)-8x1eafyidgla1";
+        var append = "$(ip)-$(mac)-g6t2m8q4r1p5";
         var hotspotAddress = "$(server-address)";
         var interfaceName = "$(interface-name)";
         var remainingTimer = null;
@@ -31,13 +31,13 @@
             isLoggedIn = parseInt(sessiontimeInSecs) > 0;
         $(endif)
     </script>
-    <script src="assets/js/signalr.min.js?v=$(ip)-$(mac)-8x1eafyidgla1" defer></script>
-    <script src="assets/js/jquery.min.js?v=$(ip)-$(mac)-8x1eafyidgla1" defer></script>
-    <script src="assets/js/eload.js?v=$(ip)-$(mac)-8x1eafyidgla1" defer></script>
-    <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)-8x1eafyidgla1" defer></script>
-    <script src="assets/js/cache.js?v=$(ip)-$(mac)-8x1eafyidgla1" defer></script>
-    <script src="assets/js/core.js?v=$(ip)-$(mac)-8x1eafyidgla1" defer></script>
-    <script src="assets/js/pako.min.js?v=$(ip)-$(mac)-8x1eafyidgla1" defer></script>
+    <script src="assets/js/signalr.min.js?v=$(ip)-$(mac)-g6t2m8q4r1p5" defer></script>
+    <script src="assets/js/jquery.min.js?v=$(ip)-$(mac)-g6t2m8q4r1p5" defer></script>
+    <script src="assets/js/eload.js?v=$(ip)-$(mac)-g6t2m8q4r1p5" defer></script>
+    <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)-g6t2m8q4r1p5" defer></script>
+    <script src="assets/js/cache.js?v=$(ip)-$(mac)-g6t2m8q4r1p5" defer></script>
+    <script src="assets/js/core.js?v=$(ip)-$(mac)-g6t2m8q4r1p5" defer></script>
+    <script src="assets/js/pako.min.js?v=$(ip)-$(mac)-g6t2m8q4r1p5" defer></script>
 </head>
 
 <body class="portal-body col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2 ">
@@ -55,7 +55,7 @@
 
         <div id="headerContainer" class="d-flex justify-content-between align-items-center container">
             <div class="d-flex flex-column gap-0 align-items-center">
-                <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-8x1eafyidgla1" class="img-fluid banner" />
+                <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-g6t2m8q4r1p5" class="img-fluid banner"  alt="logo"/>
             </div>
             <div class="header-meta d-flex justify-content-between gap-1">
                 <div class="juanfi-default-text small" id="displayVersion"></div>
@@ -66,8 +66,9 @@
         </div>
         <div id="remainingTimeContainer"
             class="container text-center px-2 py-1 d-flex flex-column gap-1 align-items-center">
-            <h2 style="font-family: 'Courier New', monospace;" id="remainTime"
-                class="fw-bolder juanfi-primary-text my-0">Loading...</h2>
+            <h4 style="font-family: 'Courier New', monospace;" id="remainTime"
+                class="fw-bolder juanfi-primary-text my-0" role="button" tabindex="0" aria-pressed="false"
+                title="Tap to enlarge timer">Loading...</h4>
             <small id="expirationTime"></small>
         </div>
         <div id="useVoucherContainer" class="container d-flex justify-content-between align-items-center gap-2">

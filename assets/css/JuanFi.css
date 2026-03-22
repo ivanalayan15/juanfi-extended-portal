@@ -632,20 +632,22 @@ body.portal-body .toast-container > .toast > .toast-body {
 	white-space: nowrap;
 }
 
-.marquee span {
-	display: inline-block;
-	padding-left: 100%;
-	animation: marquee var(--marquee-duration, 18s) linear infinite;
-	will-change: transform;
+.marquee {
+	overflow: hidden;
+	position: relative;
+	touch-action: pan-y;
+	user-select: none;
+	-webkit-user-select: none;
 }
 
-@keyframes marquee {
-	0% {
-		transform: translateX(0);
-	}
-	100% {
-		transform: translateX(-100%);
-	}
+.marquee span {
+	display: inline-block;
+	will-change: transform;
+	transform: translateX(0);
+}
+
+.marquee.is-dragging {
+	cursor: grabbing;
 }
 
 /* scoped portal refresh */
@@ -782,14 +784,67 @@ body.portal-body #remainingTimeContainer {
 	background:
 		linear-gradient(135deg, rgba(255, 154, 79, 0.16) 0%, rgba(255, 154, 79, 0.06) 25%, rgba(10, 19, 35, 0.98) 100%);
 	border-color: rgba(255, 165, 98, 0.26);
+	transition: border-color 0.22s ease, box-shadow 0.22s ease;
 	padding: 10px 14px !important;
+}
+
+body.portal-body #remainingTimeContainer.connection-state-green {
+	animation: remainingTimeGlowGreen 1.2s infinite;
+	border-color: rgba(76, 209, 55, 0.62);
+	box-shadow: 0 0 16px rgba(76, 209, 55, 0.28), 0 12px 30px rgba(0, 0, 0, 0.28);
+}
+
+body.portal-body #remainingTimeContainer.connection-state-red {
+	animation: remainingTimeGlowRed 1.2s infinite;
+	border-color: rgba(255, 71, 87, 0.62);
+	box-shadow: 0 0 16px rgba(255, 71, 87, 0.28), 0 12px 30px rgba(0, 0, 0, 0.28);
+}
+
+@keyframes remainingTimeGlowGreen {
+	0%, 49% {
+		border-color: rgba(76, 209, 55, 0.72);
+		box-shadow: 0 0 18px rgba(76, 209, 55, 0.34), 0 12px 30px rgba(0, 0, 0, 0.28);
+	}
+	60%, 99% {
+		border-color: rgba(76, 209, 55, 0.34);
+		box-shadow: 0 0 8px rgba(76, 209, 55, 0.16), 0 12px 30px rgba(0, 0, 0, 0.28);
+	}
+	100% {
+		border-color: rgba(76, 209, 55, 0.72);
+		box-shadow: 0 0 18px rgba(76, 209, 55, 0.34), 0 12px 30px rgba(0, 0, 0, 0.28);
+	}
+}
+
+@keyframes remainingTimeGlowRed {
+	0%, 49% {
+		border-color: rgba(255, 71, 87, 0.72);
+		box-shadow: 0 0 18px rgba(255, 71, 87, 0.34), 0 12px 30px rgba(0, 0, 0, 0.28);
+	}
+	60%, 99% {
+		border-color: rgba(255, 71, 87, 0.34);
+		box-shadow: 0 0 8px rgba(255, 71, 87, 0.16), 0 12px 30px rgba(0, 0, 0, 0.28);
+	}
+	100% {
+		border-color: rgba(255, 71, 87, 0.72);
+		box-shadow: 0 0 18px rgba(255, 71, 87, 0.34), 0 12px 30px rgba(0, 0, 0, 0.28);
+	}
 }
 
 body.portal-body #remainTime {
 	color: #fff5e8 !important;
-	font-size: 2rem;
+	font-size: 1.2rem;
 	letter-spacing: 0.08em;
 	text-shadow: 0 10px 25px rgba(0, 0, 0, 0.28);
+	cursor: pointer;
+	display: inline-block;
+	line-height: 1.15;
+	max-width: 100%;
+	transition: font-size 0.22s ease, text-shadow 0.22s ease;
+	white-space: nowrap;
+}
+
+body.portal-body #remainTime.is-expanded {
+	text-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
 }
 
 body.portal-body #expirationTime {
@@ -1016,7 +1071,7 @@ body.portal-body #memberBtn {
 
 body.portal-body #insertBtn {
 	background: radial-gradient(circle at 30% 30%, #ffbd80 0%, #ff8d3f 35%, #d8540c 100%) !important;
-	border: 1px solid rgba(255, 212, 177, 0.42) !important;
+	border: 2px solid rgba(255, 212, 177, 0.18) !important;
 	border-radius: 50% !important;
 	box-shadow: 0 14px 28px rgba(216, 84, 12, 0.32), inset 0 2px 0 rgba(255, 255, 255, 0.18);
 	font-size: 0.82rem;
@@ -1031,6 +1086,57 @@ body.portal-body #insertBtn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	isolation: isolate;
+	overflow: visible;
+	position: relative;
+	z-index: 0;
+}
+
+body.portal-body #insertBtn::before {
+	animation: insertBtnBorderSpin 2.6s linear infinite;
+	border: 4px dashed #ffb15e;
+	border-radius: 50%;
+	box-shadow: 0 0 18px rgba(255, 148, 66, 0.42);
+	content: "";
+	inset: -6px;
+	pointer-events: none;
+	position: absolute;
+	z-index: -1;
+}
+
+@supports ((background: conic-gradient(from 0deg, #ff9b54, #87ceeb)) and (-webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px)))) {
+	body.portal-body #insertBtn::before {
+		background: repeating-conic-gradient(from 0deg,
+				#ff9b54 0deg,
+				#ffd166 10deg,
+				#87ceeb 20deg,
+				#ffb15e 30deg,
+				transparent 30deg 36deg);
+		border: none;
+		-webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
+	}
+}
+
+@supports ((background: conic-gradient(from 0deg, #ff9b54, #87ceeb)) and (mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px)))) {
+	body.portal-body #insertBtn::before {
+		background: repeating-conic-gradient(from 0deg,
+				#ff9b54 0deg,
+				#ffd166 10deg,
+				#87ceeb 20deg,
+				#ffb15e 30deg,
+				transparent 30deg 36deg);
+		border: none;
+		mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 4px));
+	}
+}
+
+@keyframes insertBtnBorderSpin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
 }
 
 body.portal-body #resumeTimeBtn,
@@ -1193,7 +1299,7 @@ body.portal-body #memberDashboardContainer p {
 	}
 
 	body.portal-body #remainTime {
-		font-size: 1.6rem;
+		font-size: 1rem;
 	}
 
 	body.portal-body .nav-tabs .nav-link {
