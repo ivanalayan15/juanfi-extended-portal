@@ -1288,7 +1288,6 @@ function multiVendoConfiguration(vendo, user) {
     } else {
         $("#insertBtnContainer").removeClass("hide");
     }
-    showPauseTime = vendo.showPauseTime;
     if (!vendo.showPauseTime) {
         $("#pauseBtnContainer").addClass("hide");
     } else {
@@ -2451,13 +2450,13 @@ function renderHistories(data, containerId) {
 
         div.innerHTML =
             '<div class="d-flex justify-content-between align-items-center">' +
-                '<span class="voucher-amount">₱ ' + amount + '</span>' +
-                '<span class="voucher-activity">' + item.activity + '</span>' +
+            '<span class="voucher-amount">₱ ' + amount + '</span>' +
+            '<span class="voucher-activity">' + item.activity + '</span>' +
             '</div>' +
             '<div class="voucher-divider"></div>' +
             '<div class="d-flex justify-content-between align-items-center">' +
-                '<span class="voucher-date">' + date + '</span>' +
-                '<span class="voucher-points">' + points + ' pts</span>' +
+            '<span class="voucher-date">' + date + '</span>' +
+            '<span class="voucher-points">' + points + ' pts</span>' +
             '</div>';
 
         container.appendChild(div);
@@ -4044,3 +4043,4 @@ createToastContainer();
 function getWholeNumber(num) {
     return num < 0 ? Math.ceil(num) : Math.floor(num);
 }
+
