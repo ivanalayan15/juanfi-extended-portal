@@ -1186,6 +1186,7 @@ function renderView() {
                 $("#rewardDtlsBtn").addClass("hide");
                 $("#resumeBtnContainer").addClass("hide");
                 $("#pauseBtnContainer").addClass("hide");
+                $("#pauseBtnContainer").addClass("hide");
                 $("#rateTable").addClass("hide");
                 $("#chargingBtn").addClass("hide");
                 $("#eloadBtn").addClass("hide");
@@ -1288,6 +1289,7 @@ function multiVendoConfiguration(vendo, user) {
     } else {
         $("#insertBtnContainer").removeClass("hide");
     }
+    showPauseTime = vendo.showPauseTime;
     if (!vendo.showPauseTime) {
         $("#pauseBtnContainer").addClass("hide");
     } else {
