@@ -3000,11 +3000,21 @@ function onRedeemRewardPtsConfirmBtnEvt(macNoColon) {
 }
 
 function showPauseButton() {
+    if(!showPauseTime){
+        $("#pauseBtnContainer").addClass("hide");
+        $("#resumeBtnContainer").addClass("hide");
+        return;
+    }
     $("#pauseBtnContainer").removeClass("hide");
     $("#resumeBtnContainer").addClass("hide");
 }
 
 function showResumeButton() {
+    if(!showPauseTime){
+        $("#pauseBtnContainer").addClass("hide");
+        $("#resumeBtnContainer").addClass("hide");
+        return;
+    }
     $("#resumeBtnContainer").removeClass("hide");
     $("#pauseBtnContainer").addClass("hide");
 }
