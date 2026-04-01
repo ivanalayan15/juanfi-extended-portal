@@ -53,6 +53,7 @@ var buttonEffect;
 var pauseAwaitingUserInfoResponse = false;
 var pauseRequestInFlight = false;
 var resumeRequestInFlight = false;
+var userInfoRequestPool = {};
 var announcementMarqueeState = {
     announcement: null,
     track: null,
@@ -373,6 +374,12 @@ $(document).ready(function () {
 
 function newLogin() {
     initValues();
+    if (isGamesPageContext()) {
+        if (typeof fetchUserPoints === 'function') {
+            fetchUserPoints();
+        }
+        return;
+    }
     renderView();
 }
 
@@ -2347,7 +2354,58 @@ function getDeviceOS() {
     return 'Unknown';
 }
 
+function createUserInfoResponsePayload(data, pointsEnabled) {
+    if (!data) {
+        return null;
+    }
+
+    return {
+        isOnline: data.isOnline,
+        isMember: data.isMember,
+        voucherCode: data.voucherCode,
+        pointsEnabled: pointsEnabled,
+        totalPoints: data.totalPoints,
+        timeRemaining: data.timeRemaining,
+        timeExpiry: data.timeExpiry,
+        timeRemainingStr: data.timeRemainingStr
+    };
+}
+
+function resolveUserInfoRequest(requestKey, data, error) {
+    var requestEntry = userInfoRequestPool[requestKey];
+    if (!requestEntry) {
+        return;
+    }
+
+    delete userInfoRequestPool[requestKey];
+    var subscribers = requestEntry.subscribers || [];
+
+    for (var i = 0; i < subscribers.length; i++) {
+        var subscriber = subscribers[i];
+        if (!subscriber || typeof subscriber.cb !== "function") {
+            continue;
+        }
+
+        try {
+            if (error) {
+                subscriber.cb(null, error);
+            } else if (!data) {
+                subscriber.cb(null, null);
+            } else {
+                subscriber.cb(createUserInfoResponsePayload(data, subscriber.pointsEnabled), null);
+            }
+        } catch (cbError) {
+            console.error("fetchUserInfo callback error:", cbError);
+        }
+    }
+}
+
 function fetchUserInfo(macNoColon, pointsEnabled, cb) {
+    if (typeof cb !== "function") {
+        cb = function () {
+        };
+    }
+
     vendorIpAddress = localStorage.getItem("vendorIpAddress");
     var params = "mac=" + macNoColon + "&interfaceName=" + interfaceName;
     var old_mac = getStorageValue("activeVoucher");
@@ -2361,15 +2419,27 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
             params += "&isPaused=false";
         }
     }
+    var requestKey = (vendorIpAddress || "") + "|" + params;
+    var requestEntry = userInfoRequestPool[requestKey];
+
+    if (requestEntry) {
+        requestEntry.subscribers.push({ pointsEnabled: pointsEnabled, cb: cb });
+        return;
+    }
+
+    userInfoRequestPool[requestKey] = {
+        subscribers: [{ pointsEnabled: pointsEnabled, cb: cb }]
+    };
+
     fetchPortalAPI("/user-info?" + params, "GET", vendorIpAddress, null)
         .then(function (result) {
             if ((!result) || (!result.success)) {
-                cb(null, (result && result.error) || "Server request failed.");
+                resolveUserInfoRequest(requestKey, null, (result && result.error) || "Server request failed.");
                 return;
             }
             var data = result.data;
             if (!data) {
-                cb(null, null);
+                resolveUserInfoRequest(requestKey, null, null);
                 return;
             }
 
@@ -2410,11 +2480,10 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
             }
 
             renderHistories(data);
-            cb({
+            resolveUserInfoRequest(requestKey, {
                 isOnline: isOnline,
                 isMember: isMember,
                 voucherCode: voucherCode,
-                pointsEnabled: pointsEnabled,
                 totalPoints: totalPoints,
                 timeRemaining: timeRemaining,
                 timeExpiry: timeExpiry,
@@ -2422,7 +2491,7 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
             }, null);
         })
         .catch(function (error) {
-            cb(null, error);
+            resolveUserInfoRequest(requestKey, null, error);
         });
 }
 
@@ -2728,25 +2797,34 @@ function fetchServerData() {
 function fetchPortalConfig(cb) {
     var storageKey = 'juanfi_portal_config';
     var appendKey = 'juanfi_portal_config_append';
-    if (typeof append !== 'undefined') {
+    var cachedData = localStorage.getItem(storageKey);
+    var shouldUseCache = !!cachedData;
+
+    if (shouldUseCache && typeof append !== 'undefined') {
+        var appendValue = (append || "").toString();
+        var hasTemplateToken = appendValue.indexOf("$(") !== -1;
         var cachedAppend = localStorage.getItem(appendKey);
-        if (cachedAppend === append) {
-            var cachedData = localStorage.getItem(storageKey);
-            if (cachedData) {
-                try {
-                    var data = JSON.parse(cachedData);
-                    var output = {};
-                    for (var key in data) {
-                        if (data.hasOwnProperty(key)) {
-                            output[key] = data[key];
-                        }
-                    }
-                    cb(output, null);
-                    return;
-                } catch (e) {
-                    console.error('Failed to parse cached config, fetching new data');
+
+        // Use strict append matching only when append is a resolved value.
+        // Games page can have unresolved template tokens, which should not force cache misses.
+        if (!hasTemplateToken && cachedAppend && cachedAppend !== appendValue) {
+            shouldUseCache = false;
+        }
+    }
+
+    if (shouldUseCache) {
+        try {
+            var data = JSON.parse(cachedData);
+            var output = {};
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    output[key] = data[key];
                 }
             }
+            cb(output, null);
+            return;
+        } catch (e) {
+            console.error('Failed to parse cached config, fetching new data');
         }
     }
 
@@ -2765,7 +2843,10 @@ function fetchPortalConfig(cb) {
             if (typeof append !== 'undefined') {
                 try {
                     localStorage.setItem(storageKey, JSON.stringify(data));
-                    localStorage.setItem(appendKey, append);
+                    var appendValue = (append || "").toString();
+                    if (appendValue.indexOf("$(") === -1) {
+                        localStorage.setItem(appendKey, appendValue);
+                    }
                 } catch (e) {
                     console.error('Failed to save config to localStorage:', e);
                 }
@@ -2854,7 +2935,7 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig) {
         var spinRedeemBtn = document.getElementById("spinRedeemBtn");
 
         if (spinRedeemBtn) {
-            bindEvent(spinRedeemBtn, "click", function (e) {
+            spinRedeemBtn.onclick = function (e) {
                 e.preventDefault();
 
                 var avail = parseInt(rewardPointsBalance) || 0;
@@ -2894,7 +2975,7 @@ function onRedeemRewardPtsEvt(macNoColon, wheelConfig) {
                 ];
 
                 drawSpinWheel(macNoColon, wheelConfig, colors);
-            });
+            };
         }
     }
 }
@@ -3608,8 +3689,12 @@ function drawSpinWheel(mac, prizes, colors) {
                     $('#redeemBySpinModal').modal('hide');
                 }
 
-                // Refresh points on games page if function exists
-                if (typeof fetchUserPoints === 'function') {
+                // Avoid another /user-info call in games: values are already returned by spin API.
+                if (isGamesPageContext()) {
+                    if (typeof updatePointsDisplays === 'function') {
+                        updatePointsDisplays(Number(rewardPointsBalance) || 0);
+                    }
+                } else if (typeof fetchUserPoints === 'function') {
                     fetchUserPoints();
                 }
             });
@@ -3675,6 +3760,9 @@ function drawSpinWheel(mac, prizes, colors) {
         }
         if (spinCancelBtn) {
             spinCancelBtn.onclick = function (e) {
+                if (isGamesPageContext()) {
+                    return;
+                }
                 newLogin();
             };
         }
@@ -4045,4 +4133,3 @@ createToastContainer();
 function getWholeNumber(num) {
     return num < 0 ? Math.ceil(num) : Math.floor(num);
 }
-
