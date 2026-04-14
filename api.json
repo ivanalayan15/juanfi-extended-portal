@@ -1,0 +1,13 @@
+{
+   "status": "$(if logged-in == 'yes')Connected$(else)Disconnected$(endif)",
+$(if session-timeout-secs != 0)
+   "sessiontimeInSecs": $(session-timeout-secs),
+$(endif)
+$(if remain-bytes-total)
+   "bytesRemaining": $(remain-bytes-total),
+$(endif)
+   "mac": "$(mac)",
+   "ip": "$(ip)",
+   "interfaceName": "$(interface-name)",
+   "code": "$(username)",
+}

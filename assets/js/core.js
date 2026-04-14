@@ -1067,15 +1067,24 @@ function renderView() {
 
             // $("#voucherCode").html(voucherCode);
             isPaused = (!isOnline);
-            var time = parseInt(sessiontimeInSecs);
-            if (time === 0) {
-                time = timeRemaining;
+            var time = parseInt(timeRemaining, 10);
+            if (isNaN(time)) {
+                time = parseInt(sessiontimeInSecs, 10) || 0;
             }
-            if (timeRemaining === 0)
-                time = timeRemaining;
 
-            $("#remainTime").html(secondsToDhms(time));
-            updateRemainTimeExpandedSize();
+            function updateRemainingTimeDisplay(timeValue) {
+                var parsedTime = parseInt(timeValue, 10);
+                if (isNaN(parsedTime)) {
+                    return false;
+                }
+
+                time = parsedTime;
+                $("#remainTime").html(secondsToDhms(time));
+                updateRemainTimeExpandedSize();
+                return true;
+            }
+
+            updateRemainingTimeDisplay(time);
             if (remainingTimer != null) {
                 clearInterval(remainingTimer);
                 remainingTimer = null;
@@ -1096,23 +1105,26 @@ function renderView() {
                 $("#statusImg").addClass("blinking2");
                 $("#remainingTimeWrapper").removeClass("hide");
 
+                getTimeLeftInSecs(function (latestTime) {
+                    updateRemainingTimeDisplay(latestTime);
+                });
+
                 remainingTimer = setInterval(function () {
-                    time--;
-                    $("#remainTime").html(secondsToDhms(time))
-                    updateRemainTimeExpandedSize();
-                    if (isLoggedIn) {
-                        showPauseButton();
-                    } else {
-                        showResumeButton();
-                    }
-                    if (time <= 0 && !isMember) {
-                        localStorage.clear();
-                        clearInterval(remainingTimer);
-                        setTimeout(function () {
-                            isOnline = false;
-                            renderView();
-                        }, 1000);
-                    }
+                    getTimeLeftInSecs(function (latestTime) {
+                        if (!updateRemainingTimeDisplay(latestTime)) {
+                            return;
+                        }
+
+
+                        if (time <= 0 && !isMember) {
+                            localStorage.clear();
+                            clearInterval(remainingTimer);
+                            setTimeout(function () {
+                                isOnline = false;
+                                renderView();
+                            }, 1000);
+                        }
+                    });
                 }, 1000);
 
             } else {
@@ -1240,10 +1252,10 @@ function renderView() {
 }
 
 function RefreshPortal() {
-    localStorage.clear();
-    setTimeout(function () {
-        window.location.href = "/login?vc=" + voucher;
-    }, 1500);
+    // localStorage.clear();
+    // setTimeout(function () {
+    //     window.location.href = "/login?vc=" + voucher;
+    // }, 1500);
 }
 
 function isCaptivePortal() {
@@ -1730,6 +1742,71 @@ function populatePromoRates(retryCount) {
                     populatePromoRates(retryCount + 1);
                 }
             }, 1000);
+        }
+    });
+}
+
+function parseTimeLeftResponse(data) {
+    if (!data) {
+        return null;
+    }
+
+    if (typeof data === "object") {
+        return data;
+    }
+
+    if (typeof data !== "string") {
+        return null;
+    }
+
+    var normalizedData = data.replace(/,\s*([}\]])/g, "$1");
+
+    try {
+        return JSON.parse(normalizedData);
+    } catch (e) {
+        var sessionTimeMatch = normalizedData.match(/"sessiontimeInSecs"\s*:\s*(\d+)/);
+        if (sessionTimeMatch) {
+            return {
+                sessiontimeInSecs: parseInt(sessionTimeMatch[1], 10)
+            };
+        }
+    }
+
+    return null;
+}
+
+function getTimeLeftInSecs(cb) {
+    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+
+    $.ajax({
+        type: "GET",
+        url: "http://" + hotspotAddress + "/api",
+        crossOrigin: true,
+        dataType: "text",
+        contentType: 'text/plain',
+        success: function (data) {
+            var responseData = parseTimeLeftResponse(data);
+            var latestTime = responseData ? parseInt(responseData.sessiontimeInSecs, 10) : NaN;
+
+            if (!isNaN(latestTime)) {
+                $("#remainTime").html(secondsToDhms(latestTime));
+                updateRemainTimeExpandedSize();
+                sessiontimeInSecs = latestTime;
+            }
+            if (responseData.status === 'Connected') {
+                showPauseButton();
+            } else {
+                renderView();
+                pause(macNoColon);
+                showResumeButton();
+            }
+            if (typeof cb === "function") {
+                cb(latestTime, responseData);
+            }
+        }, error: function (jqXHR, exception) {
+            if (typeof cb === "function") {
+                cb(null);
+            }
         }
     });
 }
