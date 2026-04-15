@@ -1252,10 +1252,10 @@ function renderView() {
 }
 
 function RefreshPortal() {
-    // localStorage.clear();
-    // setTimeout(function () {
-    //     window.location.href = "/login?vc=" + voucher;
-    // }, 1500);
+    localStorage.clear();
+    setTimeout(function () {
+        window.location.href = "/login?vc=" + voucher;
+    }, 1500);
 }
 
 function isCaptivePortal() {
