@@ -143,7 +143,14 @@ function topUpEload(retryCount){
 				if(isMultiVendo){
 					$("#insertCoinModalTitle").html("Please insert the coin on "+$("#vendoSelected option:selected").text());
 				}
-				insertcoinbg.play();
+				if (typeof safeAudioPlay === "function") {
+					safeAudioPlay(insertcoinbg);
+				} else {
+					try {
+						insertcoinbg.play();
+					} catch (e) {
+					}
+				}
 				$("#totalTimeDiv").attr("style", "display: none");
 				$("#expectedCoinDiv").attr("style", "display: block");
 				$("#expectedCoin").html(productPrice+".00 Php");

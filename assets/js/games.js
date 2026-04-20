@@ -5,8 +5,22 @@ function getGamesUrlParameter(name) {
     return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
 }
 
+function setGamesCachedValue(key, value) {
+    if (typeof localStorageCompat !== "undefined" && localStorageCompat && typeof localStorageCompat.setItem === "function") {
+        localStorageCompat.setItem(key, value);
+        return;
+    }
+
+    try {
+        if (window.localStorage && typeof window.localStorage.setItem === "function") {
+            window.localStorage.setItem(key, value);
+        }
+    } catch (e) {
+    }
+}
+
 var serverIp = getGamesUrlParameter("ip");
-localStorage.setItem("vendorIpAddress", serverIp);
+setGamesCachedValue("vendorIpAddress", serverIp);
 var winningDuck = 0;
 var wonPoints = 0;
 var selectedDuck = null;
@@ -203,7 +217,6 @@ function initializeAudio(server) {
     }
 
     juanfiExtendedIp = server.ip;
-    buttonEffect = new Audio("http://" + server.ip + ":8080/sounds/button.mp3");
     duckRacingMusic = new Audio("http://" + server.ip + ":8080/sounds/duck-racing.mp3");
     lobbyMusic = new Audio("http://" + server.ip + ":8080/sounds/lobby.mp3");
 

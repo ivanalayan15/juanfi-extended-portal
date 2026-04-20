@@ -49,7 +49,6 @@ var isPaused;
 var hasWiFree = false;
 var announcementText = '';
 var isTestMode = window.location.href.indexOf("http") !== 0;
-var buttonEffect;
 var pauseAwaitingUserInfoResponse = false;
 var pauseRequestInFlight = false;
 var resumeRequestInFlight = false;
@@ -88,6 +87,49 @@ var cancelCompatAnimationFrame = window.cancelAnimationFrame ? function (frameId
 } : function (frameId) {
     window.clearTimeout(frameId);
 };
+var isTimeLeftPollingPaused = false;
+var isInsertCoinPollingPausePending = false;
+var isInsertCoinModalVisible = false;
+var activeTimeLeftRequest = null;
+
+function suspendTimeLeftPolling() {
+    isTimeLeftPollingPaused = true;
+
+    if (activeTimeLeftRequest && typeof activeTimeLeftRequest.abort === "function") {
+        try {
+            activeTimeLeftRequest.abort();
+        } catch (e) {
+        }
+    }
+
+    activeTimeLeftRequest = null;
+}
+
+function resumeTimeLeftPolling(shouldRefresh) {
+    var wasPaused = isTimeLeftPollingPaused;
+
+    isTimeLeftPollingPaused = false;
+
+    if (shouldRefresh === false) {
+        return;
+    }
+
+    if (wasPaused && remainingTimer != null) {
+        getTimeLeftInSecs(function () {
+        });
+    }
+}
+
+function pauseTimeLeftPollingForInsertCoin() {
+    isInsertCoinPollingPausePending = true;
+    suspendTimeLeftPolling();
+}
+
+function releaseTimeLeftPollingAfterInsertCoin(shouldRefresh) {
+    isInsertCoinPollingPausePending = false;
+    isInsertCoinModalVisible = false;
+    resumeTimeLeftPolling(shouldRefresh);
+}
 
 function getPersistedUserInfo() {
     var storedValue = getStorageValue(persistedUserInfoStorageKey);
@@ -209,6 +251,234 @@ function resolveCompatPromise(value) {
     var deferred = $.Deferred();
     deferred.resolve(value);
     return patchPromiseCatch(deferred.promise());
+}
+
+var storageAreaCompatCache = {};
+var storageAreaCompatMemory = {
+    localStorage: {},
+    sessionStorage: {}
+};
+
+function resolveStorageAreaCompat(areaName) {
+    if (storageAreaCompatCache.hasOwnProperty(areaName)) {
+        return storageAreaCompatCache[areaName];
+    }
+
+    try {
+        var storageArea = window[areaName];
+        var testKey = "__juanfi_storage_test__";
+        if (!storageArea) {
+            storageAreaCompatCache[areaName] = null;
+            return null;
+        }
+
+        storageArea.setItem(testKey, testKey);
+        storageArea.removeItem(testKey);
+        storageAreaCompatCache[areaName] = storageArea;
+        return storageArea;
+    } catch (e) {
+        storageAreaCompatCache[areaName] = null;
+        return null;
+    }
+}
+
+function getStorageAreaMemoryCompat(areaName) {
+    if (!storageAreaCompatMemory[areaName]) {
+        storageAreaCompatMemory[areaName] = {};
+    }
+
+    return storageAreaCompatMemory[areaName];
+}
+
+function createStorageFacadeCompat(areaName) {
+    return {
+        getItem: function (key) {
+            var storageArea = resolveStorageAreaCompat(areaName);
+            var memoryStore = getStorageAreaMemoryCompat(areaName);
+
+            if (storageArea) {
+                try {
+                    return storageArea.getItem(key);
+                } catch (e) {
+                }
+            }
+
+            return memoryStore.hasOwnProperty(key) ? memoryStore[key] : null;
+        },
+        setItem: function (key, value) {
+            var storageArea = resolveStorageAreaCompat(areaName);
+            var memoryStore = getStorageAreaMemoryCompat(areaName);
+            var stringValue = value == null ? "" : String(value);
+
+            memoryStore[key] = stringValue;
+
+            if (storageArea) {
+                try {
+                    storageArea.setItem(key, stringValue);
+                    return true;
+                } catch (e) {
+                }
+            }
+
+            return false;
+        },
+        removeItem: function (key) {
+            var storageArea = resolveStorageAreaCompat(areaName);
+            var memoryStore = getStorageAreaMemoryCompat(areaName);
+
+            delete memoryStore[key];
+
+            if (storageArea) {
+                try {
+                    storageArea.removeItem(key);
+                    return true;
+                } catch (e) {
+                }
+            }
+
+            return false;
+        },
+        clear: function () {
+            var storageArea = resolveStorageAreaCompat(areaName);
+            storageAreaCompatMemory[areaName] = {};
+
+            if (storageArea) {
+                try {
+                    storageArea.clear();
+                    return true;
+                } catch (e) {
+                }
+            }
+
+            return false;
+        },
+        supported: function () {
+            return !!resolveStorageAreaCompat(areaName);
+        }
+    };
+}
+
+var localStorageCompat = createStorageFacadeCompat("localStorage");
+var sessionStorageCompat = createStorageFacadeCompat("sessionStorage");
+
+function getPerformanceTimeCompat() {
+    if (window.performance && typeof window.performance.now === "function") {
+        return window.performance.now();
+    }
+
+    return (new Date()).getTime();
+}
+
+function parseDateCompat(value) {
+    var parsedDate;
+    var normalizedValue;
+    var numericValue;
+
+    if (value == null || value === "") {
+        return null;
+    }
+
+    if (Object.prototype.toString.call(value) === "[object Date]") {
+        return isNaN(value.getTime()) ? null : value;
+    }
+
+    if (typeof value === "number") {
+        parsedDate = new Date(value);
+        return isNaN(parsedDate.getTime()) ? null : parsedDate;
+    }
+
+    if (typeof value !== "string") {
+        return null;
+    }
+
+    normalizedValue = value.replace(/^\s+|\s+$/g, "");
+    if (normalizedValue === "") {
+        return null;
+    }
+
+    if (/^\d+$/.test(normalizedValue)) {
+        numericValue = parseInt(normalizedValue, 10);
+        if (normalizedValue.length <= 10) {
+            numericValue = numericValue * 1000;
+        }
+
+        parsedDate = new Date(numericValue);
+        if (!isNaN(parsedDate.getTime())) {
+            return parsedDate;
+        }
+    }
+
+    parsedDate = new Date(normalizedValue);
+    if (!isNaN(parsedDate.getTime())) {
+        return parsedDate;
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)?$/.test(normalizedValue)) {
+        normalizedValue = normalizedValue
+            .replace(/^(\d{4})-(\d{2})-(\d{2})/, "$1/$2/$3")
+            .replace("T", " ");
+        parsedDate = new Date(normalizedValue);
+        if (!isNaN(parsedDate.getTime())) {
+            return parsedDate;
+        }
+    }
+
+    return null;
+}
+
+function formatDateTimeCompat(value) {
+    var parsedDate = parseDateCompat(value);
+
+    if (!parsedDate) {
+        return "";
+    }
+
+    try {
+        return parsedDate.toLocaleString();
+    } catch (e) {
+        return parsedDate.toString();
+    }
+}
+
+function setInputCustomValidityCompat(input, message) {
+    if (input && typeof input.setCustomValidity === "function") {
+        input.setCustomValidity(message || "");
+    }
+}
+
+function reportInputValidityCompat(input, message) {
+    setInputCustomValidityCompat(input, message);
+
+    if (!input || !message) {
+        return;
+    }
+
+    if (typeof input.reportValidity === "function") {
+        input.reportValidity();
+        return;
+    }
+
+    try {
+        input.focus();
+    } catch (e) {
+    }
+
+    if (window.$ && $.toast) {
+        $.toast({
+            title: "Validation",
+            content: message,
+            type: "warning",
+            delay: 3000
+        });
+    }
+}
+
+function checkInputValidityCompat(input) {
+    if (!input || typeof input.checkValidity !== "function") {
+        return true;
+    }
+
+    return input.checkValidity();
 }
 
 function removeNode(node) {
@@ -428,22 +698,12 @@ function initValues() {
 }
 
 $(document).ready(function () {
-    // Global click listener for UI interaction sounds
-    $(document).on('click', 'button, .btn, a.btn', function () {
-        if (typeof buttonEffect !== 'undefined' && buttonEffect) {
-            buttonEffect.currentTime = 0;
-            safeAudioPlay(buttonEffect);
-        }
-    });
-
     if (isGamesPageContext()) {
         return;
     }
 
-    initRemainTimeInteraction();
     fetchServerData().then(function (server) {
         juanfiExtendedServerUrl = "http://" + server.ip + ":8080/api/portal";
-        buttonEffect = new Audio("http://" + server.ip + ":8080/sounds/button.mp3");
         $('#displayVersion').html("v" + server.version);
         if (!initLoad) {
             initValues();
@@ -524,23 +784,6 @@ function updateRemainTimeExpandedSize() {
     remainTime.style.fontSize = expandedFontSize + "px";
 }
 
-function setRemainTimeExpanded(isExpanded) {
-    var remainTime = document.getElementById("remainTime");
-
-    if (!remainTime) {
-        return;
-    }
-
-    if (isExpanded) {
-        addClassCompat(remainTime, "is-expanded");
-    } else {
-        removeClassCompat(remainTime, "is-expanded");
-    }
-
-    remainTime.setAttribute("aria-pressed", isExpanded ? "true" : "false");
-    updateRemainTimeExpandedSize();
-}
-
 function setRemainingTimeConnectionState(isConnected) {
     var remainingTimeContainer = document.getElementById("remainingTimeContainer");
 
@@ -555,33 +798,6 @@ function setRemainingTimeConnectionState(isConnected) {
         addClassCompat(remainingTimeContainer, "connection-state-red");
         removeClassCompat(remainingTimeContainer, "connection-state-green");
     }
-}
-
-function initRemainTimeInteraction() {
-    var remainTime = document.getElementById("remainTime");
-
-    if (!remainTime || remainTime.getAttribute("data-expand-bound") === "true") {
-        return;
-    }
-
-    function toggleRemainTimeExpanded(event) {
-        if (event && event.preventDefault) {
-            event.preventDefault();
-        }
-
-        setRemainTimeExpanded(!hasClassCompat(remainTime, "is-expanded"));
-    }
-
-    bindEvent(remainTime, "click", toggleRemainTimeExpanded);
-    bindEvent(remainTime, "keydown", function (event) {
-        var key = event ? (event.key || event.keyCode) : null;
-
-        if (key === "Enter" || key === " " || key === "Spacebar" || key === 13 || key === 32) {
-            toggleRemainTimeExpanded(event);
-        }
-    });
-
-    remainTime.setAttribute("data-expand-bound", "true");
 }
 
 bindEvent(window, "resize", function () {
@@ -920,7 +1136,7 @@ function renderView() {
             hasWiFree = data.hasWiFree;
             announcementText = data.announcement;
         }
-        localStorage.setItem('vendorIpAddress', vendorIpAddress);
+        localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
         if (announcementText) {
             var announcement = $("#announcement");
             announcement.removeClass("hide");
@@ -1057,7 +1273,7 @@ function renderView() {
                     if (!!dtls) {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
-                        localStorage.setItem('vendorIpAddress', vendorIpAddress);
+                        localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
                         multiVendoConfiguration(dtls, userData);
                     }
                 } else if (multiVendoOption == 2) {
@@ -1072,7 +1288,7 @@ function renderView() {
                     if (!!dtls) {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
-                        localStorage.setItem('vendorIpAddress', vendorIpAddress);
+                        localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
                         multiVendoConfiguration(dtls, userData);
                     }
                 } else {
@@ -1096,7 +1312,7 @@ function renderView() {
                     }
                     if (selectedVendo != null) {
                         vendorIpAddress = selectedVendo;
-                        localStorage.setItem('vendorIpAddress', vendorIpAddress);
+                        localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
                     }
 
                     $("#vendoSelected").val(vendorIpAddress);
@@ -1104,7 +1320,7 @@ function renderView() {
                     vendoSelectOption.onchange = function () {
                         vendorIpAddress = $("#vendoSelected").val();
                         setStorageValue('selectedVendo', vendorIpAddress);
-                        localStorage.setItem('vendorIpAddress', vendorIpAddress);
+                        localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
                         var dtls = null;
                         for (var i = 0; i < multiVendoAddresses.length; i++) {
                             if (multiVendoAddresses[i].vendoIp === vendorIpAddress) {
@@ -1188,11 +1404,17 @@ function renderView() {
                 $("#statusImg").addClass("blinking2");
                 $("#remainingTimeWrapper").removeClass("hide");
 
-                getTimeLeftInSecs(function (latestTime) {
-                    updateRemainingTimeDisplay(latestTime);
-                });
+                if (!isTimeLeftPollingPaused) {
+                    getTimeLeftInSecs(function (latestTime) {
+                        updateRemainingTimeDisplay(latestTime);
+                    });
+                }
 
                 remainingTimer = setInterval(function () {
+                    if (isTimeLeftPollingPaused) {
+                        return;
+                    }
+
                     getTimeLeftInSecs(function (latestTime) {
                         if (!updateRemainingTimeDisplay(latestTime)) {
                             return;
@@ -1200,7 +1422,7 @@ function renderView() {
 
 
                         if (time <= 0 && !isMember) {
-                            localStorage.clear();
+                            localStorageCompat.clear();
                             clearInterval(remainingTimer);
                             setTimeout(function () {
                                 isOnline = false;
@@ -1231,8 +1453,12 @@ function renderView() {
             }
 
             if (!!timeExpiry) {
-                var expirationTime = new Date(timeExpiry);
-                $("#expirationTime").html(expirationTime.toLocaleString());
+                var expirationTime = parseDateCompat(timeExpiry);
+                if (expirationTime) {
+                    $("#expirationTime").html(formatDateTimeCompat(expirationTime));
+                } else {
+                    $("#expirationTime").html(timeExpiry);
+                }
             } else {
                 $("#expirationTimeWrapper").addClass("hide");
             }
@@ -1334,7 +1560,7 @@ function renderView() {
 }
 
 function RefreshPortal() {
-    localStorage.clear();
+    localStorageCompat.clear();
     voucher = resolveVoucherValue(voucher);
     setTimeout(function () {
         window.location.href = "/login?vc=" + voucher;
@@ -1424,8 +1650,14 @@ function multiVendoConfiguration(vendo, user) {
     }
 }
 
+$('#insertCoinModal').on('show.bs.modal', function () {
+    isInsertCoinModalVisible = true;
+    isInsertCoinPollingPausePending = true;
+    suspendTimeLeftPolling();
+});
+
 $('#insertCoinModal').on('hidden.bs.modal', function () {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     clearInterval(timer);
     timer = null;
     insertingCoin = false;
@@ -1444,6 +1676,8 @@ $('#insertCoinModal').on('hidden.bs.modal', function () {
             }
         });
     }
+
+    releaseTimeLeftPollingAfterInsertCoin(true);
 });
 
 $('#eloadModal').on('hidden.bs.modal', function () {
@@ -1511,7 +1745,7 @@ if (memberLoginExecuteBtn) {
         $("#errorMsg").addClass("d-none");
         addLoader('memberLoginExecuteBtn');
         var old_mac = getStorageValue('activeVoucher')
-        vendorIpAddress = localStorage.getItem("vendorIpAddress");
+        vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
         fetchPortalAPI("/member-login", "POST", vendorIpAddress, {
             mac: mac,
             old_mac: old_mac,
@@ -1660,7 +1894,7 @@ function getPersistedPromoRates() {
     }
 
     try {
-        var storedValue = localStorage.getItem(storageKey);
+        var storedValue = localStorageCompat.getItem(storageKey);
         if (!storedValue) {
             return null;
         }
@@ -1683,7 +1917,7 @@ function persistPromoRates(data) {
     }
 
     try {
-        var storedValue = localStorage.getItem(storageKey);
+        var storedValue = localStorageCompat.getItem(storageKey);
         var parsedValue = {};
 
         if (storedValue) {
@@ -1695,7 +1929,7 @@ function persistPromoRates(data) {
         }
 
         parsedValue.ratesByType[rateType] = data;
-        localStorage.setItem(storageKey, JSON.stringify(parsedValue));
+        localStorageCompat.setItem(storageKey, JSON.stringify(parsedValue));
     } catch (e) {
         console.error("Failed to persist promo rates:", e);
     }
@@ -1708,7 +1942,7 @@ function clearPersistedPromoRates() {
     }
 
     try {
-        localStorage.removeItem(storageKey);
+        localStorageCompat.removeItem(storageKey);
     } catch (e) {
         console.error("Failed to clear promo rates:", e);
     }
@@ -1753,6 +1987,7 @@ function renderPromoRatesTable(data, tableBody) {
 }
 
 function insertBtnAction() {
+    pauseTimeLeftPollingForInsertCoin();
     removeStorageValue("ignoreSaveCode");
     setStorageValue('insertCoinRefreshed', "0");
     clearPersistedPromoRates();
@@ -1808,7 +2043,7 @@ function parseDuration(minutes) {
 }
 
 function populatePromoRates(retryCount) {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     var tableBody = document.querySelector("#rateTable tbody");
     tableBody.innerHTML = "";
     $.ajax({
@@ -1859,15 +2094,25 @@ function parseTimeLeftResponse(data) {
 }
 
 function getTimeLeftInSecs(cb) {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    if (isTimeLeftPollingPaused) {
+        if (typeof cb === "function") {
+            cb(null, {pollingPaused: true});
+        }
+        return;
+    }
 
-    $.ajax({
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
+    var timeLeftRequest = $.ajax({
         type: "GET",
         url: "http://" + hotspotAddress + "/api",
         crossOrigin: true,
         dataType: "text",
         contentType: 'text/plain',
         success: function (data) {
+            if (activeTimeLeftRequest === timeLeftRequest) {
+                activeTimeLeftRequest = null;
+            }
+
             var responseData = parseTimeLeftResponse(data);
             var latestTime = responseData ? parseInt(responseData.sessiontimeInSecs, 10) : NaN;
             voucher = resolveVoucherValue(responseData.code);
@@ -1887,11 +2132,21 @@ function getTimeLeftInSecs(cb) {
                 cb(latestTime, responseData);
             }
         }, error: function (jqXHR, exception) {
+            if (activeTimeLeftRequest === timeLeftRequest) {
+                activeTimeLeftRequest = null;
+            }
+
+            if (exception === "abort" || (jqXHR && jqXHR.statusText === "abort")) {
+                return;
+            }
+
             if (typeof cb === "function") {
                 cb(null);
             }
         }
     });
+
+    activeTimeLeftRequest = timeLeftRequest;
 }
 
 $('#chargingModal').on('shown.bs.modal', function (e) {
@@ -1920,7 +2175,7 @@ function minutesToTime(totalMinutes) {
 }
 
 function populateChargingStations(retryCount) {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     clearInterval(chargerTimer);
     chargerTimer = setInterval(refreshChargerTimer, 1000);
     $.ajax({
@@ -1999,7 +2254,7 @@ function onRateTypeChange(evt) {
 }
 
 function addChargerTime(port, portName, retryCount) {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     topupMode = TOPUP_CHARGER;
     $.ajax({
         type: "POST",
@@ -2018,7 +2273,7 @@ function addChargerTime(port, portName, retryCount) {
                 if (isMultiVendo) {
                     $("#insertCoinModalTitle").html("Please insert the coin on " + $("#vendoSelected option:selected").text());
                 }
-                insertcoinbg.play();
+                safeAudioPlay(insertcoinbg);
             } else {
                 notifyCoinSlotError(data.errorCode);
                 clearInterval(timer);
@@ -2035,7 +2290,7 @@ function addChargerTime(port, portName, retryCount) {
 }
 
 function callTopupAPI(retryCount) {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     $('#cncl').html("CANCEL");
     $("#vcCodeDiv").attr('style', 'display: block');
     var type = $("#saveVoucherButton").attr('data-save-type');
@@ -2068,20 +2323,26 @@ function callTopupAPI(retryCount) {
                 if (isMultiVendo) {
                     $("#insertCoinModalTitle").html("Please insert the coin on " + $("#vendoSelected option:selected").text());
                 }
-                insertcoinbg.play();
+                safeAudioPlay(insertcoinbg);
             } else {
                 notifyCoinSlotError(data.errorCode);
                 clearInterval(timer);
                 timer = null;
-                removeLoader('insertBtn')
+                removeLoader('insertBtn');
+                if (isInsertCoinPollingPausePending && !isInsertCoinModalVisible) {
+                    releaseTimeLeftPollingAfterInsertCoin(false);
+                }
             }
         }, error: function (jqXHR, exception) {
             setTimeout(function () {
                 if (retryCount < 3) {
                     callTopupAPI(retryCount + 1);
                 } else {
-                    removeLoader('insertBtn')
+                    removeLoader('insertBtn');
                     notifyCoinSlotError("coin.slot.notavailable");
+                    if (isInsertCoinPollingPausePending && !isInsertCoinModalVisible) {
+                        releaseTimeLeftPollingAfterInsertCoin(false);
+                    }
                 }
             }, 1000);
         }
@@ -2089,7 +2350,7 @@ function callTopupAPI(retryCount) {
 }
 
 function saveVoucherBtnAction() {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     addLoader('saveVoucherButton')
     voucher = resolveVoucherValue(voucher);
 
@@ -2127,7 +2388,7 @@ function saveVoucherBtnAction() {
                         type: 'success',
                         delay: 3000
                     });
-                    saveLogs(`${totalCoinReceived} coins successfully inserted.`);
+                    saveLogs(totalCoinReceived + " coins successfully inserted.");
 
                     setTimeout(function () {
                         newLogin();
@@ -2147,7 +2408,7 @@ function saveVoucherBtnAction() {
         }, error: function (jqXHR, exception) {
 
             if (totalCoinReceived > 0) {
-                saveLogs(`Insert coin error: ${exception.message}`);
+                saveLogs("Insert coin error: " + ((exception && exception.message) || exception || "Unknown error"));
                 $.toast({
                     title: 'Warning',
                     content: 'Connect/Login failed, however coin has been process, please manually connect using this voucher: ' + voucher,
@@ -2164,7 +2425,7 @@ function saveVoucherBtnAction() {
 }
 
 function checkCoin() {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     voucher = resolveVoucherValue(voucher);
     $.ajax({
         type: "POST",
@@ -2327,7 +2588,7 @@ function notifyCoinSlotError(errorCode, delay) {
 
 function notifyCoinSuccess(coin, delay) {
     if (delay === undefined) delay = 5000;
-    coinCount.play();
+    safeAudioPlay(coinCount);
 
     $.toast({
         title: "Insert Coin",
@@ -2361,7 +2622,7 @@ function removeStorageValue(key) {
 }
 
 function clearStorageValues() {
-    localStorage.clear();
+    localStorageCompat.clear();
     clearPersistedUserInfo();
 }
 
@@ -2568,7 +2829,7 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
         };
     }
 
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     var params = "mac=" + macNoColon + "&interfaceName=" + interfaceName;
     var old_mac = getStorageValue("activeVoucher");
     if (old_mac && old_mac !== "") {
@@ -2668,7 +2929,7 @@ function renderHistories(data, containerId) {
     if (!container) return;
 
     container.innerHTML = "";
-    container.setAttribute("style", "overflow-y:auto;max-height:60dvh;");
+    container.setAttribute("style", "overflow-y:auto;max-height:60vh;max-height:60dvh;");
     container.className = "history-list d-flex flex-column gap-2 pb-3";
 
     if (!data || !isArrayCompat(data.histories) || data.histories.length === 0) {
@@ -2680,7 +2941,7 @@ function renderHistories(data, containerId) {
         var div = document.createElement("div");
         div.className = "voucher-card";
 
-        var date = new Date(item.date).toLocaleString();
+        var date = formatDateTimeCompat(item.date) || item.date;
         var amount = item.coin ? item.coin.toFixed(2) : "0.00";
         var points = Number(item.pointsEarned.toFixed(2));
 
@@ -2700,7 +2961,7 @@ function renderHistories(data, containerId) {
 }
 
 function onPurchaseClicked(item) {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     addLoader('wifreeBtn');
     $('#wifreeCheckOutModal').modal('show');
     $('#wifreeModal').modal('hide');
@@ -2885,13 +3146,13 @@ function fetchServerData() {
         if (isTestMode)
             return;
 
-        var cachedData = localStorage.getItem(storageKey);
-        var cachedExpiry = localStorage.getItem(expiryKey);
+        var cachedData = localStorageCompat.getItem(storageKey);
+        var cachedExpiry = localStorageCompat.getItem(expiryKey);
         var now = new Date().getTime();
 
         var isAppendValid = true;
         if (typeof append !== 'undefined') {
-            var cachedAppend = localStorage.getItem(appendKey);
+            var cachedAppend = localStorageCompat.getItem(appendKey);
             isAppendValid = (cachedAppend === append);
         }
 
@@ -2917,12 +3178,12 @@ function fetchServerData() {
                 success: function (data) {
                     console.log('JuanFi Extended Version:', data.version);
                     try {
-                        localStorage.setItem(storageKey, JSON.stringify(data));
+                        localStorageCompat.setItem(storageKey, JSON.stringify(data));
                         // 5 minutes expiration
-                        localStorage.setItem(expiryKey, (new Date().getTime() + 5 * 60 * 1000).toString());
+                        localStorageCompat.setItem(expiryKey, (new Date().getTime() + 5 * 60 * 1000).toString());
 
                         if (typeof append !== 'undefined') {
-                            localStorage.setItem(appendKey, append);
+                            localStorageCompat.setItem(appendKey, append);
                         }
 
                         if (data) {
@@ -2962,13 +3223,13 @@ function fetchServerData() {
 function fetchPortalConfig(cb) {
     var storageKey = 'juanfi_portal_config';
     var appendKey = 'juanfi_portal_config_append';
-    var cachedData = localStorage.getItem(storageKey);
+    var cachedData = localStorageCompat.getItem(storageKey);
     var shouldUseCache = !!cachedData;
 
     if (shouldUseCache && typeof append !== 'undefined') {
         var appendValue = (append || "").toString();
         var hasTemplateToken = appendValue.indexOf("$(") !== -1;
-        var cachedAppend = localStorage.getItem(appendKey);
+        var cachedAppend = localStorageCompat.getItem(appendKey);
 
         // Use strict append matching only when append is a resolved value.
         // Games page can have unresolved template tokens, which should not force cache misses.
@@ -3007,10 +3268,10 @@ function fetchPortalConfig(cb) {
 
             if (typeof append !== 'undefined') {
                 try {
-                    localStorage.setItem(storageKey, JSON.stringify(data));
+                    localStorageCompat.setItem(storageKey, JSON.stringify(data));
                     var appendValue = (append || "").toString();
                     if (appendValue.indexOf("$(") === -1) {
-                        localStorage.setItem(appendKey, appendValue);
+                        localStorageCompat.setItem(appendKey, appendValue);
                     }
                 } catch (e) {
                     console.error('Failed to save config to localStorage:', e);
@@ -3160,7 +3421,7 @@ function onRedeemRewardPtsSliderChangeEvt() {
 }
 
 function onRedeemRewardPtsConfirmBtnEvt(macNoColon) {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     var confirmRedeemBtn = document.getElementById("confirmRedeemBtn");
     if (confirmRedeemBtn) {
         confirmRedeemBtn.onclick = function () {
@@ -3267,7 +3528,7 @@ function showResumeButton() {
 }
 
 function logoutMember() {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     voucher = resolveVoucherValue(voucher);
     fetchPortalAPI("/logout-member", "POST", vendorIpAddress, {mac: voucher})
         .then(function (result) {
@@ -3312,7 +3573,7 @@ function logoutMember() {
 }
 
 function logoutVoucher(macNoColon, cb) {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     fetchPortalAPI("/logout", "POST", vendorIpAddress, {mac: macNoColon})
         .then(function (result) {
             if ((!result) || (!result.success)) {
@@ -3353,7 +3614,7 @@ function logoutVoucher(macNoColon, cb) {
 }
 
 function saveLogs(msg) {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     if(voucherCode === "")
         voucherCode = getStorageValue("voucherCode");
     fetchPortalAPI("/logs", "POST", vendorIpAddress, JSON.stringify({code: voucherCode, message: msg}), {
@@ -3366,7 +3627,7 @@ function saveLogs(msg) {
 }
 
 function loginVoucher(macNoColon, cb) {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     fetchPortalAPI("/login", "POST", vendorIpAddress, {mac: macNoColon})
         .then(function (result) {
             if ((!result) || (!result.success)) {
@@ -3405,7 +3666,7 @@ function loginVoucher(macNoColon, cb) {
 
 
 function claimFreeInternetFetch(macNoColon, cb) {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     fetchPortalAPI("/claim-free-internet", "POST", vendorIpAddress, {mac: macNoColon})
         .then(function (result) {
             if ((!result) || (!result.success)) {
@@ -3467,7 +3728,7 @@ function checkIsLoggedIn(macNoColon) {
 }
 
 function fetchSpinWheelReward(mac, cb) {
-    vendorIpAddress = localStorage.getItem("vendorIpAddress");
+    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     if (parseInt(rewardPointsBalance) < 0) {
         $.toast({
             title: 'Failed',
@@ -3829,7 +4090,7 @@ function drawSpinWheel(mac, prizes, colors) {
             }
 
             if (t < 1) {
-                requestAnimationFrame(step);
+                requestCompatAnimationFrame(step);
                 return;
             }
 
@@ -3879,7 +4140,7 @@ function drawSpinWheel(mac, prizes, colors) {
             });
         }
 
-        requestAnimationFrame(step);
+        requestCompatAnimationFrame(step);
 
     }
 
@@ -3888,7 +4149,7 @@ function drawSpinWheel(mac, prizes, colors) {
         if (pulses === undefined) pulses = 3;
         if (pulseDuration === undefined) pulseDuration = 700;
         var total = pulses * pulseDuration;
-        var start = performance.now();
+        var start = getPerformanceTimeCompat();
 
         function frame(now) {
             var elapsed = now - start;
@@ -3900,10 +4161,10 @@ function drawSpinWheel(mac, prizes, colors) {
             var pulseProgress = (elapsed % pulseDuration) / pulseDuration; // 0..1
             var alpha = Math.sin(pulseProgress * Math.PI); // smooth 0..1..0
             drawWheel(currentRotation, index, alpha * 0.95);
-            requestAnimationFrame(frame);
+            requestCompatAnimationFrame(frame);
         }
 
-        requestAnimationFrame(frame);
+        requestCompatAnimationFrame(frame);
     }
 
     /* ===== shuffle prizes (randomize displayed positions) ===== */
@@ -4011,32 +4272,28 @@ function useVoucherBtnEvt() {
             e.preventDefault();
             var input = document.getElementById('voucherInput');
             // Clear previous custom validity
-            input.setCustomValidity('');
+            setInputCustomValidityCompat(input, '');
 
             // Trim the value to catch empty or whitespace-only input
             if (!input.value || input.value.trim() === '') {
-                input.setCustomValidity('Please input a valid voucher');
-                input.reportValidity();
+                reportInputValidityCompat(input, 'Please input a valid voucher');
                 return;
             }
 
             // Optional: check HTML5 constraints
-            if (!input.checkValidity()) {
-                input.setCustomValidity('Please input a valid voucher');
-                input.reportValidity();
+            if (!checkInputValidityCompat(input)) {
+                reportInputValidityCompat(input, 'Please input a valid voucher');
                 return;
             }
 
             // Check other variables
             if (!macNoColon || macNoColon.trim() === '') {
-                input.setCustomValidity('Please input a valid voucher');
-                input.reportValidity();
+                reportInputValidityCompat(input, 'Please input a valid voucher');
                 return;
             }
 
             if (!vendorIpAddress || vendorIpAddress.trim() === '') {
-                input.setCustomValidity('Please input a valid voucher');
-                input.reportValidity();
+                reportInputValidityCompat(input, 'Please input a valid voucher');
                 return;
             }
 
@@ -4057,7 +4314,9 @@ function useVoucherBtnEvt() {
                         type: 'success',
                         delay: 3000
                     });
-                    newLogin();
+                    setTimeout(function () {
+                        newLogin();
+                    },1000)
                     removeLoader('connectBtn')
                 } else {
                     removeLoader('connectBtn')
