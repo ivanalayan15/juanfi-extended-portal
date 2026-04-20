@@ -14,8 +14,6 @@
     <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-20260414b1">
     <link rel="stylesheet" href="assets/css/core.css?v=$(ip)-$(mac)-20260414b1">
     <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)-20260414b1">
-    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)-20260414b1">
-    <link rel="stylesheet" href="assets/css/toast.min.css?v=$(ip)-$(mac)-20260414b1">
 
     <script>
         var loginError = "";
@@ -31,12 +29,196 @@
             isLoggedIn = parseInt(sessiontimeInSecs) > 0;
         $(endif)
     </script>
+    <script>
+        var eloadAssetsState = "idle";
+        var eloadAssetsCallbacks = [];
+
+        function loadDeferredScript(id, src, readyCheck, callback) {
+            if (readyCheck()) {
+                callback(null);
+                return;
+            }
+
+            var script = document.getElementById(id);
+            var isComplete = false;
+
+            function complete(error) {
+                if (isComplete) {
+                    return;
+                }
+
+                isComplete = true;
+                callback(error || null);
+            }
+
+            function handleLoad() {
+                if (script) {
+                    script.setAttribute("data-loaded", "true");
+                }
+                complete(null);
+            }
+
+            function handleError() {
+                if (script) {
+                    script.setAttribute("data-error", "true");
+                    if (script.parentNode) {
+                        script.parentNode.removeChild(script);
+                    }
+                    script = null;
+                }
+                complete(new Error("Failed to load " + src));
+            }
+
+            if (script && script.getAttribute("data-error") === "true") {
+                if (script.parentNode) {
+                    script.parentNode.removeChild(script);
+                }
+                script = null;
+            }
+
+            if (!script) {
+                script = document.createElement("script");
+                script.id = id;
+                script.src = src;
+                script.async = true;
+                script.onload = handleLoad;
+                script.onerror = handleError;
+                document.head.appendChild(script);
+                return;
+            }
+
+            if (script.getAttribute("data-loaded") === "true" || readyCheck()) {
+                complete(null);
+                return;
+            }
+
+            if (script.getAttribute("data-error") === "true") {
+                complete(new Error("Failed to load " + src));
+                return;
+            }
+
+            script.onload = handleLoad;
+            script.onerror = handleError;
+        }
+
+        function finishEloadAssetLoad(error) {
+            var pendingCallbacks = eloadAssetsCallbacks.slice(0);
+            var i;
+
+            eloadAssetsCallbacks = [];
+            eloadAssetsState = error ? "idle" : "ready";
+
+            for (i = 0; i < pendingCallbacks.length; i++) {
+                pendingCallbacks[i](error || null);
+            }
+        }
+
+        function ensureEloadAssets(callback) {
+            if (typeof callback !== "function") {
+                callback = function () {
+                };
+            }
+
+            if (typeof window.eloadBtnAction === "function" && !window.eloadBtnAction.__isDeferredEloadAction) {
+                callback(null);
+                return;
+            }
+
+            eloadAssetsCallbacks.push(callback);
+
+            if (eloadAssetsState === "ready") {
+                finishEloadAssetLoad(null);
+                return;
+            }
+
+            if (eloadAssetsState === "loading") {
+                return;
+            }
+
+            eloadAssetsState = "loading";
+
+            loadDeferredScript("pakoScript", "assets/js/pako.min.js?v=" + append, function () {
+                return !!window.pako;
+            }, function (pakoError) {
+                if (pakoError) {
+                    finishEloadAssetLoad(pakoError);
+                    return;
+                }
+
+                loadDeferredScript("eloadScript", "assets/js/eload.js?v=" + append, function () {
+                    return typeof window.eloadBtnAction === "function" && !window.eloadBtnAction.__isDeferredEloadAction;
+                }, finishEloadAssetLoad);
+            });
+        }
+
+        function notifyDeferredAssetError(message) {
+            if (window.$ && typeof $.toast === "function") {
+                $.toast({
+                    title: "Failed",
+                    content: message,
+                    type: "error",
+                    delay: 4000
+                });
+                return;
+            }
+
+            if (window.console && typeof console.error === "function") {
+                console.error(message);
+            }
+        }
+
+        function createDeferredEloadAction(actionName) {
+            var deferredAction = function () {
+                var args = arguments;
+
+                ensureEloadAssets(function (error) {
+                    var resolvedAction;
+
+                    if (error) {
+                        notifyDeferredAssetError("E-LOAD assets could not be loaded. Please try again.");
+                        return;
+                    }
+
+                    resolvedAction = window[actionName];
+
+                    if (typeof resolvedAction === "function" && resolvedAction !== deferredAction && !resolvedAction.__isDeferredEloadAction) {
+                        resolvedAction.apply(window, args);
+                        return;
+                    }
+
+                    notifyDeferredAssetError("E-LOAD is not available right now.");
+                });
+
+                return false;
+            };
+
+            deferredAction.__isDeferredEloadAction = true;
+            return deferredAction;
+        }
+
+        function evaluateEloadButton(vendoDtls) {
+            if (!window.$) {
+                return;
+            }
+
+            if ((!!vendoDtls) && (!vendoDtls.eloadEnable)) {
+                $("#eloadBtn").addClass("hide");
+            } else {
+                $("#eloadBtn").removeClass("hide");
+            }
+        }
+
+        evaluateEloadButton.__isDeferredEloadAction = true;
+        window.eloadBtnAction = createDeferredEloadAction("eloadBtnAction");
+        window.buyEloadAction = createDeferredEloadAction("buyEloadAction");
+        window.buyEloadPrevAction = createDeferredEloadAction("buyEloadPrevAction");
+        window.loadTypeChanged = createDeferredEloadAction("loadTypeChanged");
+        window.productTypeChanged = createDeferredEloadAction("productTypeChanged");
+    </script>
     <script src="assets/js/jquery.min.js?v=$(ip)-$(mac)-20260414b1" defer></script>
-    <script src="assets/js/eload.js?v=$(ip)-$(mac)-20260414b1" defer></script>
     <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)-20260414b1" defer></script>
     <script src="assets/js/cache.js?v=$(ip)-$(mac)-20260414b1" defer></script>
     <script src="assets/js/core.js?v=$(ip)-$(mac)-20260414b1" defer></script>
-    <script src="assets/js/pako.min.js?v=$(ip)-$(mac)-20260414b1" defer></script>
 </head>
 
 <body class="portal-body col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2 ">
@@ -54,7 +236,8 @@
 
         <div id="headerContainer" class="d-flex justify-content-between align-items-center container">
             <div class="d-flex flex-column gap-0 align-items-center">
-                <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-20260414b1" class="img-fluid banner"  alt="logo"/>
+                <img src="assets/MainPic.PNG?v=$(ip)-$(mac)-20260414b1" class="img-fluid banner" width="820" height="312"
+                    decoding="async" fetchpriority="high" alt="logo"/>
             </div>
             <div class="header-meta d-flex justify-content-between gap-1">
                 <div class="juanfi-default-text small" id="displayVersion"></div>
@@ -96,7 +279,8 @@
             <div id="memberDashboardContainer" class="hide mt-3 text-center">
                 <div class="card bg-dark text-white border-warning shadow-lg" style="border-radius: 15px;">
                     <div class="card-body py-4 d-flex flex-column align-items-center gap-3">
-                        <i class="bi bi-person-fill-check text-warning" style="font-size: 4rem;"></i>
+                        <div class="d-flex align-items-center justify-content-center text-warning fw-bold rounded-circle border border-warning border-2"
+                            style="width: 4rem; height: 4rem; font-size: 1rem;">VIP</div>
                         <h4 class="mb-0 fw-bold" style="color: #f1c40f;">Member Access</h4>
                         <div class="badge rounded-pill bg-black px-4 py-2 border border-secondary"
                             style="font-size: 1rem;">
@@ -271,7 +455,8 @@
                         </button>
                     </div>
                     <div class="modal-body text-center py-4">
-                        <i class="bi bi-box-arrow-right text-danger mb-3" style="font-size: 3rem;"></i>
+                        <div class="d-inline-flex align-items-center justify-content-center text-danger fw-bold rounded-circle border border-danger border-2 mb-3"
+                            style="width: 3rem; height: 3rem; font-size: 0.82rem;">OUT</div>
                         <p class="mb-0 text-secondary">Are you sure you want to log out of your member session?</p>
                     </div>
                     <div class="modal-footer p-2 d-flex gap-2 border-top-0 justify-content-center">
@@ -342,7 +527,8 @@
                                 <div class="col-12 text-center">
                                     <div class="small text-color-white">Available Points</div>
                                     <div>
-                                        <img src="assets/img/coin.png" width="20px" height="20px" />
+                                        <img src="assets/img/coin.png" width="20" height="20" loading="lazy"
+                                            decoding="async" alt="" />
                                         <span class="availablePointsDisplay text-color-yellow">0.00</span>
                                     </div>
                                 </div>

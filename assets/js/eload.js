@@ -144,7 +144,7 @@ function topUpEload(retryCount){
 					$("#insertCoinModalTitle").html("Please insert the coin on "+$("#vendoSelected option:selected").text());
 				}
 				if (typeof safeAudioPlay === "function") {
-					safeAudioPlay(insertcoinbg);
+					safeAudioPlay(typeof ensureInsertCoinAudio === "function" ? ensureInsertCoinAudio() : insertcoinbg);
 				} else {
 					try {
 						insertcoinbg.play();
@@ -221,8 +221,12 @@ function eloadCheckCoin(){
 					$( "#cncl" ).prop('disabled', true);
 				}
 				if(remainTime == 0){
-					insertcoinbg.pause();
-					insertcoinbg.currentTime = 0.0;
+					if (typeof resetAudio === "function") {
+						resetAudio(insertcoinbg);
+					} else if (insertcoinbg) {
+						insertcoinbg.pause();
+						insertcoinbg.currentTime = 0.0;
+					}
 					if(totalCoinReceived >= productPrice){
 						processEloadNow();
 					}else if(totalCoinReceived > 0 && totalCoinReceived < productPrice){
@@ -246,8 +250,12 @@ function eloadCheckCoin(){
 				
 			}else if(data.errorCode == "coinslot.busy"){
 				//when manually cleared the button
-				insertcoinbg.pause();
-				insertcoinbg.currentTime = 0.0;
+				if (typeof resetAudio === "function") {
+					resetAudio(insertcoinbg);
+				} else if (insertcoinbg) {
+					insertcoinbg.pause();
+					insertcoinbg.currentTime = 0.0;
+				}
 				clearInterval(timer);
 				$('#insertCoinModal').modal('hide');
 				if(totalCoinReceived == 0){
@@ -277,8 +285,12 @@ function processEloadNow(){
 	$("#noticeDiv").attr('style', 'display: block');
 	$("#convertVoucherBlockDiv").attr('style', 'display: none');
 	$("#noticeText").html("Processing eload, please wait...");
-	insertcoinbg.pause();
-	insertcoinbg.currentTime = 0.0;
+	if (typeof resetAudio === "function") {
+		resetAudio(insertcoinbg);
+	} else if (insertcoinbg) {
+		insertcoinbg.pause();
+		insertcoinbg.currentTime = 0.0;
+	}
 	$.ajax({
 	  type: "POST",
 	  url: "http://"+vendorIpAddress+"/eload/process",

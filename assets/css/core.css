@@ -14,9 +14,13 @@
 	z-index: 1055 !important;
 }
 @media screen and (min-width: 70px) and (max-width: 410px) {
-  /* Styles applied when the screen width is 768px or wider */
-  body {
-	width: 375px !important;
+  body,
+  body.portal-body {
+	width: 100% !important;
+	max-width: 100% !important;
+	min-width: 0 !important;
+	margin-left: auto !important;
+	margin-right: auto !important;
   }
 }
 .spinner { 

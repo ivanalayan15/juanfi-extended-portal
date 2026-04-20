@@ -14,8 +14,8 @@ errorCodeMap['eload.failed'] = 'Sorry, Eload processing is failed';
 
 //DO NOT UPDATE - START
 var initLoad = false;
-var insertcoinbg = new Audio('assets/insertcoinbg.mp3');
-var coinCount = new Audio('assets/coin-received.mp3');
+var insertcoinbg = null;
+var coinCount = null;
 var TOPUP_CHARGER = "CHARGER";
 var TOPUP_INTERNET = "INTERNET";
 var TOPUP_ELOAD = "ELOAD";
@@ -508,6 +508,53 @@ function safeAudioPlay(audio) {
     }
 }
 
+function createAudioInstance(src) {
+    if (typeof Audio !== 'function') {
+        return null;
+    }
+
+    try {
+        return new Audio(src);
+    } catch (e) {
+        return null;
+    }
+}
+
+function ensureInsertCoinAudio() {
+    if (!insertcoinbg) {
+        insertcoinbg = createAudioInstance('assets/insertcoinbg.mp3');
+        if (insertcoinbg) {
+            insertcoinbg.loop = true;
+            insertcoinbg.preload = 'none';
+        }
+    }
+
+    return insertcoinbg;
+}
+
+function ensureCoinCountAudio() {
+    if (!coinCount) {
+        coinCount = createAudioInstance('assets/coin-received.mp3');
+        if (coinCount) {
+            coinCount.preload = 'none';
+        }
+    }
+
+    return coinCount;
+}
+
+function resetAudio(audio) {
+    if (!audio) {
+        return;
+    }
+
+    try {
+        audio.pause();
+        audio.currentTime = 0.0;
+    } catch (e) {
+    }
+}
+
 function bindEvent(target, eventName, handler) {
     if (!target) {
         return;
@@ -620,7 +667,6 @@ function initValues() {
     //DO NOT UPDATE - START
     macNoColon = replaceAll(mac, ":");
     totalCoinReceived = 0;
-    insertcoinbg.loop = true;
     userInfo = getPersistedUserInfo();
     voucher = resolveVoucherValue(getStorageValue('activeVoucher'));
     insertingCoin = false;
@@ -1661,8 +1707,7 @@ $('#insertCoinModal').on('hidden.bs.modal', function () {
     clearInterval(timer);
     timer = null;
     insertingCoin = false;
-    insertcoinbg.pause();
-    insertcoinbg.currentTime = 0.0;
+    resetAudio(insertcoinbg);
     if (totalCoinReceived == 0) {
         voucher = resolveVoucherValue(voucher);
         $.ajax({
@@ -2273,7 +2318,7 @@ function addChargerTime(port, portName, retryCount) {
                 if (isMultiVendo) {
                     $("#insertCoinModalTitle").html("Please insert the coin on " + $("#vendoSelected option:selected").text());
                 }
-                safeAudioPlay(insertcoinbg);
+                safeAudioPlay(ensureInsertCoinAudio());
             } else {
                 notifyCoinSlotError(data.errorCode);
                 clearInterval(timer);
@@ -2323,7 +2368,7 @@ function callTopupAPI(retryCount) {
                 if (isMultiVendo) {
                     $("#insertCoinModalTitle").html("Please insert the coin on " + $("#vendoSelected option:selected").text());
                 }
-                safeAudioPlay(insertcoinbg);
+                safeAudioPlay(ensureInsertCoinAudio());
             } else {
                 notifyCoinSlotError(data.errorCode);
                 clearInterval(timer);
@@ -2362,8 +2407,7 @@ function saveVoucherBtnAction() {
 
     clearInterval(timer);
     timer = null;
-    insertcoinbg.pause();
-    insertcoinbg.currentTime = 0.0;
+    resetAudio(insertcoinbg);
     $.ajax({
         type: "POST",
         url: "http://" + vendorIpAddress + "/useVoucher",
@@ -2467,8 +2511,7 @@ function checkCoin() {
                     }
                     if (remainTime == 0) {
                         $('#insertCoinModal').modal('hide');
-                        insertcoinbg.pause();
-                        insertcoinbg.currentTime = 0.0;
+                        resetAudio(insertcoinbg);
                         if (totalCoinReceived > 0) {
 
                             if (topupMode == TOPUP_INTERNET) {
@@ -2511,8 +2554,7 @@ function checkCoin() {
 
                 } else if (data.errorCode == "coinslot.busy") {
                     //when manually cleared the button
-                    insertcoinbg.pause();
-                    insertcoinbg.currentTime = 0.0;
+                    resetAudio(insertcoinbg);
                     clearInterval(timer);
                     $('#insertCoinModal').modal('hide');
                     if (totalCoinReceived == 0) {
@@ -2588,7 +2630,7 @@ function notifyCoinSlotError(errorCode, delay) {
 
 function notifyCoinSuccess(coin, delay) {
     if (delay === undefined) delay = 5000;
-    safeAudioPlay(coinCount);
+    safeAudioPlay(ensureCoinCountAudio());
 
     $.toast({
         title: "Insert Coin",
