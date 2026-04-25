@@ -91,6 +91,243 @@ var isTimeLeftPollingPaused = false;
 var isInsertCoinPollingPausePending = false;
 var isInsertCoinModalVisible = false;
 var activeTimeLeftRequest = null;
+var hasQueuedCancelTopUpOnUnload = false;
+var lastKnownVoucherSessionState = {
+    isOnline: false,
+    timeRemaining: 0
+};
+var insertCoinSessionTransition = {
+    shouldRestoreLogin: false,
+    request: null,
+    restoreInProgress: false
+};
+
+function updateLastKnownVoucherSessionState(isOnlineValue, timeRemainingValue) {
+    var parsedTimeRemaining = parseInt(timeRemainingValue, 10);
+
+    lastKnownVoucherSessionState.isOnline = !!isOnlineValue;
+    lastKnownVoucherSessionState.timeRemaining = isNaN(parsedTimeRemaining) ? 0 : parsedTimeRemaining;
+}
+
+function resetInsertCoinSessionTransition() {
+    insertCoinSessionTransition.shouldRestoreLogin = false;
+    insertCoinSessionTransition.request = null;
+    insertCoinSessionTransition.restoreInProgress = false;
+}
+
+function getPendingTopUpVendorIpAddress() {
+    var activeVendorIpAddress = vendorIpAddress;
+
+    if (!activeVendorIpAddress && typeof localStorageCompat !== "undefined" && localStorageCompat && typeof localStorageCompat.getItem === "function") {
+        activeVendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
+    }
+
+    return activeVendorIpAddress || "";
+}
+
+function getPendingTopUpVoucherValue() {
+    return resolveVoucherValue(voucher);
+}
+
+function shouldCancelPendingTopUp(forceCancel) {
+    var activeVendorIpAddress = getPendingTopUpVendorIpAddress();
+    var activeVoucher = getPendingTopUpVoucherValue();
+    var parsedTotalCoinReceived = parseInt(totalCoinReceived, 10);
+
+    if (isNaN(parsedTotalCoinReceived)) {
+        parsedTotalCoinReceived = 0;
+    }
+
+    if (!forceCancel && !insertingCoin) {
+        return false;
+    }
+
+    return !!activeVendorIpAddress && !!activeVoucher && parsedTotalCoinReceived === 0;
+}
+
+function buildCancelTopUpRequestData() {
+    return "voucher=" + encodeURIComponent(getPendingTopUpVoucherValue()) + "&mac=" + encodeURIComponent(mac || "");
+}
+
+function cancelPendingTopUp(forceCancel) {
+    var activeVendorIpAddress;
+    var requestData;
+
+    if (!shouldCancelPendingTopUp(forceCancel)) {
+        return false;
+    }
+
+    activeVendorIpAddress = getPendingTopUpVendorIpAddress();
+    requestData = buildCancelTopUpRequestData();
+
+    $.ajax({
+        type: "POST",
+        url: "http://" + activeVendorIpAddress + "/cancelTopUp",
+        data: requestData,
+        success: function () {
+        },
+        error: function () {
+        }
+    });
+
+    return true;
+}
+
+function cancelPendingTopUpOnUnload() {
+    var activeVendorIpAddress;
+    var requestData;
+    var requestUrl;
+    var beaconPayload;
+
+    if (hasQueuedCancelTopUpOnUnload || !shouldCancelPendingTopUp(false)) {
+        return false;
+    }
+
+    activeVendorIpAddress = getPendingTopUpVendorIpAddress();
+    requestData = buildCancelTopUpRequestData();
+    requestUrl = "http://" + activeVendorIpAddress + "/cancelTopUp";
+
+    if (navigator && typeof navigator.sendBeacon === "function") {
+        try {
+            if (typeof Blob === "function") {
+                beaconPayload = new Blob([requestData], {
+                    type: "application/x-www-form-urlencoded; charset=UTF-8"
+                });
+            } else {
+                beaconPayload = requestData;
+            }
+
+            if (navigator.sendBeacon(requestUrl, beaconPayload)) {
+                hasQueuedCancelTopUpOnUnload = true;
+                return true;
+            }
+        } catch (e) {
+        }
+    }
+
+    if (window.fetch) {
+        try {
+            window.fetch(requestUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+                },
+                body: requestData,
+                keepalive: true
+            });
+            hasQueuedCancelTopUpOnUnload = true;
+            return true;
+        } catch (e) {
+        }
+    }
+
+    return false;
+}
+
+function handlePendingTopUpPageHide(evt) {
+    if (evt && evt.persisted) {
+        return;
+    }
+
+    cancelPendingTopUpOnUnload();
+}
+
+window.addEventListener("beforeunload", cancelPendingTopUpOnUnload);
+window.addEventListener("pagehide", handlePendingTopUpPageHide);
+
+function hasInsertCoinReconnectableSession() {
+    var fallbackTimeRemaining = typeof sessiontimeInSecs !== "undefined"
+        ? parseInt(sessiontimeInSecs, 10)
+        : 0;
+    var activeUserData = getActiveUserInfo();
+    var hasRemainingTime = lastKnownVoucherSessionState.timeRemaining > 0;
+    var hasVoucherState = !!voucher
+        || !!getStorageValue("voucherCode")
+        || !!getStorageValue("activeVoucher")
+        || (activeUserData && activeUserData.code);
+
+    if (isNaN(fallbackTimeRemaining)) {
+        fallbackTimeRemaining = 0;
+    }
+
+    if (!hasRemainingTime && fallbackTimeRemaining > 0) {
+        hasRemainingTime = true;
+    }
+
+    if (!hasVoucherState) {
+        return false;
+    }
+
+    return lastKnownVoucherSessionState.isOnline || hasRemainingTime;
+}
+
+function logoutVoucherForInsertCoin() {
+    if (getStorageValue("isPaused") === "1" && !lastKnownVoucherSessionState.isOnline) {
+        return resolveCompatPromise(true);
+    }
+
+    return createCompatPromise(function (resolve) {
+        logoutVoucher(macNoColon, function (success) {
+            if (success) {
+                setStorageValue("isPaused", "1");
+                updateLastKnownVoucherSessionState(false, lastKnownVoucherSessionState.timeRemaining);
+            }
+
+            resolve(!!success);
+        });
+    });
+}
+
+function restoreVoucherSessionAfterInsertCoin() {
+    return createCompatPromise(function (resolve) {
+        loginVoucher(macNoColon, function (success) {
+            if (success) {
+                setStorageValue("isPaused", "0");
+                sessiontimeInSecs = 0;
+                updateLastKnownVoucherSessionState(true, lastKnownVoucherSessionState.timeRemaining);
+                newLogin();
+            } else {
+                setStorageValue("isPaused", "1");
+                newLogin();
+            }
+
+            resolve(!!success);
+        });
+    });
+}
+
+function finalizeInsertCoinModalClose() {
+    if (insertCoinSessionTransition.restoreInProgress) {
+        return;
+    }
+
+    if (!insertCoinSessionTransition.shouldRestoreLogin) {
+        releaseTimeLeftPollingAfterInsertCoin(true);
+        resetInsertCoinSessionTransition();
+        return;
+    }
+
+    insertCoinSessionTransition.restoreInProgress = true;
+
+    (insertCoinSessionTransition.request || resolveCompatPromise(false))
+        .then(function (logoutSucceeded) {
+            if (!logoutSucceeded) {
+                releaseTimeLeftPollingAfterInsertCoin(true);
+                resetInsertCoinSessionTransition();
+                return;
+            }
+
+            return restoreVoucherSessionAfterInsertCoin()
+                .then(function () {
+                    releaseTimeLeftPollingAfterInsertCoin(true);
+                    resetInsertCoinSessionTransition();
+                });
+        })
+        .catch(function () {
+            releaseTimeLeftPollingAfterInsertCoin(true);
+            resetInsertCoinSessionTransition();
+        });
+}
 
 function suspendTimeLeftPolling() {
     isTimeLeftPollingPaused = true;
@@ -1606,9 +1843,9 @@ function renderView() {
 }
 
 function RefreshPortal() {
-    localStorageCompat.clear();
-    voucher = resolveVoucherValue(voucher);
     setTimeout(function () {
+        localStorageCompat.clear();
+        voucher = resolveVoucherValue(voucher);
         window.location.href = "/login?vc=" + voucher;
     }, 1500);
 }
@@ -1699,30 +1936,26 @@ function multiVendoConfiguration(vendo, user) {
 $('#insertCoinModal').on('show.bs.modal', function () {
     isInsertCoinModalVisible = true;
     isInsertCoinPollingPausePending = true;
+    hasQueuedCancelTopUpOnUnload = false;
     suspendTimeLeftPolling();
+    resetInsertCoinSessionTransition();
+
+    if (!hasInsertCoinReconnectableSession()) {
+        return;
+    }
+
+    insertCoinSessionTransition.shouldRestoreLogin = true;
+    insertCoinSessionTransition.request = logoutVoucherForInsertCoin();
 });
 
 $('#insertCoinModal').on('hidden.bs.modal', function () {
-    vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     clearInterval(timer);
     timer = null;
-    insertingCoin = false;
     resetAudio(insertcoinbg);
-    if (totalCoinReceived == 0) {
-        voucher = resolveVoucherValue(voucher);
-        $.ajax({
-            type: "POST",
-            url: "http://" + vendorIpAddress + "/cancelTopUp",
-            data: "voucher=" + voucher + "&mac=" + mac,
-            success: function (data) {
+    cancelPendingTopUp(true);
+    insertingCoin = false;
 
-            }, error: function (jqXHR, exception) {
-
-            }
-        });
-    }
-
-    releaseTimeLeftPollingAfterInsertCoin(true);
+    finalizeInsertCoinModalClose();
 });
 
 $('#eloadModal').on('hidden.bs.modal', function () {
@@ -2160,13 +2393,15 @@ function getTimeLeftInSecs(cb) {
 
             var responseData = parseTimeLeftResponse(data);
             var latestTime = responseData ? parseInt(responseData.sessiontimeInSecs, 10) : NaN;
+            var isCurrentlyConnected = responseData && responseData.status === 'Connected';
             voucher = resolveVoucherValue(responseData.code);
             if (!isNaN(latestTime)) {
                 $("#remainTime").html(secondsToDhms(latestTime));
                 updateRemainTimeExpandedSize();
                 sessiontimeInSecs = latestTime;
             }
-            if (responseData.status === 'Connected') {
+            updateLastKnownVoucherSessionState(isCurrentlyConnected, !isNaN(latestTime) ? latestTime : lastKnownVoucherSessionState.timeRemaining);
+            if (isCurrentlyConnected) {
                 showPauseButton();
             } else {
                 renderView();
@@ -2439,7 +2674,7 @@ function saveVoucherBtnAction() {
                         removeLoader('insertBtn')
                         removeLoader('saveVoucherButton')
                         RefreshPortal();
-                    }, 1000);
+                    }, 1300);
                 }
                 // if (parseInt(rewardPointsBalance) < 0) {
                 // 	document.getElementById('spinRedeemBtn').disabled = true;
@@ -2918,6 +3153,7 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
             var timeRemainingStr = data.timeRemaining;
             var timeRemaining = data.timeRemainingInSeconds;
             var timeExpiry = data.timeExpiry;
+            updateLastKnownVoucherSessionState(isOnline, timeRemaining);
             // $("#voucherCode").html(voucherCode);
 
             if (data.hasFreeInternet) {
@@ -3644,12 +3880,12 @@ function logoutVoucher(macNoColon, cb) {
             }
         })
         .catch(function (error) {
-            $.toast({
-                title: 'Failed',
-                content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
-                type: 'error',
-                delay: 4000
-            });
+            // $.toast({
+            //     title: 'Failed',
+            //     content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
+            //     type: 'error',
+            //     delay: 4000
+            // });
             removeLoader('pauseTimeBtn');
             if (cb) cb(false);
         });
