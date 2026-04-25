@@ -56,6 +56,7 @@ var userInfoRequestPool = {};
 var voucherCode = "";
 var userInfo = null;
 var persistedUserInfoStorageKey = "persistedUserInfo";
+var isUserInfoOfflineFallbackActive = false;
 var announcementMarqueeState = {
     announcement: null,
     track: null,
@@ -369,27 +370,26 @@ function releaseTimeLeftPollingAfterInsertCoin(shouldRefresh) {
 }
 
 function getPersistedUserInfo() {
-    var storedValue = getStorageValue(persistedUserInfoStorageKey);
+    var storedValue = localStorageCompat.getItem(persistedUserInfoStorageKey);
     if (!storedValue) {
         return null;
     }
 
     try {
-        return JSON.parse(decodeURIComponent(storedValue));
+        return JSON.parse(storedValue);
     } catch (e) {
-        removeStorageValue(persistedUserInfoStorageKey);
+        localStorageCompat.removeItem(persistedUserInfoStorageKey);
         return null;
     }
 }
 
 function persistUserInfo(data) {
     if (!data || typeof data !== "object" || data.code == null || data.code === "") {
-        removeStorageValue(persistedUserInfoStorageKey);
         return;
     }
 
     try {
-        setStorageValue(persistedUserInfoStorageKey, encodeURIComponent(JSON.stringify({code: data.code})));
+        localStorageCompat.setItem(persistedUserInfoStorageKey, JSON.stringify(data));
     } catch (e) {
         // Ignore storage failures and continue with the in-memory copy.
     }
@@ -397,7 +397,7 @@ function persistUserInfo(data) {
 
 function clearPersistedUserInfo() {
     userInfo = null;
-    removeStorageValue(persistedUserInfoStorageKey);
+    localStorageCompat.removeItem(persistedUserInfoStorageKey);
 }
 
 function getActiveUserInfo() {
@@ -405,13 +405,73 @@ function getActiveUserInfo() {
         return userInfo;
     }
 
-    var persistedUserInfo = getPersistedUserInfo();
-    if (persistedUserInfo && typeof persistedUserInfo === "object") {
-        userInfo = persistedUserInfo;
-        return userInfo;
+    return null;
+}
+
+function setUserInfoOfflineButtonsDisabled(disabled) {
+    var buttons = document.querySelectorAll("button");
+    var i;
+    var button;
+
+    for (i = 0; i < buttons.length; i++) {
+        button = buttons[i];
+
+        if (disabled) {
+            if (button.disabled) {
+                continue;
+            }
+
+            button.disabled = true;
+            button.setAttribute("data-user-info-offline-disabled", "true");
+            continue;
+        }
+
+        if (button.getAttribute("data-user-info-offline-disabled") === "true") {
+            button.disabled = false;
+            button.removeAttribute("data-user-info-offline-disabled");
+        }
+    }
+}
+
+function setUserInfoOfflineFallbackState(isActive) {
+    var serverStatus = document.getElementById("serverStatus");
+    var previousClassName;
+    var previousText;
+
+    isUserInfoOfflineFallbackActive = !!isActive;
+
+    if (isUserInfoOfflineFallbackActive) {
+        $('.modal').modal('hide');
+        setUserInfoOfflineButtonsDisabled(true);
+
+        if (serverStatus) {
+            if (serverStatus.getAttribute("data-user-info-offline-active") !== "true") {
+                serverStatus.setAttribute("data-user-info-prev-class", serverStatus.className || "");
+                serverStatus.setAttribute("data-user-info-prev-text", serverStatus.textContent || "");
+            }
+
+            serverStatus.setAttribute("data-user-info-offline-active", "true");
+            serverStatus.className = "small py-0 bg-warning text-dark container text-center";
+            serverStatus.textContent = "Warning: Server is currently offline.";
+        }
+
+        return;
     }
 
-    return null;
+    setUserInfoOfflineButtonsDisabled(false);
+
+    if (!serverStatus || serverStatus.getAttribute("data-user-info-offline-active") !== "true") {
+        return;
+    }
+
+    previousClassName = serverStatus.getAttribute("data-user-info-prev-class");
+    previousText = serverStatus.getAttribute("data-user-info-prev-text");
+
+    serverStatus.className = previousClassName || "small py-0 bg-danger text-white container text-center hide";
+    serverStatus.textContent = previousText != null ? previousText : "Offline";
+    serverStatus.removeAttribute("data-user-info-offline-active");
+    serverStatus.removeAttribute("data-user-info-prev-class");
+    serverStatus.removeAttribute("data-user-info-prev-text");
 }
 
 function resolveVoucherValue(fallbackValue) {
@@ -904,7 +964,7 @@ function initValues() {
     //DO NOT UPDATE - START
     macNoColon = replaceAll(mac, ":");
     totalCoinReceived = 0;
-    userInfo = getPersistedUserInfo();
+    userInfo = null;
     voucher = resolveVoucherValue(getStorageValue('activeVoucher'));
     insertingCoin = false;
     topupMode = TOPUP_INTERNET;
@@ -3071,6 +3131,115 @@ function createUserInfoResponsePayload(data, pointsEnabled) {
     };
 }
 
+function normalizeUserInfoResponseData(data) {
+    var normalizedVoucherCode;
+    var normalizedTimeRemaining;
+    var normalizedTimeRemainingStr;
+
+    if (!data || typeof data !== "object") {
+        return null;
+    }
+
+    normalizedVoucherCode = data.code;
+    if (normalizedVoucherCode == null || normalizedVoucherCode === "") {
+        normalizedVoucherCode = data.voucherCode;
+    }
+
+    normalizedTimeRemaining = data.timeRemainingInSeconds;
+    if (normalizedTimeRemaining == null || normalizedTimeRemaining === "") {
+        normalizedTimeRemaining = data.timeRemaining;
+    }
+
+    normalizedTimeRemainingStr = data.timeRemaining;
+    if (normalizedTimeRemainingStr == null || normalizedTimeRemainingStr === "") {
+        normalizedTimeRemainingStr = data.timeRemainingStr;
+    }
+
+    return {
+        isOnline: data.isOnline,
+        isMember: data.isMember,
+        voucherCode: normalizedVoucherCode,
+        totalPoints: data.totalPoints,
+        timeRemaining: normalizedTimeRemaining,
+        timeExpiry: data.timeExpiry,
+        timeRemainingStr: normalizedTimeRemainingStr
+    };
+}
+
+function applyUserInfoState(data, macNoColon, options) {
+    var normalizedData = normalizeUserInfoResponseData(data);
+    var allowFreeInternetActions = !(options && options.allowFreeInternetActions === false);
+    var isPersistedFallback = !!(options && options.isPersistedFallback);
+
+    if (!normalizedData) {
+        return null;
+    }
+
+    setUserInfoOfflineFallbackState(isPersistedFallback);
+    userInfo = data;
+    voucherCode = normalizedData.voucherCode || "";
+    if (voucherCode !== "") {
+        setStorageValue("voucherCode", voucherCode)
+    }
+    voucher = resolveVoucherValue(voucherCode);
+    updateLastKnownVoucherSessionState(normalizedData.isOnline, normalizedData.timeRemaining);
+
+    if (allowFreeInternetActions && data.hasFreeInternet) {
+        $("#freeInternetContainer").removeClass("hide");
+        document.getElementById("claimFreeInternetBtn").onclick = function () {
+            $("#claimFreeInternetModal").modal("show");
+            claimFreeInternet(voucherCode);
+        };
+        document.getElementById("confirmClaimFreeInternetBtn").onclick = function () {
+            addLoader("confirmClaimFreeInternetBtn");
+            claimFreeInternetFetch(macNoColon, function (success) {
+                if (success) {
+                    newLogin();
+                    $("#freeInternetContainer").addClass("hide");
+                    $.toast({
+                        title: "Success",
+                        content: "Free internet claimed successfully!",
+                        type: "success",
+                        delay: 4000
+                    });
+                }
+                removeLoader("confirmClaimFreeInternetBtn");
+            });
+        };
+
+        $("#claimFreeInternetModal").modal("show");
+        $("#freeMinutesLabel").html("You are eligible to claim " + parseInt(data.freeMinutes, 10) + " minutes of internet access");
+    }
+
+    renderHistories(data);
+
+    return normalizedData;
+}
+
+function resolveUserInfoRequestFailure(requestKey, macNoColon, error) {
+    var persistedData;
+    var resolvedData;
+
+    // fetchPortalAPI already performs the configured retries before this handler runs.
+    persistedData = getPersistedUserInfo();
+    if (!persistedData) {
+        resolveUserInfoRequest(requestKey, null, error);
+        return;
+    }
+
+    resolvedData = applyUserInfoState(persistedData, macNoColon, {
+        allowFreeInternetActions: false,
+        isPersistedFallback: true
+    });
+
+    if (!resolvedData) {
+        resolveUserInfoRequest(requestKey, null, error);
+        return;
+    }
+
+    resolveUserInfoRequest(requestKey, resolvedData, null);
+}
+
 function resolveUserInfoRequest(requestKey, data, error) {
     var requestEntry = userInfoRequestPool[requestKey];
     if (!requestEntry) {
@@ -3134,7 +3303,7 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
     fetchPortalAPI("/user-info?" + params, "GET", vendorIpAddress, null)
         .then(function (result) {
             if ((!result) || (!result.success)) {
-                resolveUserInfoRequest(requestKey, null, (result && result.error) || "Server request failed.");
+                resolveUserInfoRequestFailure(requestKey, macNoColon, (result && result.error) || "Server request failed.");
                 return;
             }
             var data = result.data;
@@ -3142,60 +3311,11 @@ function fetchUserInfo(macNoColon, pointsEnabled, cb) {
                 resolveUserInfoRequest(requestKey, null, null);
                 return;
             }
-            userInfo = data;
             persistUserInfo(data);
-            var isOnline = data.isOnline;
-            var isMember = data.isMember;
-            voucherCode = data.code;
-            setStorageValue("voucherCode", voucherCode)
-            voucher = resolveVoucherValue(voucherCode);
-            var totalPoints = data.totalPoints;
-            var timeRemainingStr = data.timeRemaining;
-            var timeRemaining = data.timeRemainingInSeconds;
-            var timeExpiry = data.timeExpiry;
-            updateLastKnownVoucherSessionState(isOnline, timeRemaining);
-            // $("#voucherCode").html(voucherCode);
-
-            if (data.hasFreeInternet) {
-                $("#freeInternetContainer").removeClass("hide");
-                document.getElementById("claimFreeInternetBtn").onclick = function () {
-                    $("#claimFreeInternetModal").modal("show");
-                    claimFreeInternet(voucherCode);
-                };
-                document.getElementById("confirmClaimFreeInternetBtn").onclick = function () {
-                    addLoader("confirmClaimFreeInternetBtn");
-                    claimFreeInternetFetch(macNoColon, function (success) {
-                        if (success) {
-                            newLogin();
-                            $("#freeInternetContainer").addClass("hide");
-                            $.toast({
-                                title: "Success",
-                                content: "Free internet claimed successfully!",
-                                type: "success",
-                                delay: 4000
-                            });
-                        }
-                        removeLoader("confirmClaimFreeInternetBtn");
-                    });
-                };
-
-                $("#claimFreeInternetModal").modal("show");
-                $("#freeMinutesLabel").html("You are eligible to claim " + parseInt(data.freeMinutes) + " minutes of internet access");
-            }
-
-            renderHistories(data);
-            resolveUserInfoRequest(requestKey, {
-                isOnline: isOnline,
-                isMember: isMember,
-                voucherCode: voucherCode,
-                totalPoints: totalPoints,
-                timeRemaining: timeRemaining,
-                timeExpiry: timeExpiry,
-                timeRemainingStr: timeRemainingStr
-            }, null);
+            resolveUserInfoRequest(requestKey, applyUserInfoState(data, macNoColon), null);
         })
         .catch(function (error) {
-            resolveUserInfoRequest(requestKey, null, error);
+            resolveUserInfoRequestFailure(requestKey, macNoColon, error);
         });
 }
 
