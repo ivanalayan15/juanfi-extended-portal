@@ -4765,9 +4765,31 @@ function parseAjaxErrorResponse(jqXHR, textStatus, errorThrown) {
 function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
     return createCompatPromise(function (resolve, reject) {
         var MAX_RETRIES = 3;
+        var MAX_PROCESSING_WAIT_MS = 30000;
         var RETRY_DELAY = 1000; // 1 second
+        var MIN_PROCESSING_RETRY_DELAY = 500;
+        var MAX_PROCESSING_RETRY_DELAY = 3000;
 
-        var attemptCount = 0;
+        var networkAttemptCount = 0;
+        var processingAttemptCount = 0;
+        var processingStartedAt = null;
+
+        var getProcessingRetryDelay = function (jqXHR) {
+            var retryAfter = null;
+            if (jqXHR && typeof jqXHR.getResponseHeader === "function") {
+                retryAfter = jqXHR.getResponseHeader("Retry-After");
+            }
+
+            var retryAfterSeconds = parseFloat(retryAfter);
+            if (!isNaN(retryAfterSeconds) && retryAfterSeconds > 0) {
+                return Math.min(
+                    MAX_PROCESSING_RETRY_DELAY,
+                    Math.max(MIN_PROCESSING_RETRY_DELAY, retryAfterSeconds * 1000)
+                );
+            }
+
+            return RETRY_DELAY;
+        };
 
         var attemptRequest = function () {
             try {
@@ -4784,11 +4806,34 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
                     url: finalUrl,
                     headers: headers,
                     data: params,
-                    success: function (data) {
+                    success: function (data, textStatus, jqXHR) {
                         if (!data) {
                             resolve({
                                 success: false,
                                 error: "Failed to fetch."
+                            });
+                        } else if (data.status === "processing") {
+                            var now = new Date().getTime();
+                            if (processingStartedAt === null) {
+                                processingStartedAt = now;
+                            }
+
+                            var retryDelay = getProcessingRetryDelay(jqXHR);
+                            if ((now - processingStartedAt + retryDelay) <= MAX_PROCESSING_WAIT_MS) {
+                                processingAttemptCount++;
+
+                                console.warn(
+                                    "fetchPortalAPI processing retry " + processingAttemptCount +
+                                    " in " + (retryDelay / 1000) + "s"
+                                );
+
+                                setTimeout(attemptRequest, retryDelay);
+                                return;
+                            }
+
+                            resolve({
+                                success: false,
+                                error: data.message || "Request is still processing. Please retry shortly."
                             });
                         } else {
                             resolve({
@@ -4803,11 +4848,11 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
                             textStatus === "timeout" ||
                             (jqXHR.status >= 500 && jqXHR.status < 600);
 
-                        if (isNetworkError && attemptCount < MAX_RETRIES) {
-                            attemptCount++;
+                        if (isNetworkError && networkAttemptCount < MAX_RETRIES) {
+                            networkAttemptCount++;
 
                             console.warn(
-                                "fetchPortalAPI network retry " + attemptCount + "/" + MAX_RETRIES + " in 1s"
+                                "fetchPortalAPI network retry " + networkAttemptCount + "/" + MAX_RETRIES + " in 1s"
                             );
 
                             setTimeout(attemptRequest, RETRY_DELAY);
