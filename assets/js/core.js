@@ -56,6 +56,7 @@ var userInfoRequestPool = {};
 var voucherCode = "";
 var userInfo = null;
 var persistedUserInfoStorageKey = "persistedUserInfo";
+var userIpHeaderName = "X-USER-IP";
 var isUserInfoOfflineFallbackActive = false;
 var announcementMarqueeState = {
     announcement: null,
@@ -131,6 +132,10 @@ function getPendingTopUpVoucherValue() {
 }
 
 function shouldCancelPendingTopUp(forceCancel) {
+    if (donePayingFinalizeSucceeded) {
+        return false;
+    }
+
     var activeVendorIpAddress = getPendingTopUpVendorIpAddress();
     var activeVoucher = getPendingTopUpVoucherValue();
     var parsedTotalCoinReceived = parseInt(totalCoinReceived, 10);
@@ -932,6 +937,72 @@ function getRootUrl() {
     }
 
     return "/";
+}
+
+function getCaptivePortalUserIpAddress() {
+    var clientIp = "";
+
+    if (typeof uIp !== "undefined" && uIp != null) {
+        clientIp = String(uIp);
+    } else if (window.uIp != null) {
+        clientIp = String(window.uIp);
+    }
+
+    clientIp = clientIp.replace(/^\s+|\s+$/g, "");
+
+    if (clientIp === "" || clientIp.indexOf("$(") !== -1) {
+        return "";
+    }
+
+    if (!/^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3}$/.test(clientIp)) {
+        return "";
+    }
+
+    return clientIp;
+}
+
+function copyPortalRequestHeaders(targetHeaders, sourceHeaders) {
+    var key;
+
+    if (!sourceHeaders) {
+        return;
+    }
+
+    for (key in sourceHeaders) {
+        if (Object.prototype.hasOwnProperty.call(sourceHeaders, key)) {
+            targetHeaders[key] = sourceHeaders[key];
+        }
+    }
+}
+
+function hasPortalRequestHeaders(headers) {
+    var key;
+
+    for (key in headers) {
+        if (Object.prototype.hasOwnProperty.call(headers, key)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function buildPortalRequestHeaders(vendorIpAddress, extraHeaders) {
+    var headers = {};
+    var userIpAddress;
+
+    if (vendorIpAddress) {
+        headers["X-IP"] = vendorIpAddress;
+    }
+
+    copyPortalRequestHeaders(headers, extraHeaders);
+
+    userIpAddress = getCaptivePortalUserIpAddress();
+    if (userIpAddress) {
+        headers[userIpHeaderName] = userIpAddress;
+    }
+
+    return hasPortalRequestHeaders(headers) ? headers : undefined;
 }
 
 function isGamesPageContext() {
@@ -2216,6 +2287,64 @@ function chargingBtnAction() {
 }
 
 var timer = null;
+var donePayingRequestInFlight = false;
+var donePayingFinalizeSucceeded = false;
+var donePayingSlowNoticeTimer = null;
+var DONE_PAYING_TIMEOUT_MS = 70000;
+
+function setDonePayingNotice(message) {
+    $("#noticeDiv").attr('style', 'display: block');
+    $("#noticeText").text(message);
+}
+
+function clearDonePayingNotice() {
+    if (donePayingSlowNoticeTimer) {
+        clearTimeout(donePayingSlowNoticeTimer);
+        donePayingSlowNoticeTimer = null;
+    }
+    $("#noticeDiv").attr('style', 'display: none');
+}
+
+function beginDonePayingNotice() {
+    setDonePayingNotice("Finalizing payment, please wait...");
+    donePayingSlowNoticeTimer = setTimeout(function () {
+        setDonePayingNotice("Still finalizing. This can take up to a minute on a slow connection.");
+    }, 10000);
+}
+
+function resetDonePayingButton() {
+    donePayingRequestInFlight = false;
+    clearDonePayingNotice();
+    removeLoader('saveVoucherButton');
+    if (totalCoinReceived > 0) {
+        $("#saveVoucherButton").prop('disabled', false);
+        showDoneButton();
+        $("#cncl").prop('disabled', true);
+    } else {
+        $("#saveVoucherButton").prop('disabled', true);
+        hideDoneButton();
+        $("#cncl").prop('disabled', false);
+    }
+}
+
+function getActiveInsertCoinVoucher() {
+    var candidates = [
+        voucher,
+        getStorageValue('activeVoucher'),
+        $("#codeGenerated").text(),
+        voucherCode,
+        $("#voucherInput").val()
+    ];
+
+    for (var i = 0; i < candidates.length; i++) {
+        if (candidates[i] != null && String(candidates[i]).trim() !== "") {
+            voucher = String(candidates[i]).trim();
+            return voucher;
+        }
+    }
+
+    return "";
+}
 
 function getPromoRatesStorageKey() {
     if (vendorIpAddress == null) {
@@ -2329,6 +2458,7 @@ function insertBtnAction() {
     removeStorageValue("ignoreSaveCode");
     setStorageValue('insertCoinRefreshed', "0");
     clearPersistedPromoRates();
+    donePayingFinalizeSucceeded = false;
     $("#progressDiv").attr('style', 'width: 100%');
     $("#saveVoucherButton").prop('disabled', true);
     $("#cncl").prop('disabled', false);
@@ -2596,6 +2726,7 @@ function onRateTypeChange(evt) {
 function addChargerTime(port, portName, retryCount) {
     vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     topupMode = TOPUP_CHARGER;
+    donePayingFinalizeSucceeded = false;
     $.ajax({
         type: "POST",
         url: "http://" + vendorIpAddress + "/topUp",
@@ -2690,14 +2821,47 @@ function callTopupAPI(retryCount) {
 }
 
 function saveVoucherBtnAction() {
+    if (donePayingRequestInFlight) {
+        return false;
+    }
+
     vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
-    addLoader('saveVoucherButton')
-    voucher = resolveVoucherValue(voucher);
+    var voucherToUse = getActiveInsertCoinVoucher();
+    var coinsInserted = parseInt(totalCoinReceived, 10);
+
+    if (isNaN(coinsInserted)) {
+        coinsInserted = 0;
+    }
+
+    if (!vendorIpAddress) {
+        $.toast({
+            title: 'Coin Error',
+            content: 'Cannot finalize payment because the vendo address is missing. Please refresh and try again.',
+            type: 'error',
+            delay: 5000
+        });
+        return false;
+    }
+
+    if (!voucherToUse) {
+        $.toast({
+            title: 'Coin Error',
+            content: 'Cannot finalize payment because the generated voucher is missing. Please refresh and try again.',
+            type: 'error',
+            delay: 5000
+        });
+        return false;
+    }
+
+    donePayingRequestInFlight = true;
+    donePayingFinalizeSucceeded = false;
+    voucher = voucherToUse;
+    addLoader('saveVoucherButton');
+    beginDonePayingNotice();
 
     if (topupMode == TOPUP_INTERNET) {
-        setStorageValue('activeVoucher', voucher);
-        removeStorageValue("totalCoinReceived");
-        $('#voucherInput').val(voucher);
+        setStorageValue('activeVoucher', voucherToUse);
+        $('#voucherInput').val(voucherToUse);
     }
 
     clearInterval(timer);
@@ -2706,9 +2870,15 @@ function saveVoucherBtnAction() {
     $.ajax({
         type: "POST",
         url: "http://" + vendorIpAddress + "/useVoucher",
-        data: "voucher=" + voucherCode,
+        data: "voucher=" + encodeURIComponent(voucherToUse),
+        timeout: DONE_PAYING_TIMEOUT_MS,
         success: function (data) {
-            if (data.status == "true") {
+            if (data && data.status == "true") {
+                donePayingFinalizeSucceeded = true;
+                clearDonePayingNotice();
+                removeStorageValue("totalCoinReceived");
+                totalCoinReceived = 0;
+
                 if (topupMode == TOPUP_CHARGER) {
                     populateChargingStations();
                     $.toast({
@@ -2717,9 +2887,10 @@ function saveVoucherBtnAction() {
                         type: 'success',
                         delay: 3000
                     });
-
+                    resetDonePayingButton();
+                    $('#insertCoinModal').modal('hide');
                 } else {
-                    setStorageValue(voucher + "tempValidity", data.validity);
+                    setStorageValue(voucherToUse + "tempValidity", data.validity);
 
                     $.toast({
                         title: 'Success',
@@ -2727,12 +2898,15 @@ function saveVoucherBtnAction() {
                         type: 'success',
                         delay: 3000
                     });
-                    saveLogs(totalCoinReceived + " coins successfully inserted.");
+                    saveLogs(coinsInserted + " coins successfully inserted.");
 
                     setTimeout(function () {
+                        voucher = voucherToUse;
+                        clearPersistedUserInfo();
                         newLogin();
-                        removeLoader('insertBtn')
-                        removeLoader('saveVoucherButton')
+                        donePayingRequestInFlight = false;
+                        removeLoader('insertBtn');
+                        removeLoader('saveVoucherButton');
                         RefreshPortal();
                     }, 1300);
                 }
@@ -2741,26 +2915,46 @@ function saveVoucherBtnAction() {
                 // 	document.getElementById('redeemPtsBtn').disabled = true;
                 // }
             } else {
-                notifyCoinSlotError(data.errorCode);
+                if (data && data.errorCode) {
+                    notifyCoinSlotError(data.errorCode);
+                } else {
+                    $.toast({
+                        title: 'Coin Error',
+                        content: 'Payment was not finalized. Please tap DONE PAYING again.',
+                        type: 'error',
+                        delay: 5000
+                    });
+                }
+                resetDonePayingButton();
             }
-            totalCoinReceived = 0;
         }, error: function (jqXHR, exception) {
 
             if (totalCoinReceived > 0) {
                 saveLogs("Insert coin error: " + ((exception && exception.message) || exception || "Unknown error"));
                 $.toast({
                     title: 'Warning',
-                    content: 'Connect/Login failed, however coin has been process, please manually connect using this voucher: ' + voucher,
+                    content: exception === "timeout"
+                        ? 'Finalizing payment is taking longer than expected. If you are not connected yet, tap DONE PAYING again.'
+                        : 'Connect/Login failed, but the coin was already processed. Tap DONE PAYING again or manually connect using this voucher: ' + voucherToUse,
                     type: 'info',
                     delay: 8000
                 });
                 setTimeout(function () {
                     newLogin();
                 }, 3000);
+            } else {
+                $.toast({
+                    title: 'Coin Error',
+                    content: 'Payment was not finalized. Please try inserting coins again.',
+                    type: 'error',
+                    delay: 5000
+                });
             }
+            resetDonePayingButton();
         }
     });
 
+    return false;
 }
 
 function checkCoin() {
@@ -4796,15 +4990,11 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
                 var timestamp = new Date().getTime();
                 var separator = apiUrl.indexOf("?") !== -1 ? "&" : "?";
                 var finalUrl = juanfiExtendedServerUrl + apiUrl + separator + "t=" + timestamp;
-
-                var headers = vendorIpAddress
-                    ? {'X-IP': vendorIpAddress}
-                    : undefined;
+                var optionHeaders = null;
 
                 var ajaxOptions = {
                     type: type,
                     url: finalUrl,
-                    headers: headers,
                     data: params,
                     success: function (data, textStatus, jqXHR) {
                         if (!data) {
@@ -4867,10 +5057,16 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
                 if (options) {
                     for (var opt in options) {
                         if (options.hasOwnProperty(opt)) {
-                            ajaxOptions[opt] = options[opt];
+                            if (opt === "headers") {
+                                optionHeaders = options[opt];
+                            } else {
+                                ajaxOptions[opt] = options[opt];
+                            }
                         }
                     }
                 }
+
+                ajaxOptions.headers = buildPortalRequestHeaders(vendorIpAddress, optionHeaders);
 
                 $.ajax(ajaxOptions);
             } catch (e) {
