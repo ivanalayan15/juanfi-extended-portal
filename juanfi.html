@@ -497,14 +497,45 @@
                     </div>
                     <div class="modal-body d-flex flex-column gap-2">
                         <div id="checkout-container"></div>
-                        <input type="text" required class="form-control w-100" id="inputMobileNumber"
-                            placeholder="Mobile Number">
-                        <div id="mobileError" class="invalid-feedback">
-                            Please enter a valid 11-digit mobile number.
+                        <div id="wifreeMobileNumberGroup">
+                            <input type="text" class="form-control w-100" id="inputMobileNumber"
+                                placeholder="Mobile Number">
+                            <div id="mobileError" class="invalid-feedback">
+                                Please enter a valid 11-digit mobile number.
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" id="payNowBtn" class="btn btn-success w-100">PAY NOW</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="portalPaymentCheckoutModal" tabindex="-1" role="dialog"
+            aria-labelledby="portalPaymentCheckoutModalLabel" aria-hidden="true"
+            data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered portal-payment-dialog" role="document">
+                <div class="modal-content portal-payment-content">
+                    <div class="modal-header">
+                        <div>
+                            <h5 class="modal-title" id="portalPaymentCheckoutModalLabel">Complete Payment</h5>
+                            <small class="text-secondary">Keep this window open while payment is confirmed.</small>
+                        </div>
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" aria-label="Close payment checkout">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body portal-payment-body">
+                        <div class="portal-payment-frame-wrap">
+                            <iframe id="portalPaymentCheckoutFrame" class="portal-payment-frame"
+                                title="Secure E-Wallet payment checkout" frameborder="0"></iframe>
+                        </div>
+                        <div class="portal-payment-footer-note">
+                            <span id="portalPaymentCheckoutStatus" role="status" aria-live="polite">Loading secure checkout...</span>
+                            <a id="portalPaymentExternalLink" class="btn btn-outline-primary btn-sm"
+                                target="_blank" rel="noopener">Open payment page</a>
+                        </div>
                     </div>
                 </div>
             </div>

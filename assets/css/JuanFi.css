@@ -602,6 +602,80 @@ body.portal-body .toast-container > .toast > .toast-header .close span {
 	text-shadow: none !important;
 }
 
+body.portal-body .portal-payment-dialog {
+    width: auto;
+    max-width: 760px;
+    margin-left: 12px;
+    margin-right: 12px;
+}
+
+body.portal-body .portal-payment-content {
+    overflow: hidden;
+}
+
+body.portal-body .portal-payment-body {
+    padding: 0;
+    background: #f5f7fb;
+}
+
+body.portal-body .portal-payment-frame-wrap {
+    width: 100%;
+    height: 70vh;
+    min-height: 420px;
+    background: #fff;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+body.portal-body .portal-payment-frame {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 420px;
+    border: 0;
+    background: #fff;
+}
+
+body.portal-body .portal-payment-footer-note {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    color: #60708f;
+    background: #fff;
+    border-top: 1px solid #e2e7f0;
+}
+
+@media (max-width: 575.98px) {
+    body.portal-body .portal-payment-dialog {
+        margin: 6px;
+    }
+
+    body.portal-body .portal-payment-frame-wrap,
+    body.portal-body .portal-payment-frame {
+        height: 68vh;
+        min-height: 360px;
+    }
+
+    body.portal-body .portal-payment-footer-note {
+        display: block;
+    }
+
+    body.portal-body .portal-payment-footer-note .btn {
+        display: block;
+        width: 100%;
+        margin-top: 8px;
+    }
+}
+
 body.portal-body .toast-container > .toast > .toast-body {
 	background: linear-gradient(180deg, rgba(16, 26, 47, 0.97) 0%, rgba(10, 18, 34, 0.98) 100%) !important;
 	color: #cad6ef !important;
