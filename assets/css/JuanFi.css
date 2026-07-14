@@ -702,29 +702,6 @@ body.portal-body .toast-container > .toast > .toast-body {
 	height: 1px !important;
 }
 
-#announcement {
-	overflow: hidden;
-	white-space: nowrap;
-}
-
-.marquee {
-	overflow: hidden;
-	position: relative;
-	touch-action: pan-y;
-	user-select: none;
-	-webkit-user-select: none;
-}
-
-.marquee span {
-	display: inline-block;
-	will-change: transform;
-	transform: translateX(0);
-}
-
-.marquee.is-dragging {
-	cursor: grabbing;
-}
-
 /* scoped portal refresh */
 body.portal-body {
 	background-color: #07111f;
@@ -1136,18 +1113,32 @@ body.portal-body #serverStatus {
 	text-transform: uppercase;
 }
 
-body.portal-body #announcement {
-	background: linear-gradient(135deg, rgba(26, 108, 166, 0.92) 0%, rgba(17, 62, 102, 0.96) 100%) !important;
-	border-color: rgba(126, 196, 255, 0.24);
-	color: #f3f9ff !important;
-	padding: 12px 16px;
+body.portal-body .announcement-fab {
+	position: fixed;
+	right: 1.25rem;
+	bottom: 1.25rem;
+	z-index: 1040;
+	width: 3.75rem;
+	height: 3.75rem;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: #f1c40f;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
-body.portal-body #announcementText {
+body.portal-body .announcement-fab img {
+	width: 2.5rem;
+	height: 2.5rem;
+	object-fit: contain;
+}
+
+body.portal-body .announcement-text {
+	white-space: pre-wrap;
+	word-break: break-word;
 	color: #f3f9ff;
-	font-size: 0.92rem;
-	font-weight: 700;
-	letter-spacing: 0.02em;
+	font-size: 1rem;
+	line-height: 1.6;
 }
 
 body.portal-body #rewardDtls,
@@ -1295,4 +1286,18 @@ body.portal-body #memberDashboardContainer p {
 		max-height: 95px;
 		font-size: 0.78rem;
 	}
+}
+/* Purchase cards use provider-neutral QRPh branding while payment routing remains unchanged. */
+.portal-payment-brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	font-weight: 700;
+}
+
+.portal-payment-brand img {
+	display: block;
+	width: 72px;
+	height: 28px;
+	object-fit: contain;
 }
