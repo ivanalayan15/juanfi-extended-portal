@@ -1,4 +1,4 @@
-var errorCodeMap = [];
+﻿var errorCodeMap = [];
 errorCodeMap['coins.wait.expired'] = 'Coin slot expired';
 errorCodeMap['coin.not.inserted'] = 'Coin not inserted';
 errorCodeMap['coinslot.cancelled'] = 'Coinslot was cancelled';
@@ -12,17 +12,17 @@ errorCodeMap['convertVoucher.invalid'] = 'Invalid voucher code';
 errorCodeMap['load.not.enough'] = 'Machine has insufficient load to cater your request';
 errorCodeMap['eload.failed'] = 'Sorry, Eload processing is failed';
 
-//DO NOT UPDATE - START
+
 var initLoad = false;
-// Tracks the first-paint shell independently from initLoad. initLoad remains reserved
-// for a successfully hydrated user-info state so failed requests can retry normally.
+
+
 var portalShellShown = false;
 var insertcoinbg = null;
 var coinCount = null;
 var TOPUP_CHARGER = "CHARGER";
 var TOPUP_INTERNET = "INTERNET";
 var TOPUP_ELOAD = "ELOAD";
-var juanfiExtendedServerUrl = ""; //do not change value of this line
+var juanfiExtendedServerUrl = "";
 var totalCoinReceived;
 var voucher;
 var insertingCoin;
@@ -35,7 +35,7 @@ var redeemRatioValue;
 var selectedVendoDtls = {};
 var spinEventsCreated = false;
 var rewardPointsBalance = 0;
-//DO NOT UPDATE - END
+
 
 var juanfiExtendedIp = "";
 var isMultiVendo;
@@ -68,11 +68,13 @@ var portalPaymentPollingState = {
     pollingEnabled: false,
     reference: "",
     voucherCode: "",
+    voucherPlanId: "",
     startedAt: 0,
     generation: 0
 };
 var PORTAL_PAYMENT_POLL_DELAY_MS = 3000;
 var PORTAL_PAYMENT_POLL_TIMEOUT_MS = 600000;
+var portalPaymentRequestStoragePrefix = "paymongoPortalRequest:";
 var announcementMarqueeState = {
     announcement: null,
     track: null,
@@ -95,11 +97,21 @@ var announcementMarqueeState = {
 
 function normalizeWalletChannel(value) {
     var channel = (value || "").toString().replace(/^\s+|\s+$/g, "").toUpperCase();
-    return channel === "EXTENDED" ? "EXTENDED" : "WIFREE";
+    if (channel === "EXTENDED") return "EXTENDED";
+    if (channel === "PAYMONGO") return "PAYMONGO";
+    return "WIFREE";
 }
 
 function isExtendedWalletChannel() {
     return normalizeWalletChannel(walletChannel) === "EXTENDED";
+}
+
+function isPayMongoWalletChannel() {
+    return normalizeWalletChannel(walletChannel) === "PAYMONGO";
+}
+
+function isPortalWalletChannel() {
+    return isExtendedWalletChannel() || isPayMongoWalletChannel();
 }
 
 var requestCompatAnimationFrame = window.requestAnimationFrame ? function (callback) {
@@ -421,7 +433,7 @@ function persistUserInfo(data) {
     try {
         localStorageCompat.setItem(persistedUserInfoStorageKey, JSON.stringify(data));
     } catch (e) {
-        // Ignore storage failures and continue with the in-memory copy.
+
     }
 }
 
@@ -1057,7 +1069,7 @@ try {
 }
 
 function initValues() {
-    //DO NOT UPDATE - START
+
     macNoColon = replaceAll(mac, ":");
     totalCoinReceived = 0;
     userInfo = null;
@@ -1068,72 +1080,72 @@ function initValues() {
     rateType = "1";
     autologin = false;
     voucherToConvert = "";
-    redeemRatioValue = 1; //do not change value of this line to avoid conflict/misrepresentation of UI to API data
-    pointsEnabled = false;//enable reward points by checking if points percentage is configured in admin
-    wheelConfig = [];//values displayed on spin the wheel
+    redeemRatioValue = 1;
+    pointsEnabled = false;
+    wheelConfig = [];
     selectedVendoDtls = {};
     rewardPointsBalance = 0;
-    //DO NOT UPDATE - END
 
-    //DEFAULT VALUES (WILL BE USED IF CONFIG API DOES NOT WORK) - START
-    //this is to enable multi vendo setup, set to true when multi vendo is supported
+
+
+
     isMultiVendo = true;
-    // 0 = traditional (client choose a vendo) , 1 = auto select vendo base on hotspot address, 2 = interface name ( this will preserve one hotspot server ip only)
+
     multiVendoOption = 0;
 
-    //list here all node mcu address for multi vendo setup
+
     multiVendoAddresses = [
         {
-            vendoName: "Vendo 1 - ESP32 Wireless", //change accordingly to your vendo name
-            vendoIp: "10.10.10.252", //change accordingly to your vendo ip
-            chargingEnable: true,  //change true if you want to enable charging station
-            eloadEnable: true, //change true if you want to enable eloading station
-            hotspotAddress: "10.10.10.1", // use for multi vendo option = 1, means your vendo map to this hotspot and autoselect it when client connected to this
-            interfaceName: "vlan11-hotspot1" // hotspot interface name preser
+            vendoName: "Vendo 1 - ESP32 Wireless",
+            vendoIp: "10.10.10.252",
+            chargingEnable: true,
+            eloadEnable: true,
+            hotspotAddress: "10.10.10.1",
+            interfaceName: "vlan11-hotspot1"
         },
         {
-            vendoName: "Vendo 2 - ESP8622 Wireless", //change accordingly to your vendo name
-            vendoIp: "10.10.10.251", //change accordingly to your vendo ip
-            chargingEnable: false,  //change true if you want to enable charging station
-            eloadEnable: true //change true if you want to enable eloading station
+            vendoName: "Vendo 2 - ESP8622 Wireless",
+            vendoIp: "10.10.10.251",
+            chargingEnable: false,
+            eloadEnable: true
         },
         {
-            vendoName: "Vendo 3 - ESP8622 LAN", //change accordingly to your vendo name
-            vendoIp: "10.10.10.253", //change accordingly to your vendo ip
-            chargingEnable: false,  //change true if you want to enable charging station
-            eloadEnable: false //change true if you want to enable eloading station
+            vendoName: "Vendo 3 - ESP8622 LAN",
+            vendoIp: "10.10.10.253",
+            chargingEnable: false,
+            eloadEnable: false
         },
         {
-            vendoName: "Vendo 4 - ESP32 LAN", //change accordingly to your vendo name
-            vendoIp: "10.10.10.254", //change accordingly to your vendo ip
-            chargingEnable: true,  //change true if you want to enable charging station
-            eloadEnable: false //change true if you want to enable eloading station
+            vendoName: "Vendo 4 - ESP32 LAN",
+            vendoIp: "10.10.10.254",
+            chargingEnable: true,
+            eloadEnable: false
         }
     ];
 
-    //0 means its login by username only, 1 = means if login by username + password
-    loginOption = 0; //replace 1 if you want login voucher by username + password
 
-    dataRateOption = false; //replace true if you enable data rates
-    //put here the default selected address
+    loginOption = 0;
+
+    dataRateOption = false;
+
     vendorIpAddress = "10.10.10.252";
 
-    chargingEnable = false; //replace true if you enable charging, this can be override if multivendo setup
+    chargingEnable = false;
 
-    eloadEnable = false; //replace true if you enable eload, this can be override if multivendo setup
+    eloadEnable = false;
 
-    showPauseTime = true; //hide pause time / logout true = you want to show pause / logout button
+    showPauseTime = true;
 
-    showMemberLogin = true; //enable member login, true = if you want to enable member login
+    showMemberLogin = true;
 
-    showExtendTimeButton = true; //enable extend time button for customers
+    showExtendTimeButton = true;
 
-    disableVoucherInput = false; //disable voucher input
+    disableVoucherInput = false;
 
-    macAsVoucherCode = false; //enable mac address as voucher code
+    macAsVoucherCode = false;
 
-    qrCodeVoucherPurchase = false; //enable voucher purchase via QR Code (epayment)
-    //DEFAULT VALUES (WILL BE USED IF CONFIG API DOES NOT WORK) - END
+    qrCodeVoucherPurchase = false;
+
 }
 
 $(document).ready(function () {
@@ -1568,9 +1580,9 @@ bindEvent(window, "resize", function () {
 function renderView() {
     $("#voucherInput").val("");
     $('.modal').modal('hide');
-    // Keep the vendo selector out of the first paint while user-info is loading.
-    // It is revealed only after a resolved user-info response confirms that the
-    // configurable multi-vendo selector applies.
+
+
+
     $("#vendoSelectDiv").addClass("hide");
     $("#ipInfo").html(uIp);
     $("#macInfo").html(mac);
@@ -1611,7 +1623,7 @@ function renderView() {
         }
         localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
         $("#announcementText").html(announcementText || "No announcements at this time.");
-        // handle the data if needed
+
         $("#saveVoucherButton").prop('disabled', true);
         hideDoneButton();
         $("#cncl").prop('disabled', false);
@@ -1656,13 +1668,13 @@ function renderView() {
         }
 
 
-        // if (data.hideRates) {
-        //     $("#rateTable").addClass("hide");
-        //     $("#btnPromoRates").addClass("hide");
-        // } else {
-        //     $("#rateTable").removeClass("hide");
-        //     $("#btnPromoRates").removeClass("hide");
-        // }
+
+
+
+
+
+
+
 
         if (!chargingEnable) {
             if (isMultiVendo) {
@@ -1691,10 +1703,10 @@ function renderView() {
         if (ignoreSaveCode == null || ignoreSaveCode == "0") {
             ignoreSaveCode = "0";
         }
-        // The portal shell is useful immediately after configuration is loaded.  User info
-        // still hydrates the exact same callback below, but it no longer blocks the first
-        // paint while RouterOS/API responds. Keep hydration state separate so a failed
-        // request can retry without showing the shell repeatedly.
+
+
+
+
         if (!portalShellShown) {
             $('#loaderDiv').addClass("hide");
             var containerDiv = $('#containerDiv');
@@ -1771,8 +1783,8 @@ function renderView() {
                         multiVendoConfiguration(dtls, userData);
                     }
                 } else {
-                    // Retries/newLogin can re-enter this callback; rebuild the
-                    // options instead of accumulating duplicates.
+
+
                     $("#vendoSelected").empty();
                     var selectedVendo = getStorageValue('selectedVendo');
                     if (selectedVendo === "null") {
@@ -1841,16 +1853,16 @@ function renderView() {
                 $("#rewardDtls").removeClass("hide");
                 $("#rewardDtlsBtn").removeClass("hide");
 
-                // if (parseInt(rewardPointsBalance) < 0) {
-                // 	document.getElementById('spinRedeemBtn').disabled = true;
-                // 	document.getElementById('redeemPtsBtn').disabled = true;
-                // }
+
+
+
+
             } else {
                 $("#rewardDtls").addClass("hide");
                 $("#rewardDtlsBtn").addClass("hide");
             }
 
-            // $("#voucherCode").html(voucherCode);
+
             isPaused = (!isOnline);
             var time = parseInt(timeRemaining, 10);
             if (isNaN(time)) {
@@ -1919,7 +1931,7 @@ function renderView() {
                 }, 1000);
 
             } else {
-                //$("#remainTime").html(timeRemainingStr);
+
                 if (timeRemaining > 0 && !isMember) {
                     isPaused = true;
                     $("#remainingTimeWrapper").removeClass("hide");
@@ -1969,10 +1981,10 @@ function renderView() {
                 $("#wifreeBtn").addClass("hide");
             }
 
-            // Initial call to display immediately
+
             updateDeviceDateTime();
 
-            // Update every second (1000 milliseconds)
+
             setInterval(updateDeviceDateTime, 1000);
 
             if (isMember) {
@@ -1985,16 +1997,16 @@ function renderView() {
                 $("#insertBtnContainer").addClass("hide");
                 $("#vendoSelectDiv").addClass("hide");
 
-                // Keep the member dashboard and hide everything else inside tabs
+
                 $("#myTab").addClass("hide");
                 $("#myTabContent").addClass("hide");
                 $("#memberDashboardContainer").removeClass("hide");
 
-                // Show the voucher code or some identifier in the Dashboard
+
                 var displayUsername = (userData && userData.username) ? userData.username : voucherCode;
                 $("#memberUI_Username").text(displayUsername);
 
-                $("#refreshBtn").addClass("hide"); // Hide default refresh
+                $("#refreshBtn").addClass("hide");
 
                 $("#historyTab").addClass("hide");
                 $("#rewardDtlsBtn").addClass("hide");
@@ -2031,8 +2043,8 @@ function renderView() {
                 }
             }
 
-            // Mark the initial load only after user-info succeeded (including persisted
-            // fallback). This preserves the existing retry/newLogin semantics.
+
+
             initLoad = true;
             });
         }, 0);
@@ -2976,10 +2988,10 @@ function saveVoucherBtnAction() {
                         RefreshPortal();
                     }, 1300);
                 }
-                // if (parseInt(rewardPointsBalance) < 0) {
-                // 	document.getElementById('spinRedeemBtn').disabled = true;
-                // 	document.getElementById('redeemPtsBtn').disabled = true;
-                // }
+
+
+
+
             } else {
                 if (data && data.errorCode) {
                     notifyCoinSlotError(data.errorCode);
@@ -3103,12 +3115,12 @@ function checkCoin() {
                         $('#totalCoin').html(data.totalCoin);
                         $('#totalData').html(data.data);
                         $('#totalTime').html(secondsToDhms(parseInt(data.timeAdded)));
-                        //$( "#remainingTime" ).html(remainTime);
+
                         $("#progressDiv").attr('style', 'width: ' + percent + '%')
                     }
 
                 } else if (data.errorCode == "coinslot.busy") {
-                    //when manually cleared the button
+
                     resetAudio(insertcoinbg);
                     clearInterval(timer);
                     $('#insertCoinModal').modal('hide');
@@ -3348,10 +3360,10 @@ function checkInternet() {
 function getDeviceOS() {
     var userAgent = window.navigator.userAgent;
 
-    // 1. Safety check: handle null/undefined/empty
+
     if (!userAgent) return 'Unknown';
 
-    // 2. Detection Logic
+
     if (/android/i.test(userAgent)) {
         return 'Android';
     }
@@ -3480,7 +3492,7 @@ function resolveUserInfoRequestFailure(requestKey, macNoColon, error) {
     var persistedData;
     var resolvedData;
 
-    // fetchPortalAPI already performs the configured retries before this handler runs.
+
     persistedData = getPersistedUserInfo();
     if (!persistedData) {
         resolveUserInfoRequest(requestKey, null, error);
@@ -3630,15 +3642,26 @@ function isSafePortalPaymentUrl(url) {
     return link.protocol === "https:" || link.protocol === "http:";
 }
 
+function isSafePortalPaymentQr(value) {
+    return typeof value === "string" &&
+        value.length <= 1000000 &&
+        (/^https:\/\
+            /^data:image\/(?:png|svg\+xml);base64,[A-Za-z0-9+/=\r\n]+$/i.test(value));
+}
+
 function isPortalPaymentDialogVisibleWithFrame() {
     var modal = document.getElementById("portalPaymentCheckoutModal");
     var frame = document.getElementById("portalPaymentCheckoutFrame");
-    return !!(modal && frame && hasClassCompat(modal, "show") && frame.getAttribute("src"));
+    var qr = document.getElementById("portalPaymentQrImage");
+    return !!(modal && hasClassCompat(modal, "show") &&
+        ((frame && frame.getAttribute("src")) || (qr && qr.getAttribute("src"))));
 }
 
 function stopPortalPaymentStatusPolling(clearCheckout) {
     var frame;
     var externalLink;
+    var qrImage;
+    var qrWrap;
 
     portalPaymentPollingState.generation++;
     portalPaymentPollingState.inFlight = false;
@@ -3650,12 +3673,17 @@ function stopPortalPaymentStatusPolling(clearCheckout) {
     if (clearCheckout) {
         portalPaymentPollingState.reference = "";
         portalPaymentPollingState.voucherCode = "";
+        portalPaymentPollingState.voucherPlanId = "";
         portalPaymentPollingState.pollingEnabled = false;
         portalPaymentPollingState.startedAt = 0;
         frame = document.getElementById("portalPaymentCheckoutFrame");
         externalLink = document.getElementById("portalPaymentExternalLink");
+        qrImage = document.getElementById("portalPaymentQrImage");
+        qrWrap = document.getElementById("portalPaymentQrWrap");
         if (frame) frame.removeAttribute("src");
         if (externalLink) externalLink.removeAttribute("href");
+        if (qrImage) qrImage.removeAttribute("src");
+        if (qrWrap) addClassCompat(qrWrap, "hide");
     }
 }
 
@@ -3673,7 +3701,7 @@ function schedulePortalPaymentStatusPoll(generation) {
 function refreshPortalUserInfoAfterPayment() {
     if (!macNoColon) return;
     fetchUserInfo(macNoColon, pointsEnabled, function () {
-        // applyUserInfoState already refreshes remaining time and purchase history.
+
     });
 }
 
@@ -3694,6 +3722,26 @@ function finishPortalPayment(status, reference) {
     if (isSuccess) {
         refreshPortalUserInfoAfterPayment();
     }
+    clearPortalPaymentRequestId(
+        portalPaymentPollingState.voucherCode,
+        portalPaymentPollingState.voucherPlanId);
+}
+
+function getPortalPaymentRequestId(voucherCodeValue, voucherPlanId) {
+    var storageKey = portalPaymentRequestStoragePrefix +
+        String(voucherCodeValue || "") + ":" + String(voucherPlanId || "");
+    var existing = localStorageCompat.getItem(storageKey);
+    if (existing) return existing;
+    var created = "hotspot-" + (new Date().getTime()).toString(36) + "-" +
+        Math.random().toString(36).slice(2, 12);
+    localStorageCompat.setItem(storageKey, created);
+    return created;
+}
+
+function clearPortalPaymentRequestId(voucherCodeValue, voucherPlanId) {
+    if (!voucherCodeValue || !voucherPlanId) return;
+    localStorageCompat.removeItem(portalPaymentRequestStoragePrefix +
+        String(voucherCodeValue) + ":" + String(voucherPlanId));
 }
 
 function pollPortalPaymentStatus(generation) {
@@ -3736,7 +3784,9 @@ function pollPortalPaymentStatus(generation) {
             }
 
             status = String(result.data.status || "").toLowerCase();
-            if (status === "completed" || status === "success" || status === "failed" || status === "error") {
+            if (status === "completed" || status === "success" || status === "failed" ||
+                status === "error" || status === "expired" ||
+                status === "canceled" || status === "cancelled") {
                 finishPortalPayment(status, portalPaymentPollingState.reference);
                 return;
             }
@@ -3785,11 +3835,18 @@ function openPortalPaymentCheckout(data, activeVoucherCode, enableStatusPolling)
     var frame = document.getElementById("portalPaymentCheckoutFrame");
     var externalLink = document.getElementById("portalPaymentExternalLink");
     var statusText = document.getElementById("portalPaymentCheckoutStatus");
+    var qrWrap = document.getElementById("portalPaymentQrWrap");
+    var qrImage = document.getElementById("portalPaymentQrImage");
+    var qrAmount = document.getElementById("portalPaymentQrAmount");
+    var qrExpiry = document.getElementById("portalPaymentQrExpiry");
+    var usePayMongoFlow = isPayMongoWalletChannel();
+    var hasQr = usePayMongoFlow && data && isSafePortalPaymentQr(data.imageUrl);
+    var hasUrl = data && isSafePortalPaymentUrl(data.url);
 
-    if (!data || !isSafePortalPaymentUrl(data.url) || !frame || !externalLink) {
+    if (!data || (!hasQr && !hasUrl) || !frame || !externalLink || !qrWrap || !qrImage) {
         $.toast({
             title: "Failed",
-            content: "The payment provider did not return a valid checkout link.",
+            content: "The payment provider did not return a valid checkout.",
             type: "error",
             delay: 4000
         });
@@ -3799,10 +3856,32 @@ function openPortalPaymentCheckout(data, activeVoucherCode, enableStatusPolling)
     stopPortalPaymentStatusPolling(true);
     portalPaymentPollingState.reference = String(data.reference || "");
     portalPaymentPollingState.voucherCode = String(activeVoucherCode || "");
+    portalPaymentPollingState.voucherPlanId = String(data.voucherPlanId || "");
     portalPaymentPollingState.pollingEnabled = enableStatusPolling === true;
-    frame.setAttribute("src", data.url);
-    externalLink.setAttribute("href", data.url);
-    if (statusText) statusText.textContent = "Loading secure checkout...";
+    if (hasQr) {
+        frame.removeAttribute("src");
+        addClassCompat(frame, "hide");
+        externalLink.removeAttribute("href");
+        externalLink.hidden = true;
+        qrImage.setAttribute("src", data.imageUrl);
+        removeClassCompat(qrWrap, "hide");
+        if (qrAmount) {
+            qrAmount.textContent = "Pay ₱" + Number(data.totalAmount || data.amount || 0).toFixed(2) +
+                " (includes ₱" + Number(data.serviceFee || 0).toFixed(2) + " service fee)";
+        }
+        if (qrExpiry) {
+            qrExpiry.textContent = data.expiresAt
+                ? "QR expires at " + new Date(data.expiresAt).toLocaleTimeString()
+                : "Scan using any QR Ph-enabled payment app.";
+        }
+        if (statusText) statusText.textContent = "Waiting for PayMongo payment confirmation...";
+    } else {
+        addClassCompat(qrWrap, "hide");
+        removeClassCompat(frame, "hide");
+        frame.setAttribute("src", data.url);
+        externalLink.setAttribute("href", data.url);
+        if (statusText) statusText.textContent = "Loading secure checkout...";
+    }
 
     ensurePortalPaymentCheckoutEvents();
     $("#wifreeCheckOutModal").modal("hide");
@@ -3836,7 +3915,7 @@ function onPurchaseClicked(item) {
     var inputMobileNumber = document.getElementById('inputMobileNumber');
     var mobileNumberGroup = document.getElementById('wifreeMobileNumberGroup');
     var mobileError = document.getElementById('mobileError');
-    var requiresMobileNumber = !isExtendedWalletChannel();
+    var requiresMobileNumber = !isPortalWalletChannel();
 
     if (inputMobileNumber) {
         inputMobileNumber.required = requiresMobileNumber;
@@ -3898,6 +3977,10 @@ function onPurchaseClicked(item) {
                 purchaseId: item.id
             };
 
+            if (isPayMongoWalletChannel()) {
+                requestPayload.requestId = getPortalPaymentRequestId(code, item.id);
+            }
+
             if (requiresMobileNumber) {
                 requestPayload.mobile = mobileValue;
             }
@@ -3916,8 +3999,8 @@ function onPurchaseClicked(item) {
                     }
 
                     var data = result.data;
-                    if (data && data.url) {
-                        if (!openPortalPaymentCheckout(data, code, isExtendedWalletChannel())) {
+                    if (data && (data.url || (isPayMongoWalletChannel() && data.imageUrl))) {
+                        if (!openPortalPaymentCheckout(data, code, isPortalWalletChannel())) {
                             removeLoader('payNowBtn');
                         }
                     } else {
@@ -4059,7 +4142,7 @@ function fetchServerData() {
                     console.log('JuanFi Extended Version:', data.version);
                     try {
                         localStorageCompat.setItem(storageKey, JSON.stringify(data));
-                        // 5 minutes expiration
+
                         localStorageCompat.setItem(expiryKey, (new Date().getTime() + 5 * 60 * 1000).toString());
 
                         if (typeof append !== 'undefined') {
@@ -4111,8 +4194,8 @@ function fetchPortalConfig(cb) {
         var hasTemplateToken = appendValue.indexOf("$(") !== -1;
         var cachedAppend = localStorageCompat.getItem(appendKey);
 
-        // Use strict append matching only when append is a resolved value.
-        // Games page can have unresolved template tokens, which should not force cache misses.
+
+
         if (!hasTemplateToken && cachedAppend && cachedAppend !== appendValue) {
             shouldUseCache = false;
         }
@@ -4182,7 +4265,7 @@ function parseRewardPoints(text) {
 }
 
 function updateRedeemRewardPtsUI(from) {
-    // from: 'slider' | 'input' | undefined
+
     var min = parseInt($('#redeemSlider').attr('min')) || 0;
     var max = parseInt($('#redeemSlider').attr('max')) || 0;
     var sliderVal = parseInt($('#redeemSlider').val()) || 0;
@@ -4190,7 +4273,7 @@ function updateRedeemRewardPtsUI(from) {
     var selected = sliderVal;
 
     if (from === 'input') {
-        // clamp input
+
         if ((!inputVal) || isNaN(inputVal)) inputVal = 0;
         if (inputVal < min) inputVal = min;
         if (max > 0 && inputVal > max) inputVal = max;
@@ -4198,7 +4281,7 @@ function updateRedeemRewardPtsUI(from) {
         $('#redeemSlider').val(selected);
         $('#selectedPointsInput').val(selected);
     } else {
-        // default behaviour: use slider value and sync input
+
         selected = sliderVal;
         $('#selectedPointsInput').val(selected);
     }
@@ -4207,7 +4290,7 @@ function updateRedeemRewardPtsUI(from) {
     var value = (selected * redeemRatioValue);
     $('#estimatedValueDisplay').text('PHP ' + value.toFixed(2));
 
-    // enable/disable confirm button based on range
+
     if (selected > min && (max === 0 || selected <= max)) {
         $("#confirmRedeemBtn").removeClass("disabled");
     } else {
@@ -4291,7 +4374,7 @@ function onRedeemRewardPtsSliderChangeEvt() {
         updateRedeemRewardPtsUI('slider');
     });
     $('#selectedPointsInput').on('input change', function () {
-        // ensure integer
+
         var v = $(this).val();
         var intV = parseInt(v, 10);
         if (isNaN(intV)) intV = 0;
@@ -4482,12 +4565,12 @@ function logoutVoucher(macNoColon, cb) {
             }
         })
         .catch(function (error) {
-            // $.toast({
-            //     title: 'Failed',
-            //     content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
-            //     type: 'error',
-            //     delay: 4000
-            // });
+
+
+
+
+
+
             removeLoader('pauseTimeBtn');
             if (cb) cb(false);
         });
@@ -4497,7 +4580,11 @@ function saveLogs(msg) {
     vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     if(voucherCode === "")
         voucherCode = getStorageValue("voucherCode");
-    fetchPortalAPI("/logs", "POST", vendorIpAddress, JSON.stringify({code: voucherCode, message: msg}), {
+    fetchPortalAPI("/logs", "POST", vendorIpAddress, JSON.stringify({
+        code: voucherCode,
+        message: msg,
+        vendorIpAddress: vendorIpAddress
+    }), {
         contentType: 'application/json; charset=utf-8',
         dataType: "json"
     })
@@ -4705,7 +4792,7 @@ function fetchDuckRaceReward(serverIp, mac, betNumber) {
 }
 
 function drawSpinWheel(mac, prizes, colors) {
-    /* ===== Elements & state ===== */
+    
     var wheelCanvas = document.getElementById('wheelCanvas');
     var wheelCtx = wheelCanvas.getContext('2d');
 
@@ -4715,15 +4802,15 @@ function drawSpinWheel(mac, prizes, colors) {
 
     var clickSound = new Audio('https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg');
 
-    // Expanded prizes array based on winning percentages (max 10 slices)
+
     var expandedPrizes = [];
 
-    // Function to generate expanded prizes based on winning percentages
+
     function generateExpandedPrizes() {
         expandedPrizes = [];
         var maxSlices = 10;
 
-        // Calculate total winning percentage
+
         var totalPercentage = 0;
         prizes.forEach(function (p) {
             if (p) {
@@ -4734,7 +4821,7 @@ function drawSpinWheel(mac, prizes, colors) {
             }
         });
 
-        // If no percentages set, just use original prizes
+
         if (totalPercentage === 0) {
             expandedPrizes = prizes.slice();
             return;
@@ -4742,25 +4829,25 @@ function drawSpinWheel(mac, prizes, colors) {
 
         var maxPercentage = 100;
 
-        // Distribute prizes proportionally to fill max 10 slices
+
         prizes.forEach(function (p) {
             if (p && p.percentage > 0) {
-                // Calculate how many slices this prize should occupy
+
                 var proportion = p.percentage / maxPercentage;
                 var sliceCount = Math.max(1, Math.round(proportion * maxSlices));
-                // Add this prize multiple times
+
                 for (var i = 0; i < sliceCount; i++) {
                     expandedPrizes.push(p);
                 }
             }
         });
 
-        // Trim to exactly 10 slices if needed (remaining slots become blank)
+
         if (expandedPrizes.length > maxSlices) {
             expandedPrizes = expandedPrizes.slice(0, maxSlices);
         }
 
-        // Pad remaining slices with undefined (blank)
+
         while (expandedPrizes.length < maxSlices) {
             expandedPrizes.push({
                 "promoName": "Try again!",
@@ -4775,17 +4862,17 @@ function drawSpinWheel(mac, prizes, colors) {
     var dpr = Math.max(window.devicePixelRatio || 1, 1);
     var center = {x: 0, y: 0};
     var radius = 0;
-    var currentRotation = 0; // radians
+    var currentRotation = 0;
     var spinning = false;
     var lastSliceSound = -1;
 
-    /* ===== Resize (set CSS size + backing store for DPR) ===== */
+    
     function resizeAll() {
         dpr = Math.max(window.devicePixelRatio || 1, 1);
         var shown = Math.min(window.innerWidth * 0.9, wheelSize);
         displaySize = Math.round(shown);
 
-        // wheel canvas (use CSS px coordinates)
+
         wheelCanvas.style.width = displaySize + 'px';
         wheelCanvas.style.height = displaySize + 'px';
         wheelCanvas.width = displaySize * dpr;
@@ -4796,7 +4883,7 @@ function drawSpinWheel(mac, prizes, colors) {
         center.y = displaySize / 2;
         radius = (displaySize / 2) - 18;
 
-        // redraw
+
         drawWheel(currentRotation);
     }
 
@@ -4805,7 +4892,7 @@ function drawSpinWheel(mac, prizes, colors) {
     }
     resizeAll();
 
-    /* ===== draw wheel (rotation in radians) and optional highlighted slice ===== */
+    
     function drawWheel(rotationRad, highlightIndex, highlightAlpha) {
         if (rotationRad === undefined) rotationRad = 0;
         if (highlightIndex === undefined) highlightIndex = null;
@@ -4817,7 +4904,7 @@ function drawSpinWheel(mac, prizes, colors) {
         var displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
         var slice = (2 * Math.PI) / displayPrizes.length;
 
-        // draw wheel rotated
+
         ctx.save();
         ctx.translate(center.x, center.y);
         ctx.rotate(rotationRad);
@@ -4832,7 +4919,7 @@ function drawSpinWheel(mac, prizes, colors) {
             ctx.closePath();
             ctx.fill();
 
-            // label (only if prize is defined)
+
             if (displayPrizes[i] && displayPrizes[i].promoName) {
                 ctx.save();
                 ctx.translate(center.x, center.y);
@@ -4845,7 +4932,7 @@ function drawSpinWheel(mac, prizes, colors) {
             }
         }
 
-        // highlight overlay in wheel's rotated coordinate system
+
         if (highlightIndex !== null && highlightAlpha > 0) {
             var hStart = highlightIndex * slice;
             ctx.beginPath();
@@ -4858,7 +4945,7 @@ function drawSpinWheel(mac, prizes, colors) {
 
         ctx.restore();
 
-        // fixed pointer on top
+
         drawPointer();
     }
 
@@ -4880,25 +4967,25 @@ function drawSpinWheel(mac, prizes, colors) {
         ctx.restore();
     }
 
-    /* ===== convert rotation -> index (slice under top pointer) ===== */
+    
     function rotationToIndex(rotationRad) {
         var displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
         var rotDeg = ((rotationRad * 180 / Math.PI) % 360 + 360) % 360;
-        var pointerDeg = (270 - rotDeg + 360) % 360; // top = 270 deg
+        var pointerDeg = (270 - rotDeg + 360) % 360;
         var sliceDeg = 360 / displayPrizes.length;
         var idx = Math.floor(pointerDeg / sliceDeg);
         idx = ((idx % displayPrizes.length) + displayPrizes.length) % displayPrizes.length;
         return idx;
     }
 
-    /* ===== spin logic (choose target index via API) ===== */
+    
     function spinWheel() {
         if (spinning) return;
 
         spinning = true;
         spinBtn.disabled = true;
         if (isSpinTriggered) {
-            // fetch prize index from API
+
             fetchSpinWheelReward(mac, function (result, error) {
                 if (!!error) {
                     $.toast({
@@ -4933,10 +5020,10 @@ function drawSpinWheel(mac, prizes, colors) {
 
     }
 
-    /* ===== execute spin animation with chosen index ===== */
+    
     function executeSpin(chosenIndex, apiPrize, error) {
         if (!!error) chosenIndex = -1;
-        // compute target rotation so chosenIndex center ends under top pointer
+
         var sliceDeg = 360 / expandedPrizes.length;
         var desiredPointerDeg = (chosenIndex + 0.5) * sliceDeg;
         var desiredWheelDegNormalized = (270 - desiredPointerDeg + 360) % 360;
@@ -4944,7 +5031,7 @@ function drawSpinWheel(mac, prizes, colors) {
         var currentDeg = ((currentRotation * 180 / Math.PI) % 360 + 360) % 360;
         var deltaDeg = (desiredWheelDegNormalized - currentDeg + 360) % 360;
 
-        var extraSpins = 4 + Math.floor(Math.random() * 3); // 4..6
+        var extraSpins = 4 + Math.floor(Math.random() * 3);
         var totalDeg = deltaDeg + extraSpins * 360;
         var targetRotation = currentRotation + (totalDeg * Math.PI / 180);
 
@@ -4957,16 +5044,16 @@ function drawSpinWheel(mac, prizes, colors) {
             if (!startTime) startTime = ts;
             var elapsed = ts - startTime;
             var t = Math.min(1, elapsed / duration);
-            var ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
+            var ease = 1 - Math.pow(1 - t, 3);
             var nowRot = startRot + (targetRotation - startRot) * ease;
 
             drawWheel(nowRot);
 
-            // click sound when we move across slices
+
             var idx = rotationToIndex(nowRot);
             if (idx !== lastSliceSound) {
                 lastSliceSound = idx;
-                //try{ clickSound.currentTime = 0; clickSound.play().catch(function(){}); }catch(e){}
+
             }
 
             if (t < 1) {
@@ -4974,18 +5061,18 @@ function drawSpinWheel(mac, prizes, colors) {
                 return;
             }
 
-            // finished spinning
+
             currentRotation = targetRotation % (2 * Math.PI);
             drawWheel(currentRotation);
 
             var winningIndex = rotationToIndex(currentRotation);
 
-            // pulse the winning slice then show modal
+
             pulseHighlight(winningIndex, 3, 700, function () {
-                // prefer API-provided prize data if available, otherwise fall back to expanded/local prizes array
+
                 var displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
                 var prizeToShow = (apiPrize && apiPrize.promoName) ? apiPrize : displayPrizes[winningIndex];
-                // Handle undefined or empty prizes
+
                 $("#redeemedValueWrapper").removeClass("hide");
                 if ((!prizeToShow) || (!prizeToShow.promoName) || (prizeToShow.rewardValue <= 0)) {
                     $("#selectedReward").text("🥺 Sorry! Better luck next time.");
@@ -5009,7 +5096,7 @@ function drawSpinWheel(mac, prizes, colors) {
                     $('#redeemBySpinModal').modal('hide');
                 }
 
-                // Avoid another /user-info call in games: values are already returned by spin API.
+
                 if (isGamesPageContext()) {
                     if (typeof updatePointsDisplays === 'function') {
                         updatePointsDisplays(Number(rewardPointsBalance) || 0);
@@ -5024,7 +5111,7 @@ function drawSpinWheel(mac, prizes, colors) {
 
     }
 
-    /* ===== smooth pulse highlight (alpha rises/falls) ===== */
+    
     function pulseHighlight(index, pulses, pulseDuration, callback) {
         if (pulses === undefined) pulses = 3;
         if (pulseDuration === undefined) pulseDuration = 700;
@@ -5038,8 +5125,8 @@ function drawSpinWheel(mac, prizes, colors) {
                 if (callback) callback();
                 return;
             }
-            var pulseProgress = (elapsed % pulseDuration) / pulseDuration; // 0..1
-            var alpha = Math.sin(pulseProgress * Math.PI); // smooth 0..1..0
+            var pulseProgress = (elapsed % pulseDuration) / pulseDuration;
+            var alpha = Math.sin(pulseProgress * Math.PI);
             drawWheel(currentRotation, index, alpha * 0.95);
             requestCompatAnimationFrame(frame);
         }
@@ -5047,9 +5134,9 @@ function drawSpinWheel(mac, prizes, colors) {
         requestCompatAnimationFrame(frame);
     }
 
-    /* ===== shuffle prizes (randomize displayed positions) ===== */
+    
     function shufflePrizes() {
-        // Fisher-Yates shuffle algorithm
+
         var target = (expandedPrizes && expandedPrizes.length > 0) ? expandedPrizes : prizes;
         for (var i = target.length - 1; i > 0; i--) {
             var j = Math.floor(Math.random() * (i + 1));
@@ -5060,7 +5147,7 @@ function drawSpinWheel(mac, prizes, colors) {
     }
 
     if (!spinEventsCreated) {
-        /* ===== events & init ===== */
+        
         bindEvent(window, 'resize', function () {
             resizeAll();
         });
@@ -5094,18 +5181,18 @@ function drawSpinWheel(mac, prizes, colors) {
 
     }
 
-    generateExpandedPrizes(); // generate expanded prizes based on winning percentages
-    shufflePrizes(); // shuffle slices on initial load
+    generateExpandedPrizes();
+    shufflePrizes();
     drawWheel(currentRotation);
 
-    /* Provide a sane resizeAll in case called above */
+    
     function resizeAll() {
-        resizeAll = null; // prevent recursion
+        resizeAll = null;
         resizeAll = function () {
             resizeAll = function () {
             };
-        }; // dummy replacement
-        // Call the real function body:
+        };
+
         dpr = Math.max(window.devicePixelRatio || 1, 1);
         var shown = Math.min(window.innerWidth * 0.9, wheelSize);
         displaySize = Math.round(shown);
@@ -5120,7 +5207,7 @@ function drawSpinWheel(mac, prizes, colors) {
         drawWheel(currentRotation);
     }
 
-    /* replace placeholder with proper function */
+    
     resizeAll = function () {
         dpr = Math.max(window.devicePixelRatio || 1, 1);
         var shown = Math.min(window.innerWidth * 0.9, wheelSize);
@@ -5140,7 +5227,7 @@ function drawSpinWheel(mac, prizes, colors) {
         bindEvent(window, 'resize', resizeAll);
     }
 
-    // ensure initial sizes are correct:
+
     resizeAll();
     spinEventsCreated = true;
 }
@@ -5151,22 +5238,22 @@ function useVoucherBtnEvt() {
         connectBtn.onclick = function (e) {
             e.preventDefault();
             var input = document.getElementById('voucherInput');
-            // Clear previous custom validity
+
             setInputCustomValidityCompat(input, '');
 
-            // Trim the value to catch empty or whitespace-only input
+
             if (!input.value || input.value.trim() === '') {
                 reportInputValidityCompat(input, 'Please input a valid voucher');
                 return;
             }
 
-            // Optional: check HTML5 constraints
+
             if (!checkInputValidityCompat(input)) {
                 reportInputValidityCompat(input, 'Please input a valid voucher');
                 return;
             }
 
-            // Check other variables
+
             if (!macNoColon || macNoColon.trim() === '') {
                 reportInputValidityCompat(input, 'Please input a valid voucher');
                 return;
@@ -5230,10 +5317,10 @@ function fetchUseVoucher(macNoColon, vendorIpAddress, voucherCode, cb) {
 }
 
 function parseAjaxErrorResponse(jqXHR, textStatus, errorThrown) {
-    // Check if responseText exists and is a string
+
     if (jqXHR.responseText && typeof jqXHR.responseText === 'string') {
         try {
-            // Parse the responseText as JSON
+
             var errorData = JSON.parse(jqXHR.responseText);
             return errorData;
         } catch (e) {
@@ -5248,7 +5335,7 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
     return createCompatPromise(function (resolve, reject) {
         var MAX_RETRIES = 3;
         var MAX_PROCESSING_WAIT_MS = 30000;
-        var RETRY_DELAY = 1000; // 1 second
+        var RETRY_DELAY = 1000;
         var MIN_PROCESSING_RETRY_DELAY = 500;
         var MAX_PROCESSING_RETRY_DELAY = 3000;
 
@@ -5362,7 +5449,7 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
             }
         };
 
-        // First attempt
+
         attemptRequest();
     });
 }
@@ -5416,10 +5503,10 @@ function addLoader(buttonId) {
     if (btn.getAttribute('data-loading') === "true") return;
 
     var spinner = document.createElement('span');
-    spinner.className = 'spinner-border spinner-border-sm me-2'; // small spinner with margin
+    spinner.className = 'spinner-border spinner-border-sm me-2';
     spinner.role = 'status';
     spinner.ariaHidden = true;
-    spinner.setAttribute('data-spinner', "true"); // mark it for removal later
+    spinner.setAttribute('data-spinner', "true");
 
     prependNode(btn, spinner);
 

@@ -636,6 +636,29 @@ body.portal-body .portal-payment-frame {
     background: #fff;
 }
 
+body.portal-body .portal-payment-qr-wrap {
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 24px;
+    text-align: center;
+}
+
+body.portal-body .portal-payment-qr-wrap.hide {
+    display: none;
+}
+
+body.portal-body .portal-payment-qr {
+    width: min(100%, 360px);
+    height: auto;
+    border: 1px solid #e2e7f0;
+    border-radius: 12px;
+    background: #fff;
+}
+
 body.portal-body .portal-payment-footer-note {
     display: -webkit-box;
     display: -webkit-flex;
