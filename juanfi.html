@@ -528,6 +528,12 @@
                     <div class="portal-payment-frame-wrap">
                         <iframe id="portalPaymentCheckoutFrame" class="portal-payment-frame"
                                 title="Secure E-Wallet payment checkout" frameborder="0"></iframe>
+                        <div id="portalPaymentQrWrap" class="portal-payment-qr-wrap hide">
+                            <img id="portalPaymentQrImage" class="portal-payment-qr"
+                                 alt="PayMongo QR Ph payment code">
+                            <strong id="portalPaymentQrAmount"></strong>
+                            <small id="portalPaymentQrExpiry"></small>
+                        </div>
                     </div>
                     <div class="portal-payment-footer-note">
                         <span id="portalPaymentCheckoutStatus" role="status" aria-live="polite">Loading secure checkout...</span>
