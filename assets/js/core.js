@@ -3645,7 +3645,7 @@ function isSafePortalPaymentUrl(url) {
 function isSafePortalPaymentQr(value) {
     return typeof value === "string" &&
         value.length <= 1000000 &&
-        (/^https:\/\
+        (/^https:\/\//i.test(value) ||
             /^data:image\/(?:png|svg\+xml);base64,[A-Za-z0-9+/=\r\n]+$/i.test(value));
 }
 
