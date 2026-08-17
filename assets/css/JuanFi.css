@@ -811,8 +811,10 @@ body.portal-body .header-meta small {
 
 body.portal-body .banner {
 	display: block;
+	height: 58px;
 	margin-bottom: 0;
-	max-height: 48px;
+	max-height: 58px;
+	max-width: 100%;
 	width: auto;
 }
 

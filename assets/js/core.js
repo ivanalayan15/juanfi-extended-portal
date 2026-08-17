@@ -41,6 +41,7 @@ var juanfiExtendedIp = "";
 var isMultiVendo;
 var multiVendoOption;
 var multiVendoAddresses = [];
+var multiVendoSelectionReady = false;
 var loginOption;
 var dataRateOption;
 var vendorIpAddress;
@@ -1588,6 +1589,8 @@ function renderView() {
     $("#macInfo").html(mac);
     wheelConfig = [];
     multiVendoAddresses = [];
+    multiVendoSelectionReady = false;
+    $("#insertBtn").prop('disabled', true);
     fetchPortalConfig(function (data, error) {
         if (!!error) {
 
@@ -1765,10 +1768,15 @@ function renderView() {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
                         localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
+                        multiVendoSelectionReady = !!vendorIpAddress;
                         multiVendoConfiguration(dtls, userData);
                     }
                 } else if (multiVendoOption == 2) {
                     $("#vendoSelectDiv").addClass("hide");
+                    var vendoSelectOption = document.getElementById("vendoSelected");
+                    if (vendoSelectOption) {
+                        vendoSelectOption.onchange = null;
+                    }
                     var dtls = null;
                     for (var i = 0; i < multiVendoAddresses.length; i++) {
                         if (multiVendoAddresses[i].interfaceName === interfaceName) {
@@ -1780,6 +1788,7 @@ function renderView() {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
                         localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
+                        multiVendoSelectionReady = !!vendorIpAddress;
                         multiVendoConfiguration(dtls, userData);
                     }
                 } else {
@@ -1838,13 +1847,18 @@ function renderView() {
                         evaluateChargingButton(selectedVendoDtls);
                         evaluateEloadButton(selectedVendoDtls);
                     }
+                    multiVendoSelectionReady = !!(vendorIpAddress && selectedVendoDtls && selectedVendoDtls.vendoIp === vendorIpAddress);
                 }
 
-                $("#vendoSelected").trigger("change");
+                if (multiVendoOption != 1 && multiVendoOption != 2) {
+                    $("#vendoSelected").trigger("change");
+                }
 
             } else {
                 $("#vendoSelectDiv").addClass("hide");
+                multiVendoSelectionReady = !!vendorIpAddress;
             }
+            $("#insertBtn").prop('disabled', isMultiVendo && !multiVendoSelectionReady);
             showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig);
             if (pointsEnabled) {
                 rewardPointsBalance = totalPoints;
@@ -2532,6 +2546,16 @@ function renderPromoRatesTable(data, tableBody) {
 }
 
 function insertBtnAction() {
+    if (isMultiVendo && (!multiVendoSelectionReady || !vendorIpAddress)) {
+        $.toast({
+            title: 'Vendo Error',
+            content: 'The portal is still resolving the correct vendo for this hotspot interface. Please wait and try again.',
+            type: 'error',
+            delay: 4000
+        });
+        return false;
+    }
+
     pauseTimeLeftPollingForInsertCoin();
     removeStorageValue("ignoreSaveCode");
     setStorageValue('insertCoinRefreshed', "0");
