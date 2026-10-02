@@ -4012,9 +4012,21 @@ function onPurchaseClicked(item) {
             fetchPortalAPI("/wifree-vouchers", "POST", vendorIpAddress, requestPayload)
                 .then(function (result) {
                     if ((!result) || (!result.success)) {
+                        var purchaseError = String((result && result.error) || "");
+                        if (isPayMongoWalletChannel() && /Voucher plan or price is not synchronized/i.test(purchaseError)) {
+                            renderWifreeList();
+                            $.toast({
+                                title: 'Rates refreshed',
+                                content: 'The plan changed while this page was open. Please select the updated rate and try again.',
+                                type: 'info',
+                                delay: 5000
+                            });
+                            removeLoader('payNowBtn');
+                            return;
+                        }
                         $.toast({
                             title: 'Failed',
-                            content: (result && result.error) || 'Request failed. Please try again.',
+                            content: purchaseError || 'Request failed. Please try again.',
                             type: 'error',
                             delay: 4000
                         });
