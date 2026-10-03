@@ -75,6 +75,7 @@ var portalPaymentPollingState = {
 };
 var PORTAL_PAYMENT_POLL_DELAY_MS = 3000;
 var PORTAL_PAYMENT_POLL_TIMEOUT_MS = 600000;
+var portalPurchaseInFlight = false;
 var portalPaymentRequestStoragePrefix = "paymongoPortalRequest:";
 var announcementMarqueeState = {
     announcement: null,
@@ -100,6 +101,7 @@ function normalizeWalletChannel(value) {
     var channel = (value || "").toString().replace(/^\s+|\s+$/g, "").toUpperCase();
     if (channel === "EXTENDED") return "EXTENDED";
     if (channel === "PAYMONGO") return "PAYMONGO";
+    if (channel === "UNAVAILABLE") return "UNAVAILABLE";
     return "WIFREE";
 }
 
@@ -3730,6 +3732,8 @@ function refreshPortalUserInfoAfterPayment() {
 }
 
 function finishPortalPayment(status, reference) {
+    var completedVoucher = portalPaymentPollingState.voucherCode;
+    var completedPlan = portalPaymentPollingState.voucherPlanId;
     var isSuccess = status === "completed" || status === "success";
     stopPortalPaymentStatusPolling(false);
     $("#portalPaymentCheckoutModal").modal("hide");
@@ -3746,9 +3750,7 @@ function finishPortalPayment(status, reference) {
     if (isSuccess) {
         refreshPortalUserInfoAfterPayment();
     }
-    clearPortalPaymentRequestId(
-        portalPaymentPollingState.voucherCode,
-        portalPaymentPollingState.voucherPlanId);
+    clearPortalPaymentRequestId(completedVoucher, completedPlan);
 }
 
 function getPortalPaymentRequestId(voucherCodeValue, voucherPlanId) {
@@ -3863,7 +3865,7 @@ function openPortalPaymentCheckout(data, activeVoucherCode, enableStatusPolling)
     var qrImage = document.getElementById("portalPaymentQrImage");
     var qrAmount = document.getElementById("portalPaymentQrAmount");
     var qrExpiry = document.getElementById("portalPaymentQrExpiry");
-    var usePayMongoFlow = isPayMongoWalletChannel();
+    var usePayMongoFlow = (data && normalizeWalletChannel(data.walletChannel) === "PAYMONGO") || isPayMongoWalletChannel();
     var hasQr = usePayMongoFlow && data && isSafePortalPaymentQr(data.imageUrl);
     var hasUrl = data && isSafePortalPaymentUrl(data.url);
 
@@ -3881,7 +3883,7 @@ function openPortalPaymentCheckout(data, activeVoucherCode, enableStatusPolling)
     portalPaymentPollingState.reference = String(data.reference || "");
     portalPaymentPollingState.voucherCode = String(activeVoucherCode || "");
     portalPaymentPollingState.voucherPlanId = String(data.voucherPlanId || "");
-    portalPaymentPollingState.pollingEnabled = enableStatusPolling === true;
+    portalPaymentPollingState.pollingEnabled = enableStatusPolling === true || /^PMP/i.test(portalPaymentPollingState.reference);
     if (hasQr) {
         frame.removeAttribute("src");
         addClassCompat(frame, "hide");
@@ -3959,6 +3961,7 @@ function onPurchaseClicked(item) {
     }
 
     bindEvent(payNowBtn, 'click', function (e) {
+        if (portalPurchaseInFlight || normalizeWalletChannel(walletChannel) === 'UNAVAILABLE') return;
         if (!Number.isFinite(Number(item.price)) || Number(item.price) < 5) {
             $.toast({
                 title: 'Invalid amount',
@@ -3993,6 +3996,8 @@ function onPurchaseClicked(item) {
                 addClassCompat(inputMobileNumber, 'is-valid');
             }
 
+            portalPurchaseInFlight = true;
+            payNowBtn.disabled = true;
             addLoader('payNowBtn');
 
             var code = getStorageValue('activeVoucher');
@@ -4013,7 +4018,9 @@ function onPurchaseClicked(item) {
                 .then(function (result) {
                     if ((!result) || (!result.success)) {
                         var purchaseError = String((result && result.error) || "");
-                        if (isPayMongoWalletChannel() && /Voucher plan or price is not synchronized/i.test(purchaseError)) {
+                        if (/Voucher plan or price is not synchronized/i.test(purchaseError)) {
+                            clearPortalPaymentRequestId(code, item.id);
+                            $("#wifreeCheckOutModal").modal("hide");
                             renderWifreeList();
                             $.toast({
                                 title: 'Rates refreshed',
@@ -4035,7 +4042,7 @@ function onPurchaseClicked(item) {
                     }
 
                     var data = result.data;
-                    if (data && (data.url || (isPayMongoWalletChannel() && data.imageUrl))) {
+                    if (data && (data.url || data.imageUrl)) {
                         if (!openPortalPaymentCheckout(data, code, isPortalWalletChannel())) {
                             removeLoader('payNowBtn');
                         }
@@ -4057,6 +4064,9 @@ function onPurchaseClicked(item) {
                         delay: 4000
                     });
                     removeLoader('payNowBtn');
+                }).then(function () {
+                    portalPurchaseInFlight = false;
+                    payNowBtn.disabled = false;
                 });
         }
     });
