@@ -3865,8 +3865,7 @@ function openPortalPaymentCheckout(data, activeVoucherCode, enableStatusPolling)
     var qrImage = document.getElementById("portalPaymentQrImage");
     var qrAmount = document.getElementById("portalPaymentQrAmount");
     var qrExpiry = document.getElementById("portalPaymentQrExpiry");
-    var usePayMongoFlow = (data && normalizeWalletChannel(data.walletChannel) === "PAYMONGO") || isPayMongoWalletChannel();
-    var hasQr = usePayMongoFlow && data && isSafePortalPaymentQr(data.imageUrl);
+    var hasQr = data && isSafePortalPaymentQr(data.imageUrl);
     var hasUrl = data && isSafePortalPaymentUrl(data.url);
 
     if (!data || (!hasQr && !hasUrl) || !frame || !externalLink || !qrWrap || !qrImage) {
@@ -4006,17 +4005,20 @@ function onPurchaseClicked(item) {
                 purchaseId: item.id
             };
 
-            if (isPayMongoWalletChannel()) {
-                requestPayload.requestId = getPortalPaymentRequestId(code, item.id);
-            }
+            // The API selects PayMongo or Kinetix from the synchronized plan price.
+            // Keep one stable request identity across retries regardless of account channel.
+            requestPayload.requestId = getPortalPaymentRequestId(code, item.id);
 
             if (requiresMobileNumber) {
                 requestPayload.mobile = mobileValue;
             }
 
-            fetchPortalAPI("/wifree-vouchers", "POST", vendorIpAddress, requestPayload)
+            fetchPortalAPI("/wifree-vouchers", "POST", vendorIpAddress, requestPayload, { preserveErrorPayload: true })
                 .then(function (result) {
                     if ((!result) || (!result.success)) {
+                        if (result && result.safeToRetry === true) {
+                            clearPortalPaymentRequestId(code, item.id);
+                        }
                         var purchaseError = String((result && result.error) || "");
                         if (/Voucher plan or price is not synchronized/i.test(purchaseError)) {
                             clearPortalPaymentRequestId(code, item.id);
@@ -4057,6 +4059,9 @@ function onPurchaseClicked(item) {
                     removeLoader('payNowBtn');
                 })
                 .catch(function (error) {
+                    if (error && error.safeToRetry === true) {
+                        clearPortalPaymentRequestId(code, item.id);
+                    }
                     $.toast({
                         title: 'Failed',
                         content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
@@ -5471,7 +5476,12 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
                         }
 
                         var err = parseAjaxErrorResponse(jqXHR, textStatus, errorThrown);
-                        reject((err && err.message) || "Server request failed!");
+                        if (options && options.preserveErrorPayload && err && typeof err === "object") {
+                            err.statusCode = jqXHR.status;
+                            reject(err);
+                        } else {
+                            reject((err && err.message) || "Server request failed!");
+                        }
                     }
                 };
 
@@ -5480,6 +5490,8 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
                         if (options.hasOwnProperty(opt)) {
                             if (opt === "headers") {
                                 optionHeaders = options[opt];
+                            } else if (opt === "preserveErrorPayload") {
+                                continue;
                             } else {
                                 ajaxOptions[opt] = options[opt];
                             }
