@@ -51,6 +51,7 @@ var wheelConfig = [];
 var macNoColon;
 var isPaused;
 var hasWiFree = false;
+var ewalletPurchaseEnabled = true;
 var walletChannel = "WIFREE";
 var announcementText = '';
 var isTestMode = window.location.href.indexOf("http") !== 0;
@@ -1593,6 +1594,9 @@ function renderView() {
     multiVendoAddresses = [];
     multiVendoSelectionReady = false;
     $("#insertBtn").prop('disabled', true);
+    // A previous render must not keep purchases visible if config refresh fails.
+    ewalletPurchaseEnabled = false;
+    $("#wifreeBtn").addClass("hide");
     fetchPortalConfig(function (data, error) {
         if (!!error) {
 
@@ -1623,6 +1627,7 @@ function renderView() {
             autologin = data.autoLoginHotspot;
             wheelConfig = data.wheelConfig;
             hasWiFree = data.hasWiFree;
+            ewalletPurchaseEnabled = data.ewalletPurchaseEnabled === true;
             walletChannel = normalizeWalletChannel(data.walletChannel);
             announcementText = data.announcement;
         }
@@ -1991,7 +1996,7 @@ function renderView() {
             } else {
                 showResumeButton();
             }
-            if (hasWiFree) {
+            if (hasWiFree && ewalletPurchaseEnabled) {
                 $("#wifreeBtn").removeClass("hide");
             } else {
                 $("#wifreeBtn").addClass("hide");
@@ -4238,7 +4243,9 @@ function fetchPortalConfig(cb) {
     var storageKey = 'juanfi_portal_config';
     var appendKey = 'juanfi_portal_config_append';
     var cachedData = localStorageCompat.getItem(storageKey);
-    var shouldUseCache = !!cachedData;
+    // The operator can disable purchases at any time, so always refresh portal
+    // configuration before showing the E-Wallet entry point.
+    var shouldUseCache = false;
 
     if (shouldUseCache && typeof append !== 'undefined') {
         var appendValue = (append || "").toString();
