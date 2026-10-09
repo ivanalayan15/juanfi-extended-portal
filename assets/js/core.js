@@ -101,7 +101,7 @@ var announcementMarqueeState = {
 function normalizeWalletChannel(value) {
     var channel = (value || "").toString().replace(/^\s+|\s+$/g, "").toUpperCase();
     if (channel === "EXTENDED") return "EXTENDED";
-    if (channel === "PAYMONGO") return "PAYMONGO";
+    if (channel === "PAYMONGO") return "EXTENDED";
     if (channel === "UNAVAILABLE") return "UNAVAILABLE";
     return "WIFREE";
 }
@@ -110,12 +110,16 @@ function isExtendedWalletChannel() {
     return normalizeWalletChannel(walletChannel) === "EXTENDED";
 }
 
-function isPayMongoWalletChannel() {
-    return normalizeWalletChannel(walletChannel) === "PAYMONGO";
+function readEWalletPurchaseEnabled(config) {
+    if (!config || typeof config !== "object") return false;
+    if (Object.prototype.hasOwnProperty.call(config, "eWalletPurchaseEnabled")) {
+        return config.eWalletPurchaseEnabled === true;
+    }
+    return config.ewalletPurchaseEnabled === true;
 }
 
 function isPortalWalletChannel() {
-    return isExtendedWalletChannel() || isPayMongoWalletChannel();
+    return isExtendedWalletChannel();
 }
 
 var requestCompatAnimationFrame = window.requestAnimationFrame ? function (callback) {
@@ -547,7 +551,6 @@ function resolveVoucherValue(fallbackValue) {
     }
 
     voucher = resolvedVoucher || "";
-    console.log(voucher);
     return voucher;
 }
 
@@ -1627,7 +1630,7 @@ function renderView() {
             autologin = data.autoLoginHotspot;
             wheelConfig = data.wheelConfig;
             hasWiFree = data.hasWiFree;
-            ewalletPurchaseEnabled = data.ewalletPurchaseEnabled === true;
+            ewalletPurchaseEnabled = readEWalletPurchaseEnabled(data);
             walletChannel = normalizeWalletChannel(data.walletChannel);
             announcementText = data.announcement;
         }
@@ -1867,7 +1870,7 @@ function renderView() {
             }
             $("#insertBtn").prop('disabled', isMultiVendo && !multiVendoSelectionReady);
             showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig);
-            if (pointsEnabled) {
+            if (canUseVoucherPoints(totalPoints, pointsEnabled)) {
                 rewardPointsBalance = totalPoints;
                 $("#rewardPoints").html(totalPoints.toFixed(2));
                 $(".redeemRatio").text(redeemRatioValue);
@@ -3707,6 +3710,7 @@ function stopPortalPaymentStatusPolling(clearCheckout) {
         portalPaymentPollingState.voucherPlanId = "";
         portalPaymentPollingState.pollingEnabled = false;
         portalPaymentPollingState.startedAt = 0;
+        portalPaymentPollingState.paymentReceived = false;
         frame = document.getElementById("portalPaymentCheckoutFrame");
         externalLink = document.getElementById("portalPaymentExternalLink");
         qrImage = document.getElementById("portalPaymentQrImage");
@@ -3736,23 +3740,26 @@ function refreshPortalUserInfoAfterPayment() {
     });
 }
 
-function finishPortalPayment(status, reference) {
+function finishPortalPayment(status, reference, creditedPoints) {
     var completedVoucher = portalPaymentPollingState.voucherCode;
     var completedPlan = portalPaymentPollingState.voucherPlanId;
     var isSuccess = status === "completed" || status === "success";
+    var isPointsCredit = status === "points_credited";
     stopPortalPaymentStatusPolling(false);
     $("#portalPaymentCheckoutModal").modal("hide");
 
     $.toast({
-        title: isSuccess ? "Payment successful" : "Payment failed",
-        content: isSuccess
+        title: isPointsCredit ? "Payment saved as points" : (isSuccess ? "Payment successful" : "Payment failed"),
+        content: isPointsCredit
+            ? Number(creditedPoints || 0) + " points were credited because hotspot time could not be added. Reference: " + reference
+            : isSuccess
             ? "Your E-Wallet purchase was completed. Reference: " + reference
             : "The payment was not completed. No time was added. Reference: " + reference,
-        type: isSuccess ? "success" : "error",
+        type: (isSuccess || isPointsCredit) ? "success" : "error",
         delay: 5000
     });
 
-    if (isSuccess) {
+    if (isSuccess || isPointsCredit) {
         refreshPortalUserInfoAfterPayment();
     }
     clearPortalPaymentRequestId(completedVoucher, completedPlan);
@@ -3790,8 +3797,10 @@ function pollPortalPaymentStatus(generation) {
     if ((new Date().getTime() - portalPaymentPollingState.startedAt) >= PORTAL_PAYMENT_POLL_TIMEOUT_MS) {
         stopPortalPaymentStatusPolling(false);
         $.toast({
-            title: "Payment still pending",
-            content: "Confirmation is taking longer than expected. You may close this dialog and check your time later.",
+            title: portalPaymentPollingState.paymentReceived ? "Payment received; time pending" : "Payment still pending",
+            content: portalPaymentPollingState.paymentReceived
+                ? "Your payment was received but hotspot time is still pending. Do not pay again. Keep this reference and contact the operator: " + portalPaymentPollingState.reference
+                : "Confirmation is taking longer than expected. You may close this dialog and check your time later.",
             type: "info",
             delay: 5000
         });
@@ -3815,6 +3824,19 @@ function pollPortalPaymentStatus(generation) {
             }
 
             status = String(result.data.status || "").toLowerCase();
+            if (status === "paid_pending_fulfillment") {
+                var statusText = document.getElementById("portalPaymentCheckoutStatus");
+                if (statusText) statusText.textContent = result.data.fulfillmentStatus === "needs_reconciliation"
+                    ? "Payment received. The operator needs to verify delivery. Do not pay again. Reference: " + portalPaymentPollingState.reference
+                    : "Payment received. Waiting for your hotspot time to be added. Do not pay again. Reference: " + portalPaymentPollingState.reference;
+                portalPaymentPollingState.paymentReceived = true;
+                schedulePortalPaymentStatusPoll(generation);
+                return;
+            }
+            if (status === "points_credited") {
+                finishPortalPayment(status, portalPaymentPollingState.reference, result.data.creditedPoints);
+                return;
+            }
             if (status === "completed" || status === "success" || status === "failed" ||
                 status === "error" || status === "expired" ||
                 status === "canceled" || status === "cancelled") {
@@ -4010,8 +4032,7 @@ function onPurchaseClicked(item) {
                 purchaseId: item.id
             };
 
-            // The API selects PayMongo or Kinetix from the synchronized plan price.
-            // Keep one stable request identity across retries regardless of account channel.
+            // Extended uses PayMongo for every supported synchronized plan price.
             requestPayload.requestId = getPortalPaymentRequestId(code, item.id);
 
             if (requiresMobileNumber) {
@@ -4243,7 +4264,7 @@ function fetchPortalConfig(cb) {
     var storageKey = 'juanfi_portal_config';
     var appendKey = 'juanfi_portal_config_append';
     var cachedData = localStorageCompat.getItem(storageKey);
-    // The operator can disable purchases at any time, so always refresh portal
+    // The operator can disable purchases at any time, so refresh portal
     // configuration before showing the E-Wallet entry point.
     var shouldUseCache = false;
 
@@ -4850,7 +4871,7 @@ function fetchDuckRaceReward(serverIp, mac, betNumber) {
 }
 
 function drawSpinWheel(mac, prizes, colors) {
-    
+
     var wheelCanvas = document.getElementById('wheelCanvas');
     var wheelCtx = wheelCanvas.getContext('2d');
 
@@ -4924,7 +4945,7 @@ function drawSpinWheel(mac, prizes, colors) {
     var spinning = false;
     var lastSliceSound = -1;
 
-    
+
     function resizeAll() {
         dpr = Math.max(window.devicePixelRatio || 1, 1);
         var shown = Math.min(window.innerWidth * 0.9, wheelSize);
@@ -4950,7 +4971,7 @@ function drawSpinWheel(mac, prizes, colors) {
     }
     resizeAll();
 
-    
+
     function drawWheel(rotationRad, highlightIndex, highlightAlpha) {
         if (rotationRad === undefined) rotationRad = 0;
         if (highlightIndex === undefined) highlightIndex = null;
@@ -5025,7 +5046,7 @@ function drawSpinWheel(mac, prizes, colors) {
         ctx.restore();
     }
 
-    
+
     function rotationToIndex(rotationRad) {
         var displayPrizes = expandedPrizes.length > 0 ? expandedPrizes : prizes;
         var rotDeg = ((rotationRad * 180 / Math.PI) % 360 + 360) % 360;
@@ -5036,7 +5057,7 @@ function drawSpinWheel(mac, prizes, colors) {
         return idx;
     }
 
-    
+
     function spinWheel() {
         if (spinning) return;
 
@@ -5078,7 +5099,7 @@ function drawSpinWheel(mac, prizes, colors) {
 
     }
 
-    
+
     function executeSpin(chosenIndex, apiPrize, error) {
         if (!!error) chosenIndex = -1;
 
@@ -5169,7 +5190,7 @@ function drawSpinWheel(mac, prizes, colors) {
 
     }
 
-    
+
     function pulseHighlight(index, pulses, pulseDuration, callback) {
         if (pulses === undefined) pulses = 3;
         if (pulseDuration === undefined) pulseDuration = 700;
@@ -5192,7 +5213,7 @@ function drawSpinWheel(mac, prizes, colors) {
         requestCompatAnimationFrame(frame);
     }
 
-    
+
     function shufflePrizes() {
 
         var target = (expandedPrizes && expandedPrizes.length > 0) ? expandedPrizes : prizes;
@@ -5205,7 +5226,7 @@ function drawSpinWheel(mac, prizes, colors) {
     }
 
     if (!spinEventsCreated) {
-        
+
         bindEvent(window, 'resize', function () {
             resizeAll();
         });
@@ -5243,7 +5264,7 @@ function drawSpinWheel(mac, prizes, colors) {
     shufflePrizes();
     drawWheel(currentRotation);
 
-    
+
     function resizeAll() {
         resizeAll = null;
         resizeAll = function () {
@@ -5265,7 +5286,7 @@ function drawSpinWheel(mac, prizes, colors) {
         drawWheel(currentRotation);
     }
 
-    
+
     resizeAll = function () {
         dpr = Math.max(window.devicePixelRatio || 1, 1);
         var shown = Math.min(window.innerWidth * 0.9, wheelSize);
@@ -5519,11 +5540,15 @@ function fetchPortalAPI(apiUrl, type, vendorIpAddress, params, options) {
     });
 }
 
+function canUseVoucherPoints(totalPoints, pointsEnabled) {
+    return pointsEnabled || (isFinite(Number(totalPoints)) && Number(totalPoints) > 0);
+}
+
 function showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig) {
     $("#rewardBtnWrapper").addClass("hide");
-    if (pointsEnabled) {
+    if (canUseVoucherPoints(totalPoints, pointsEnabled)) {
         $("#redeemWrapper").removeClass("hide");
-        if ((!!wheelConfig) && wheelConfig.length > 0) {
+        if (pointsEnabled && (!!wheelConfig) && wheelConfig.length > 0) {
             $("#spinWrapper").removeClass("hide");
             $("#spinWheelCard").removeClass("hide");
             $("#spinWrapper").removeClass("col-sm-12");
@@ -5548,7 +5573,7 @@ function showPointsRedeemBtns(totalPoints, pointsEnabled, wheelConfig) {
         $("#rewardBtnWrapper").addClass("hide");
     }
 
-    if (pointsEnabled) {
+    if (canUseVoucherPoints(totalPoints, pointsEnabled)) {
         onRedeemRewardPtsEvt(macNoColon, wheelConfig);
         onRedeemRewardPtsConfirmBtnEvt(macNoColon);
         onRedeemRewardPtsSliderChangeEvt();

@@ -203,8 +203,9 @@
         var interfaceName = "";
         var isLoggedIn = true;
     </script>
-    <script src="assets/js/core.js?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261003"></script>
-    <script src="assets/js/games.js?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261003"></script>
+    <script id="juanfiCoreLoader" src="assets/js/core-loader.js?v=$(ip)-$(mac)-core-loader-20261005"
+        data-local-core="assets/js/core.js?v=$(ip)-$(mac)-core-fallback-20261008-fulfillment"
+        data-games-src="assets/js/games.js?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261003"></script>
 </body>
 
 </html>
