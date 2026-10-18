@@ -52,7 +52,8 @@ var macNoColon;
 var isPaused;
 var hasWiFree = false;
 var ewalletPurchaseEnabled = true;
-var walletChannel = "WIFREE";
+var walletChannel = "UNAVAILABLE";
+var portalWalletChannelRequestGeneration = 0;
 var announcementText = '';
 var isTestMode = window.location.href.indexOf("http") !== 0;
 var pauseAwaitingUserInfoResponse = false;
@@ -71,13 +72,14 @@ var portalPaymentPollingState = {
     reference: "",
     voucherCode: "",
     voucherPlanId: "",
+    requestId: "",
     startedAt: 0,
     generation: 0
 };
 var PORTAL_PAYMENT_POLL_DELAY_MS = 3000;
 var PORTAL_PAYMENT_POLL_TIMEOUT_MS = 600000;
 var portalPurchaseInFlight = false;
-var portalPaymentRequestStoragePrefix = "paymongoPortalRequest:";
+var portalPurchaseSelection = null;
 var announcementMarqueeState = {
     announcement: null,
     track: null,
@@ -102,8 +104,24 @@ function normalizeWalletChannel(value) {
     var channel = (value || "").toString().replace(/^\s+|\s+$/g, "").toUpperCase();
     if (channel === "EXTENDED") return "EXTENDED";
     if (channel === "PAYMONGO") return "EXTENDED";
-    if (channel === "UNAVAILABLE") return "UNAVAILABLE";
-    return "WIFREE";
+    if (channel === "WIFREE") return "WIFREE";
+    return "UNAVAILABLE";
+}
+
+function applyPortalWalletChannel(value, requestGeneration) {
+    if (requestGeneration !== portalWalletChannelRequestGeneration) return false;
+    walletChannel = normalizeWalletChannel(value);
+    return true;
+}
+
+function readVoucherWalletChannel(data) {
+    if (!Array.isArray(data) || data.length === 0) return "UNAVAILABLE";
+    var channel = normalizeWalletChannel(data[0] && data[0].walletChannel);
+    if (channel === "UNAVAILABLE") return channel;
+    for (var i = 1; i < data.length; i++) {
+        if (normalizeWalletChannel(data[i] && data[i].walletChannel) !== channel) return "UNAVAILABLE";
+    }
+    return channel;
 }
 
 function isExtendedWalletChannel() {
@@ -1599,6 +1617,8 @@ function renderView() {
     $("#insertBtn").prop('disabled', true);
     // A previous render must not keep purchases visible if config refresh fails.
     ewalletPurchaseEnabled = false;
+    walletChannel = "UNAVAILABLE";
+    var channelRequestGeneration = ++portalWalletChannelRequestGeneration;
     $("#wifreeBtn").addClass("hide");
     fetchPortalConfig(function (data, error) {
         if (!!error) {
@@ -1631,7 +1651,7 @@ function renderView() {
             wheelConfig = data.wheelConfig;
             hasWiFree = data.hasWiFree;
             ewalletPurchaseEnabled = readEWalletPurchaseEnabled(data);
-            walletChannel = normalizeWalletChannel(data.walletChannel);
+            applyPortalWalletChannel(data.walletChannel, channelRequestGeneration);
             announcementText = data.announcement;
         }
         localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
@@ -1999,7 +2019,7 @@ function renderView() {
             } else {
                 showResumeButton();
             }
-            if (hasWiFree && ewalletPurchaseEnabled) {
+            if (hasWiFree && ewalletPurchaseEnabled && normalizeWalletChannel(walletChannel) !== "UNAVAILABLE") {
                 $("#wifreeBtn").removeClass("hide");
             } else {
                 $("#wifreeBtn").addClass("hide");
@@ -3708,6 +3728,7 @@ function stopPortalPaymentStatusPolling(clearCheckout) {
         portalPaymentPollingState.reference = "";
         portalPaymentPollingState.voucherCode = "";
         portalPaymentPollingState.voucherPlanId = "";
+        portalPaymentPollingState.requestId = "";
         portalPaymentPollingState.pollingEnabled = false;
         portalPaymentPollingState.startedAt = 0;
         portalPaymentPollingState.paymentReceived = false;
@@ -3743,6 +3764,7 @@ function refreshPortalUserInfoAfterPayment() {
 function finishPortalPayment(status, reference, creditedPoints) {
     var completedVoucher = portalPaymentPollingState.voucherCode;
     var completedPlan = portalPaymentPollingState.voucherPlanId;
+    var completedRequestId = portalPaymentPollingState.requestId;
     var isSuccess = status === "completed" || status === "success";
     var isPointsCredit = status === "points_credited";
     stopPortalPaymentStatusPolling(false);
@@ -3762,24 +3784,41 @@ function finishPortalPayment(status, reference, creditedPoints) {
     if (isSuccess || isPointsCredit) {
         refreshPortalUserInfoAfterPayment();
     }
-    clearPortalPaymentRequestId(completedVoucher, completedPlan);
+    clearPortalPaymentRequestId(completedVoucher, completedPlan, completedRequestId);
+}
+
+function createPortalPaymentRequestId() {
+    return "hotspot-" + (new Date().getTime()).toString(36) + "-" +
+        Math.random().toString(36).slice(2, 12);
+}
+
+function beginPortalPaymentAttempt(item) {
+    portalPurchaseSelection = {
+        item: item,
+        voucherCode: String(getStorageValue('activeVoucher') || ""),
+        voucherPlanId: String(item && item.id || ""),
+        requestId: createPortalPaymentRequestId(),
+        requiresMobileNumber: !isPortalWalletChannel()
+    };
+    return portalPurchaseSelection;
 }
 
 function getPortalPaymentRequestId(voucherCodeValue, voucherPlanId) {
-    var storageKey = portalPaymentRequestStoragePrefix +
-        String(voucherCodeValue || "") + ":" + String(voucherPlanId || "");
-    var existing = localStorageCompat.getItem(storageKey);
-    if (existing) return existing;
-    var created = "hotspot-" + (new Date().getTime()).toString(36) + "-" +
-        Math.random().toString(36).slice(2, 12);
-    localStorageCompat.setItem(storageKey, created);
-    return created;
+    var attempt = portalPurchaseSelection;
+    if (!attempt || attempt.voucherCode !== String(voucherCodeValue || "") ||
+        attempt.voucherPlanId !== String(voucherPlanId || "")) {
+        return "";
+    }
+    if (!attempt.requestId) attempt.requestId = createPortalPaymentRequestId();
+    return attempt.requestId;
 }
 
-function clearPortalPaymentRequestId(voucherCodeValue, voucherPlanId) {
-    if (!voucherCodeValue || !voucherPlanId) return;
-    localStorageCompat.removeItem(portalPaymentRequestStoragePrefix +
-        String(voucherCodeValue) + ":" + String(voucherPlanId));
+function clearPortalPaymentRequestId(voucherCodeValue, voucherPlanId, requestId) {
+    var attempt = portalPurchaseSelection;
+    if (!attempt || attempt.voucherCode !== String(voucherCodeValue || "") ||
+        attempt.voucherPlanId !== String(voucherPlanId || "") ||
+        (requestId && attempt.requestId !== requestId)) return;
+    attempt.requestId = "";
 }
 
 function pollPortalPaymentStatus(generation) {
@@ -3880,11 +3919,16 @@ function ensurePortalPaymentCheckoutEvents() {
         startPortalPaymentStatusPolling();
     });
     bindEvent(modal, "hidden.bs.modal", function () {
+        var closedVoucher = portalPaymentPollingState.voucherCode;
+        var closedPlan = portalPaymentPollingState.voucherPlanId;
+        var closedRequestId = portalPaymentPollingState.requestId;
         stopPortalPaymentStatusPolling(true);
+        // Closing an unpaid QR abandons this local attempt but leaves the provider order settleable.
+        clearPortalPaymentRequestId(closedVoucher, closedPlan, closedRequestId);
     });
 }
 
-function openPortalPaymentCheckout(data, activeVoucherCode, enableStatusPolling) {
+function openPortalPaymentCheckout(data, activeVoucherCode, enableStatusPolling, requestId) {
     var frame = document.getElementById("portalPaymentCheckoutFrame");
     var externalLink = document.getElementById("portalPaymentExternalLink");
     var statusText = document.getElementById("portalPaymentCheckoutStatus");
@@ -3909,6 +3953,7 @@ function openPortalPaymentCheckout(data, activeVoucherCode, enableStatusPolling)
     portalPaymentPollingState.reference = String(data.reference || "");
     portalPaymentPollingState.voucherCode = String(activeVoucherCode || "");
     portalPaymentPollingState.voucherPlanId = String(data.voucherPlanId || "");
+    portalPaymentPollingState.requestId = String(requestId || "");
     portalPaymentPollingState.pollingEnabled = enableStatusPolling === true || /^PMP/i.test(portalPaymentPollingState.reference);
     if (hasQr) {
         frame.removeAttribute("src");
@@ -3941,7 +3986,147 @@ function openPortalPaymentCheckout(data, activeVoucherCode, enableStatusPolling)
     return true;
 }
 
+function ensurePortalPurchaseHandlers() {
+    var payNowBtn = document.getElementById('payNowBtn');
+    var inputMobileNumber = document.getElementById('inputMobileNumber');
+
+    if (payNowBtn && payNowBtn.getAttribute('data-portal-payment-handler-bound') !== 'true') {
+        payNowBtn.setAttribute('data-portal-payment-handler-bound', 'true');
+        bindEvent(payNowBtn, 'click', onPortalPayNowClicked);
+    }
+    if (inputMobileNumber && inputMobileNumber.getAttribute('data-portal-payment-input-bound') !== 'true') {
+        inputMobileNumber.setAttribute('data-portal-payment-input-bound', 'true');
+        bindEvent(inputMobileNumber, 'input', function () {
+            removeClassCompat(inputMobileNumber, 'is-invalid');
+        });
+    }
+}
+
+function onPortalPayNowClicked() {
+    var attempt = portalPurchaseSelection;
+    var item = attempt && attempt.item;
+    var payNowBtn = document.getElementById('payNowBtn');
+    var inputMobileNumber = document.getElementById('inputMobileNumber');
+    var mobileError = document.getElementById('mobileError');
+    var code;
+    var requestId;
+
+    if (!attempt || !item || portalPurchaseInFlight || normalizeWalletChannel(walletChannel) === 'UNAVAILABLE') return;
+    if (!Number.isFinite(Number(item.price)) || Number(item.price) < 5) {
+        $.toast({
+            title: 'Invalid amount',
+            content: 'Minimum e-wallet purchase amount is ₱5.00.',
+            type: 'error',
+            delay: 4000
+        });
+        return;
+    }
+    var mobileValue = inputMobileNumber ? inputMobileNumber.value.trim() : "";
+    var onlyNumbers = /^\d+$/;
+
+    removeClassCompat(inputMobileNumber, 'is-invalid');
+    removeClassCompat(inputMobileNumber, 'is-valid');
+    var errorMessage = "";
+
+    if (attempt.requiresMobileNumber) {
+        if (mobileValue === "") {
+            errorMessage = "Mobile number is required.";
+        } else if (!onlyNumbers.test(mobileValue)) {
+            errorMessage = "Please enter numbers only (no letters or spaces).";
+        } else if (mobileValue.length !== 11) {
+            errorMessage = "Number must be exactly 11 digits.";
+        }
+    }
+
+    if (errorMessage) {
+        if (mobileError) mobileError.textContent = errorMessage;
+        addClassCompat(inputMobileNumber, 'is-invalid');
+        return;
+    }
+    if (attempt.requiresMobileNumber) {
+        addClassCompat(inputMobileNumber, 'is-valid');
+    }
+
+    code = attempt.voucherCode;
+    requestId = getPortalPaymentRequestId(code, item.id);
+    if (!requestId) return;
+
+    portalPurchaseInFlight = true;
+    if (payNowBtn) payNowBtn.disabled = true;
+    addLoader('payNowBtn');
+
+    var requestPayload = {
+        code: code,
+        purchaseId: item.id,
+        // A selected rate starts one deliberate attempt. Retries retain this ID;
+        // a later rate selection intentionally starts a distinct provider order.
+        requestId: requestId
+    };
+
+    if (attempt.requiresMobileNumber) {
+        requestPayload.mobile = mobileValue;
+    }
+
+    fetchPortalAPI("/wifree-vouchers", "POST", vendorIpAddress, requestPayload, { preserveErrorPayload: true })
+        .then(function (result) {
+            if ((!result) || (!result.success)) {
+                var purchaseError = String((result && result.error) || "");
+                if (/Voucher plan or price is not synchronized/i.test(purchaseError)) {
+                    $("#wifreeCheckOutModal").modal("hide");
+                    renderWifreeList();
+                    $.toast({
+                        title: 'Rates refreshed',
+                        content: 'The plan changed while this page was open. Please select the updated rate and try again.',
+                        type: 'info',
+                        delay: 5000
+                    });
+                    removeLoader('payNowBtn');
+                    return;
+                }
+                $.toast({
+                    title: 'Failed',
+                    content: purchaseError || 'Request failed. Please try again.',
+                    type: 'error',
+                    delay: 4000
+                });
+                removeLoader('payNowBtn');
+                return;
+            }
+
+            var data = result.data;
+            if (data && (data.url || data.imageUrl)) {
+                if (!openPortalPaymentCheckout(data, code, isPortalWalletChannel(), requestId)) {
+                    clearPortalPaymentRequestId(code, item.id, requestId);
+                    removeLoader('payNowBtn');
+                }
+            } else {
+                // The checkout was unavailable. A new explicit Pay Now click starts a fresh order.
+                clearPortalPaymentRequestId(code, item.id, requestId);
+                $.toast({
+                    title: 'Failed',
+                    content: 'Failed to disconnect device.',
+                    type: 'error',
+                    delay: 4000
+                });
+            }
+            removeLoader('payNowBtn');
+        })
+        .catch(function (error) {
+            $.toast({
+                title: 'Failed',
+                content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
+                type: 'error',
+                delay: 4000
+            });
+            removeLoader('payNowBtn');
+        }).then(function () {
+            portalPurchaseInFlight = false;
+            if (payNowBtn) payNowBtn.disabled = false;
+        });
+}
+
 function onPurchaseClicked(item) {
+    var attempt = beginPortalPaymentAttempt(item);
     vendorIpAddress = localStorageCompat.getItem("vendorIpAddress");
     addLoader('wifreeBtn');
     $('#wifreeCheckOutModal').modal('show');
@@ -3963,149 +4148,27 @@ function onPurchaseClicked(item) {
         '</small>' +
         '</div>' +
         '</div>';
-    var payNowBtn = document.getElementById('payNowBtn');
     var inputMobileNumber = document.getElementById('inputMobileNumber');
     var mobileNumberGroup = document.getElementById('wifreeMobileNumberGroup');
-    var mobileError = document.getElementById('mobileError');
-    var requiresMobileNumber = !isPortalWalletChannel();
 
     if (inputMobileNumber) {
-        inputMobileNumber.required = requiresMobileNumber;
+        inputMobileNumber.required = attempt.requiresMobileNumber;
         removeClassCompat(inputMobileNumber, 'is-invalid');
         removeClassCompat(inputMobileNumber, 'is-valid');
-        if (!requiresMobileNumber) {
+        if (!attempt.requiresMobileNumber) {
             inputMobileNumber.value = "";
         }
     }
 
     if (mobileNumberGroup) {
-        if (requiresMobileNumber) {
+        if (attempt.requiresMobileNumber) {
             removeClassCompat(mobileNumberGroup, 'hide');
         } else {
             addClassCompat(mobileNumberGroup, 'hide');
         }
     }
 
-    bindEvent(payNowBtn, 'click', function (e) {
-        if (portalPurchaseInFlight || normalizeWalletChannel(walletChannel) === 'UNAVAILABLE') return;
-        if (!Number.isFinite(Number(item.price)) || Number(item.price) < 5) {
-            $.toast({
-                title: 'Invalid amount',
-                content: 'Minimum e-wallet purchase amount is ₱5.00.',
-                type: 'error',
-                delay: 4000
-            });
-            return;
-        }
-        var mobileValue = inputMobileNumber ? inputMobileNumber.value.trim() : "";
-        var onlyNumbers = /^\d+$/;
-
-        removeClassCompat(inputMobileNumber, 'is-invalid');
-        removeClassCompat(inputMobileNumber, 'is-valid');
-        var errorMessage = "";
-
-        if (requiresMobileNumber) {
-            if (mobileValue === "") {
-                errorMessage = "Mobile number is required.";
-            } else if (!onlyNumbers.test(mobileValue)) {
-                errorMessage = "Please enter numbers only (no letters or spaces).";
-            } else if (mobileValue.length !== 11) {
-                errorMessage = "Number must be exactly 11 digits.";
-            }
-        }
-
-        if (errorMessage) {
-            mobileError.textContent = errorMessage;
-            addClassCompat(inputMobileNumber, 'is-invalid');
-        } else {
-            if (requiresMobileNumber) {
-                addClassCompat(inputMobileNumber, 'is-valid');
-            }
-
-            portalPurchaseInFlight = true;
-            payNowBtn.disabled = true;
-            addLoader('payNowBtn');
-
-            var code = getStorageValue('activeVoucher');
-            var requestPayload = {
-                code: code,
-                purchaseId: item.id
-            };
-
-            // Extended uses PayMongo for every supported synchronized plan price.
-            requestPayload.requestId = getPortalPaymentRequestId(code, item.id);
-
-            if (requiresMobileNumber) {
-                requestPayload.mobile = mobileValue;
-            }
-
-            fetchPortalAPI("/wifree-vouchers", "POST", vendorIpAddress, requestPayload, { preserveErrorPayload: true })
-                .then(function (result) {
-                    if ((!result) || (!result.success)) {
-                        if (result && result.safeToRetry === true) {
-                            clearPortalPaymentRequestId(code, item.id);
-                        }
-                        var purchaseError = String((result && result.error) || "");
-                        if (/Voucher plan or price is not synchronized/i.test(purchaseError)) {
-                            clearPortalPaymentRequestId(code, item.id);
-                            $("#wifreeCheckOutModal").modal("hide");
-                            renderWifreeList();
-                            $.toast({
-                                title: 'Rates refreshed',
-                                content: 'The plan changed while this page was open. Please select the updated rate and try again.',
-                                type: 'info',
-                                delay: 5000
-                            });
-                            removeLoader('payNowBtn');
-                            return;
-                        }
-                        $.toast({
-                            title: 'Failed',
-                            content: purchaseError || 'Request failed. Please try again.',
-                            type: 'error',
-                            delay: 4000
-                        });
-                        removeLoader('payNowBtn');
-                        return;
-                    }
-
-                    var data = result.data;
-                    if (data && (data.url || data.imageUrl)) {
-                        if (!openPortalPaymentCheckout(data, code, isPortalWalletChannel())) {
-                            removeLoader('payNowBtn');
-                        }
-                    } else {
-                        $.toast({
-                            title: 'Failed',
-                            content: 'Failed to disconnect device.',
-                            type: 'error',
-                            delay: 4000
-                        });
-                    }
-                    removeLoader('payNowBtn');
-                })
-                .catch(function (error) {
-                    if (error && error.safeToRetry === true) {
-                        clearPortalPaymentRequestId(code, item.id);
-                    }
-                    $.toast({
-                        title: 'Failed',
-                        content: (error && (error.message || error)) || 'Failed to connect to server. Try again later.',
-                        type: 'error',
-                        delay: 4000
-                    });
-                    removeLoader('payNowBtn');
-                }).then(function () {
-                    portalPurchaseInFlight = false;
-                    payNowBtn.disabled = false;
-                });
-        }
-    });
-
-    bindEvent(inputMobileNumber, 'input', function () {
-        removeClassCompat(inputMobileNumber, 'is-invalid');
-    });
-
+    ensurePortalPurchaseHandlers();
 }
 
 $('#inputMobileNumber').on('input', function () {
@@ -4116,17 +4179,17 @@ $('#inputMobileNumber').on('input', function () {
 });
 
 function renderWifreeList() {
+    var requestGeneration = ++portalWalletChannelRequestGeneration;
+    var container = document.getElementById('wifreeList');
+    if (!container) return;
+    container.innerHTML = "";
+    walletChannel = "UNAVAILABLE";
     fetchPortalAPI("/wifree-vouchers", "GET", null, null)
         .then(function (result) {
-            if ((!result) || (!result.success)) {
-                return;
-            }
+            if (requestGeneration !== portalWalletChannelRequestGeneration || !result || !result.success) return;
             var data = result.data;
-            var container = document.getElementById('wifreeList');
-            container.innerHTML = "";
-            if (data.length > 0 && data[0].walletChannel) {
-                walletChannel = normalizeWalletChannel(data[0].walletChannel);
-            }
+            applyPortalWalletChannel(readVoucherWalletChannel(data), requestGeneration);
+            if (walletChannel === "UNAVAILABLE") return;
             data.forEach(function (item) {
                 var div = document.createElement("div");
                 div.style.cursor = "pointer";
