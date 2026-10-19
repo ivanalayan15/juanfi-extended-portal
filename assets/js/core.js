@@ -878,7 +878,13 @@ function createAudioInstance(src) {
     }
 
     try {
-        return new Audio(src);
+        var audio = new Audio();
+        if (typeof window.juanfiSetPortalAssetSource === 'function') {
+            window.juanfiSetPortalAssetSource(audio, src);
+        } else {
+            audio.src = src;
+        }
+        return audio;
     } catch (e) {
         return null;
     }
@@ -1941,7 +1947,11 @@ function renderView() {
             if (isOnline) {
                 $("#connectionDot").attr("class", "connection-dot blinking-dot-green").attr("title", "Connected");
                 setRemainingTimeConnectionState(true);
-                $("#statusImg").attr("src", "assets/img/wifi.png");
+                if (typeof window.juanfiSetPortalAssetSource === 'function') {
+                    window.juanfiSetPortalAssetSource($("#statusImg")[0], "assets/img/wifi.png");
+                } else {
+                    $("#statusImg").attr("src", "assets/img/wifi.png");
+                }
                 $("#statusImg").removeClass("hide");
                 $("#statusImg").addClass("blinking2");
                 $("#remainingTimeWrapper").removeClass("hide");
@@ -1988,7 +1998,11 @@ function renderView() {
 
                 $("#connectionDot").attr("class", "connection-dot blinking-dot-red").attr("title", "Disconnected");
                 setRemainingTimeConnectionState(false);
-                $("#statusImg").attr("src", "assets/img/off_wifi.png");
+                if (typeof window.juanfiSetPortalAssetSource === 'function') {
+                    window.juanfiSetPortalAssetSource($("#statusImg")[0], "assets/img/off_wifi.png");
+                } else {
+                    $("#statusImg").attr("src", "assets/img/off_wifi.png");
+                }
                 $("#statusImg").removeClass("hide");
                 $("#statusImg").addClass("blinking1");
                 showResumeButton();
@@ -4135,7 +4149,7 @@ function onPurchaseClicked(item) {
     container.innerHTML =
         '<div class="d-flex flex-column gap-2 px-2 py-2 shadow" style="border:1px solid #7e7e7e;border-radius: 5px">' +
         '<div class="d-flex justify-content-between align-items-center gap-2 w-100">' +
-        '<span class="portal-payment-brand"><img src="assets/img/payment_qrph.png" alt="QRPh"></span>' +
+        '<span class="portal-payment-brand"><img src="assets/img/payment_qrph.png" data-opi-asset="assets/img/payment_qrph.png" data-local-asset="assets/img/payment_qrph.png" alt="QRPh"></span>' +
         '<h2 class="fw-bolder">₱ ' + item.price.toFixed(2) + '</h2>' +
         '</div>' +
         '<div class="divider-primary"></div>' +
@@ -4196,7 +4210,7 @@ function renderWifreeList() {
                 div.innerHTML =
                     '<div class="d-flex flex-column gap-2 px-2 py-2 shadow" style="border:1px solid #7e7e7e;border-radius: 5px">' +
                     '<div class="d-flex justify-content-between align-items-center gap-2 w-100">' +
-                    '<span class="portal-payment-brand"><img src="assets/img/payment_qrph.png" alt="QRPh"></span>' +
+                    '<span class="portal-payment-brand"><img src="assets/img/payment_qrph.png" data-opi-asset="assets/img/payment_qrph.png" data-local-asset="assets/img/payment_qrph.png" alt="QRPh"></span>' +
                     '<h2 class="fw-bolder">₱ ' + item.price.toFixed(2) + '</h2>' +
                     '</div>' +
                     '<div class="divider-primary"></div>' +

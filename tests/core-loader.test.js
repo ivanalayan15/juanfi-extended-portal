@@ -5,18 +5,32 @@ const test = require("node:test");
 const vm = require("node:vm");
 
 const loaderSource = fs.readFileSync(path.join(__dirname, "../assets/js/core-loader.js"), "utf8");
+const repositoryRoot = findRepositoryRoot();
 
-function createHarness(response, gamesScriptUrl, localCoreUrl = "assets/js/core.js?v=local-core") {
+function findRepositoryRoot() {
+    let current = path.resolve(__dirname, "..");
+    while (current !== path.dirname(current)) {
+        if (fs.existsSync(path.join(current, "HOTSPOT_MANAGER.sln"))) return current;
+        current = path.dirname(current);
+    }
+    return null;
+}
+
+function createHarness(response, gamesScriptUrl, localCoreUrl = "assets/js/core.js?v=local-core", localGamesUrl = "assets/js/games.js?v=local-games", portalAssets = []) {
     const scripts = [];
     const timers = new Map();
     const elements = new Map();
     const requests = [];
+    function matchingAssets(tagName) {
+        return portalAssets.filter(asset => asset.tagName.toLowerCase() === tagName.toLowerCase());
+    }
     let nextTimerId = 1;
     const document = {
         currentScript: {
             getAttribute(name) {
                 if (name === "data-games-src") return gamesScriptUrl;
                 if (name === "data-local-core") return localCoreUrl;
+                if (name === "data-local-games") return localGamesUrl;
                 return null;
             }
         },
@@ -43,7 +57,9 @@ function createHarness(response, gamesScriptUrl, localCoreUrl = "assets/js/core.
             };
         },
         getElementById(id) { return elements.get(id) || null; }
+        ,getElementsByTagName: matchingAssets
     };
+    document.documentElement = { nodeType: 1, getElementsByTagName: matchingAssets };
     class FakeXhr {
         open(method, url, async) {
             this.method = method;
@@ -86,7 +102,17 @@ function createHarness(response, gamesScriptUrl, localCoreUrl = "assets/js/core.
     return { window, document, scripts, requests, elements, localStorage, timers, runNextTimer, context };
 }
 
-test("loads the Opi core from validated router JSON and chains games after core", () => {
+function createPortalAsset(tagName, key, localUrl) {
+    const attributes = { "data-opi-asset": key, "data-local-asset": localUrl };
+    return {
+        tagName: tagName.toUpperCase(),
+        attributes,
+        getAttribute(name) { return attributes[name] || null; },
+        setAttribute(name, value) { attributes[name] = value; }
+    };
+}
+
+test("loads the Opi core and games from validated router JSON in order", () => {
     const harness = createHarness({
         status: 200,
         body: JSON.stringify({ ip: "192.168.88.253", version: 406 })
@@ -102,7 +128,75 @@ test("loads the Opi core from validated router JSON and chains games after core"
 
     harness.scripts[0].onload();
     assert.equal(harness.scripts.length, 2);
-    assert.equal(harness.scripts[1].src, "assets/js/games.js?v=portal-version");
+    assert.equal(harness.scripts[1].src, "http://192.168.88.253:8080/api/portal/games.js?v=406");
+});
+
+test("loads allowlisted CSS and images from Opi and falls back per asset on error", () => {
+    const css = createPortalAsset("link", "assets/css/core.css", "assets/css/core.css?v=router");
+    const image = createPortalAsset("img", "assets/img/coin.png", "assets/img/coin.png");
+    const harness = createHarness({
+        status: 200,
+        body: JSON.stringify({ ip: "192.168.88.253", version: "v 406" })
+    }, null, undefined, undefined, [css, image]);
+
+    assert.equal(css.href, "http://192.168.88.253:8080/api/portal/static/assets/css/core.css?v=v%20406");
+    assert.equal(image.src, "http://192.168.88.253:8080/api/portal/static/assets/img/coin.png?v=v%20406");
+
+    css.onerror();
+    image.onerror();
+    assert.equal(css.href, "assets/css/core.css?v=router");
+    assert.equal(image.src, "assets/img/coin.png");
+});
+
+test("loads Bootstrap styles from Opi while preserving the stylesheet path used by its fonts", () => {
+    const bootstrap = createPortalAsset("link", "assets/css/bootstrap.min.css", "assets/css/bootstrap.min.css?v=router");
+    const icons = createPortalAsset("link", "assets/lib/bootstrap-icons.css", "assets/lib/bootstrap-icons.css?v=router");
+    createHarness({
+        status: 200,
+        body: JSON.stringify({ ip: "192.168.88.253", version: 406 })
+    }, null, undefined, undefined, [bootstrap, icons]);
+
+    assert.equal(bootstrap.href, "http://192.168.88.253:8080/api/portal/static/assets/css/bootstrap.min.css?v=406");
+    assert.equal(icons.href, "http://192.168.88.253:8080/api/portal/static/assets/lib/bootstrap-icons.css?v=406");
+    assert.match(icons.href, /\/assets\/lib\/bootstrap-icons\.css\?/);
+    icons.onerror();
+    assert.equal(icons.href, "assets/lib/bootstrap-icons.css?v=router");
+});
+
+test("keeps ordered JavaScript dependencies on router-local URLs", () => {
+    const page = fs.readFileSync(path.join(__dirname, "../juanfi.html"), "utf8");
+    assert.match(page, /assets\/js\/jquery\.min\.js[\s\S]*assets\/js\/bootstrap\.bundle\.min\.js[\s\S]*assets\/js\/cache\.js[\s\S]*assets\/js\/core-loader\.js/);
+    assert.match(page, /loadDeferredScript\("pakoScript", "assets\/js\/pako\.min\.js/);
+    assert.match(page, /loadDeferredScript\("eloadScript", "assets\/js\/eload\.js/);
+});
+
+test("uses local assets when router metadata is unavailable and bounds Opi asset waits", () => {
+    const css = createPortalAsset("link", "assets/css/JuanFi.css", "assets/css/JuanFi.css?v=router");
+    const fallbackHarness = createHarness({ status: 503, body: "unavailable" }, null, undefined, undefined, [css]);
+    assert.equal(css.href, "assets/css/JuanFi.css?v=router");
+
+    const slowImage = createPortalAsset("img", "assets/img/coin.png", "assets/img/coin.png");
+    const opiHarness = createHarness({
+        status: 200,
+        body: JSON.stringify({ ip: "192.168.88.253", version: 406 })
+    }, null, undefined, undefined, [slowImage]);
+    assert.match(slowImage.src, /^http:\/\/192\.168\.88\.253:8080\/api\/portal\/static\//);
+    assert.equal(opiHarness.runNextTimer(), 600);
+    assert.equal(slowImage.src, "assets/img/coin.png");
+    assert.equal(fallbackHarness.scripts[0].src, "assets/js/core.js?v=local-core");
+});
+
+test("dynamic core assets use the same validated Opi URL and local fallback helper", () => {
+    const harness = createHarness({
+        status: 200,
+        body: JSON.stringify({ ip: "192.168.88.253", version: 406 })
+    });
+    const audio = createPortalAsset("audio", "", "");
+    harness.window.juanfiSetPortalAssetSource(audio, "assets/insertcoinbg.mp3");
+
+    assert.equal(audio.src, "http://192.168.88.253:8080/api/portal/static/assets/insertcoinbg.mp3?v=406");
+    audio.onerror();
+    assert.equal(audio.src, "assets/insertcoinbg.mp3");
 });
 
 test("accepts RFC1918, link-local, and carrier-grade NAT Opi addresses", () => {
@@ -185,7 +279,7 @@ test("falls back when router JSON or the Opi script is unavailable", () => {
     assert.equal(scriptFailure.scripts.length, 2);
     assert.equal(scriptFailure.scripts[1].src, "assets/js/core.js?v=local-core");
     scriptFailure.scripts[1].onload();
-    assert.equal(scriptFailure.scripts[2].src, "assets/js/games.js?v=portal-version");
+    assert.equal(scriptFailure.scripts[2].src, "http://192.168.88.253:8080/api/portal/games.js?v=406");
 });
 
 test("Opi timeout removes the primary script, loads fallback, and keeps games ordered", () => {
@@ -205,7 +299,35 @@ test("Opi timeout removes the primary script, loads fallback, and keeps games or
     assert.equal(opiScript.onload, null, "the removed Opi script must not keep a late load callback");
     assert.equal(harness.scripts.length, 2, "a late Opi load must not start games or another core");
     localScript.onload();
-    assert.equal(harness.scripts[2].src, "assets/js/games.js?v=portal-version");
+    assert.equal(harness.scripts[2].src, "http://192.168.88.253:8080/api/portal/games.js?v=406");
+});
+
+test("falls back to router games when the Opi games script fails or times out", () => {
+    const scriptFailure = createHarness({
+        status: 200,
+        body: JSON.stringify({ ip: "192.168.88.253", version: 406 })
+    }, "assets/js/games.js?v=portal-version");
+    scriptFailure.scripts[0].onload();
+    const opiGames = scriptFailure.scripts[1];
+    assert.equal(opiGames.src, "http://192.168.88.253:8080/api/portal/games.js?v=406");
+    opiGames.onerror();
+    assert.equal(scriptFailure.scripts[2].src, "assets/js/games.js?v=local-games");
+    assert.equal(opiGames.onload, null, "late Opi games callbacks must be detached");
+
+    const timeout = createHarness({
+        status: 200,
+        body: JSON.stringify({ ip: "192.168.88.253", version: 406 })
+    }, "assets/js/games.js?v=portal-version");
+    timeout.scripts[0].onload();
+    assert.equal(timeout.runNextTimer(), 1000);
+    assert.equal(timeout.scripts[2].src, "assets/js/games.js?v=local-games");
+});
+
+test("uses router games directly when router JSON is unavailable", () => {
+    const harness = createHarness({ status: 404, body: "not found" }, "assets/js/games.js?v=portal-version");
+    assert.equal(harness.scripts[0].src, "assets/js/core.js?v=local-core");
+    harness.scripts[0].onload();
+    assert.equal(harness.scripts[1].src, "assets/js/games.js?v=local-games");
 });
 
 test("shows the generic failure panel only when the local fallback fails", () => {
@@ -240,10 +362,16 @@ test("does not inject the core twice when the loader is included more than once"
     assert.equal(harness.requests.length, 1);
 });
 
-test("router fallback and Opi canonical core stay byte-identical", () => {
+test("router fallback and Opi canonical core stay byte-identical", { skip: !repositoryRoot }, () => {
     const portalRoot = path.join(__dirname, "..");
-    const repositoryRoot = path.resolve(portalRoot, "../..");
     const routerCore = fs.readFileSync(path.join(portalRoot, "assets/js/core.js"));
     const opiCore = fs.readFileSync(path.join(repositoryRoot, "Opi/Opi/PortalAssets/core.js"));
     assert.deepEqual(routerCore, opiCore);
+});
+
+test("router fallback and Opi canonical games stay byte-identical", { skip: !repositoryRoot }, () => {
+    const portalRoot = path.join(__dirname, "..");
+    const routerGames = fs.readFileSync(path.join(portalRoot, "assets/js/games.js"));
+    const opiGames = fs.readFileSync(path.join(repositoryRoot, "Opi/Opi/PortalAssets/games.js"));
+    assert.deepEqual(routerGames, opiGames);
 });
