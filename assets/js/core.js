@@ -3978,7 +3978,9 @@ function openPortalPaymentCheckout(data, activeVoucherCode, enableStatusPolling,
         removeClassCompat(qrWrap, "hide");
         if (qrAmount) {
             qrAmount.textContent = "Pay ₱" + Number(data.totalAmount || data.amount || 0).toFixed(2) +
-                " (includes ₱" + Number(data.serviceFee || 0).toFixed(2) + " service fee)";
+                (Number(data.serviceFee) > 0
+                    ? " (includes ₱" + Number(data.serviceFee).toFixed(2) + " service fee)"
+                    : "");
         }
         if (qrExpiry) {
             qrExpiry.textContent = data.expiresAt

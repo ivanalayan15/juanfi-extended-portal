@@ -145,7 +145,7 @@ body {
 .status-holder {
 	display: block;
 	padding: 10px 5px 10px 5px;
-	font-size: 13px;	
+	font-size: 13px;
 	width: 100%;
 	color: #fff;
 	box-shadow: 0px 1px 5px #000;
@@ -230,7 +230,7 @@ body {
 
 #vendoSelectDiv label {
 	color: #fff;
-	
+
 }
 
 .col-sm-6 {
@@ -286,7 +286,7 @@ body {
 	border: none
 }
 
-#ratesBody{	
+#ratesBody{
 	border: none;
 }
 
