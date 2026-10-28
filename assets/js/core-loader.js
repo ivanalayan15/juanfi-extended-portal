@@ -76,8 +76,20 @@
         return "http://" + opiAssetIp + ":8080/api/portal/static/" + path + "?v=" + version;
     }
 
+    function cancelAssetRequest(element) {
+        if (element.__juanfiPortalAssetTimeout !== null && element.__juanfiPortalAssetTimeout !== undefined) {
+            clearTimeout(element.__juanfiPortalAssetTimeout);
+        }
+        element.__juanfiPortalAssetTimeout = null;
+        element.__juanfiPortalAssetRequest = null;
+        element.__juanfiPortalAssetState = null;
+        element.onload = null;
+        element.onerror = null;
+        element.onloadeddata = null;
+    }
+
     function applyAssetToNode(element, useOpi) {
-        if (!element || element.__juanfiPortalAssetState) {
+        if (!element) {
             return;
         }
 
@@ -87,13 +99,21 @@
             return;
         }
 
+        var previousRequest = element.__juanfiPortalAssetRequest;
+        if (previousRequest && previousRequest.key === key && previousRequest.localUrl === localUrl) {
+            return;
+        }
+        cancelAssetRequest(element);
+        var assetRequest = { key: key, localUrl: localUrl };
+        element.__juanfiPortalAssetRequest = assetRequest;
+
         var property = String(element.tagName).toUpperCase() === "LINK" ? "href" : "src";
         var state = useOpi && opiAssetIp ? "opi" : "local";
         element.__juanfiPortalAssetState = state;
         element.__juanfiPortalAssetTimeout = null;
 
         function settle(success) {
-            if (element.__juanfiPortalAssetState !== "opi") {
+            if (element.__juanfiPortalAssetRequest !== assetRequest || element.__juanfiPortalAssetState !== "opi") {
                 return;
             }
             if (element.__juanfiPortalAssetTimeout !== null) {
@@ -170,6 +190,9 @@
         var key = assetKeyFromUrl(localUrl);
         if (!element || !key) {
             if (element && localUrl) {
+                cancelAssetRequest(element);
+                element.setAttribute("data-opi-asset", "");
+                element.setAttribute("data-local-asset", "");
                 element.src = localUrl;
             }
             return;

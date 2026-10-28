@@ -170,6 +170,16 @@ test("keeps ordered JavaScript dependencies on router-local URLs", () => {
     assert.match(page, /loadDeferredScript\("eloadScript", "assets\/js\/eload\.js/);
 });
 
+test("all entrypoints invalidate cached loaders for Opi asset support", () => {
+    const expectedSource = "assets/js/core-loader.js?v=$(ip)-$(mac)-core-loader-20261028-opi-assets";
+    for (const filename of ["alogin.html", "games.html", "juanfi.html", "status.html"]) {
+        const page = fs.readFileSync(path.join(__dirname, "..", filename), "utf8");
+        const loaderTags = page.match(/<script\b[^>]*\bid="juanfiCoreLoader"[^>]*>/g) || [];
+        assert.equal(loaderTags.length, 1, `${filename} has one loader`);
+        assert.ok(loaderTags[0].includes(`src="${expectedSource}"`), `${filename} requests the current asset-capable loader`);
+    }
+});
+
 test("uses local assets when router metadata is unavailable and bounds Opi asset waits", () => {
     const css = createPortalAsset("link", "assets/css/JuanFi.css", "assets/css/JuanFi.css?v=router");
     const fallbackHarness = createHarness({ status: 503, body: "unavailable" }, null, undefined, undefined, [css]);
@@ -197,6 +207,62 @@ test("dynamic core assets use the same validated Opi URL and local fallback help
     assert.equal(audio.src, "http://192.168.88.253:8080/api/portal/static/assets/insertcoinbg.mp3?v=406");
     audio.onerror();
     assert.equal(audio.src, "assets/insertcoinbg.mp3");
+});
+
+test("dynamic status images switch sources and ignore stale callbacks and timers", () => {
+    const harness = createHarness({ status: 200, body: JSON.stringify({ ip: "192.168.88.253", version: 406 }) });
+    const image = createPortalAsset("img", "", "");
+    harness.window.juanfiSetPortalAssetSource(image, "assets/img/wifi.png");
+    const staleError = image.onerror;
+    const staleLoad = image.onload;
+    const oldTimerId = image.__juanfiPortalAssetTimeout;
+    const staleTimeout = harness.timers.get(oldTimerId).callback;
+
+    harness.window.juanfiSetPortalAssetSource(image, "assets/img/off_wifi.png");
+    const currentUrl = "http://192.168.88.253:8080/api/portal/static/assets/img/off_wifi.png?v=406";
+    assert.equal(image.src, currentUrl);
+    assert.equal(harness.timers.has(oldTimerId), false);
+    const currentTimerId = image.__juanfiPortalAssetTimeout;
+    staleError();
+    staleLoad();
+    staleTimeout();
+    assert.equal(image.src, currentUrl);
+    assert.equal(harness.timers.has(currentTimerId), true);
+
+    image.onerror();
+    assert.equal(image.src, "assets/img/off_wifi.png");
+    harness.window.juanfiSetPortalAssetSource(image, "assets/img/off_wifi.png");
+    assert.equal(image.src, "assets/img/off_wifi.png", "same-source render must retain the local fallback");
+    harness.window.juanfiSetPortalAssetSource(image, "assets/img/wifi.png");
+    assert.match(image.src, /\/wifi\.png\?v=406$/);
+});
+
+test("dynamic status images can change after success or without Opi metadata", () => {
+    for (const response of [
+        { status: 200, body: JSON.stringify({ ip: "192.168.88.253", version: 406 }) },
+        { status: 503, body: "unavailable" }
+    ]) {
+        const harness = createHarness(response);
+        const image = createPortalAsset("img", "", "");
+        harness.window.juanfiSetPortalAssetSource(image, "assets/img/wifi.png");
+        if (image.onload) image.onload();
+        harness.window.juanfiSetPortalAssetSource(image, "assets/img/off_wifi.png");
+        assert.match(image.src, /\/off_wifi\.png(?:\?v=406)?$/);
+        if (response.status !== 200) assert.equal(image.src, "assets/img/off_wifi.png");
+    }
+});
+
+test("switching to an unlisted local source cancels the old fallback", () => {
+    const harness = createHarness({ status: 200, body: JSON.stringify({ ip: "192.168.88.253", version: 406 }) });
+    const image = createPortalAsset("img", "", "");
+    harness.window.juanfiSetPortalAssetSource(image, "assets/img/wifi.png");
+    const staleError = image.onerror;
+    const oldTimerId = image.__juanfiPortalAssetTimeout;
+    harness.window.juanfiSetPortalAssetSource(image, "assets/img/no_wifi.png");
+    staleError();
+    assert.equal(image.src, "assets/img/no_wifi.png");
+    assert.equal(harness.timers.has(oldTimerId), false);
+    assert.equal(image.getAttribute("data-opi-asset"), null);
 });
 
 test("accepts RFC1918, link-local, and carrier-grade NAT Opi addresses", () => {
