@@ -1,3 +1,8 @@
+// A timed-out Opi response can still execute after the router fallback.
+// Keep classic-script globals for inline handlers, but initialize only once.
+if (!window.__juanfiGamesScriptStarted) {
+window.__juanfiGamesScriptStarted = true;
+
 function getGamesUrlParameter(name) {
     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
@@ -882,3 +887,5 @@ function initializeGamesPage() {
 $(document).ready(function () {
     initializeGamesPage();
 });
+
+}

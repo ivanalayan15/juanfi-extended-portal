@@ -19,11 +19,11 @@
             isLoggedIn = parseInt(sessiontimeInSecs) > 0;
         $(endif)
     </script>
-    <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261010">
-    <link rel="stylesheet" href="assets/css/core.css?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261010">
-    <link rel="stylesheet" href="assets/css/JuanFi.css?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261010">
-    <link rel="stylesheet" href="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261010">
-    <link rel="stylesheet" href="assets/css/games.css?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261010">
+    <link rel="stylesheet" data-opi-asset="assets/css/bootstrap.min.css" data-local-asset="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261010">
+    <link rel="stylesheet" data-opi-asset="assets/css/core.css" data-local-asset="assets/css/core.css?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261010">
+    <link rel="stylesheet" data-opi-asset="assets/css/JuanFi.css" data-local-asset="assets/css/JuanFi.css?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261010">
+    <link rel="stylesheet" data-opi-asset="assets/lib/bootstrap-icons.css" data-local-asset="assets/lib/bootstrap-icons.css?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261010">
+    <link rel="stylesheet" data-opi-asset="assets/css/games.css" data-local-asset="assets/css/games.css?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261010">
     <script src="assets/js/eload.js?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261010" defer></script>
 </head>
 
@@ -40,7 +40,7 @@
                 <i class="bi bi-arrow-left"></i> BACK
             </button>
             <div class="header-points-container d-flex align-items-center gap-1 m-0">
-                <img src="assets/img/coin.png" width="14" height="14" class="points-icon" />
+                <img data-opi-asset="assets/img/coin.png" data-local-asset="assets/img/coin.png" width="14" height="14" class="points-icon" />
                 <span id="headerPointsDisplay" class="fw-bold" style="font-size:0.82rem;color:#ffbf73;">--</span>
             </div>
         </div>
@@ -64,7 +64,7 @@
                 </div>
 
                 <div id="spinWheelCard" class="game-card d-flex align-items-center gap-3 p-3">
-                    <img src="assets/img/coin.png" alt="Spin the Wheel"
+                    <img data-opi-asset="assets/img/coin.png" data-local-asset="assets/img/coin.png" alt="Spin the Wheel"
                         style="width: 48px; height: 48px; filter: drop-shadow(0 0 4px rgba(255,191,115,0.5));"
                         onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><text x=\'50%\' y=\'50%\' font-size=\'30\' text-anchor=\'middle\' dominant-baseline=\'middle\'>🎡</text></svg>'">
                     <div class="text-start flex-grow-1">
@@ -156,7 +156,7 @@
                                 <div class="col-12 text-center">
                                     <div class="small" style="color:#9fb3d8;font-size:0.72rem;">Reward Point Balance</div>
                                     <div class="d-flex align-items-center justify-content-center gap-1">
-                                        <img src="assets/img/coin.png" width="18px" height="18px" />
+                                        <img data-opi-asset="assets/img/coin.png" data-local-asset="assets/img/coin.png" width="18px" height="18px" />
                                         <span class="availablePointsDisplay fw-bold" style="font-size:1.4rem;color:#ffbf73;">0.00</span>
                                     </div>
                                 </div>
@@ -203,9 +203,10 @@
         var interfaceName = "";
         var isLoggedIn = true;
     </script>
-    <script id="juanfiCoreLoader" src="assets/js/core-loader.js?v=$(ip)-$(mac)-core-loader-20261005"
+    <script id="juanfiCoreLoader" src="assets/js/core-loader.js?v=$(ip)-$(mac)-core-loader-20261028-opi-assets"
         data-local-core="assets/js/core.js?v=$(ip)-$(mac)-core-fallback-20261013-wallet"
-        data-games-src="assets/js/games.js?v=$(ip)-$(mac)-$(interface-name)-paymongo-20261010"></script>
+        data-games-src="assets/js/games.js?v=$(ip)-$(mac)-$(interface-name)-games-20261028-once"
+        data-local-games="assets/js/games.js?v=$(ip)-$(mac)-$(interface-name)-games-20261028-once"></script>
 </body>
 
 </html>

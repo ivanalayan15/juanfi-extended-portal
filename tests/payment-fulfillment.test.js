@@ -4,7 +4,9 @@ const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 
-const source = fs.readFileSync(path.resolve(__dirname, '../../../Opi/Opi/PortalAssets/core.js'), 'utf8');
+const canonicalCorePath = path.resolve(__dirname, '../../../Opi/Opi/PortalAssets/core.js');
+const routerCorePath = path.resolve(__dirname, '../assets/js/core.js');
+const source = fs.readFileSync(fs.existsSync(canonicalCorePath) ? canonicalCorePath : routerCorePath, 'utf8');
 const pollFunction = source.match(/function pollPortalPaymentStatus\(generation\) \{[\s\S]*?\n\}/)[0];
 
 function harness(status, extra = {}) {
