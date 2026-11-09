@@ -1099,6 +1099,329 @@ try {
 
 }
 
+// Keep only the current image and, during a slide, one bounded incoming image.
+function createPortalAdCarousel(banner, baseUrl) {
+    if (!banner || !baseUrl) return null;
+    if (banner.__portalAds && banner.__portalAds.baseUrl === baseUrl) return banner.__portalAds;
+    if (banner.__portalAds) banner.__portalAds.destroy();
+    var originalLocal = banner.getAttribute('data-local-asset') || 'assets/MainPic.PNG';
+    var wrapper = null, viewport = null, transition = null;
+    var currentReady = false;
+    var images = [], revision = '', index = 0, failed = {}, timer = null, pollTimer = null, request = null;
+    var popup = null, popupRevision = 'none', popupFailed = false;
+    var popupBackdrop = null, popupImage = null, popupImageRevision = null, popupConsumed = false, popupCleanup = null;
+    var previousFocus = null, previousBodyOverflow = '';
+    var destroyed = false, owned = false, lastConfirmed = 0;
+    var fallbackStage = 0;
+    var motion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+    var uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    var listeners = [];
+    function listen(target, name, handler) {
+        target.addEventListener(name, handler);
+        listeners.push(function () { target.removeEventListener(name, handler); });
+    }
+    function stop() { if (timer !== null) clearTimeout(timer); timer = null; }
+    function available() { return images.filter(function (item) { return !failed[item.id]; }); }
+    function closePopup(consumed) {
+        if (consumed) popupConsumed = true;
+        if (!popupBackdrop) return;
+        if (popupCleanup) popupCleanup();
+        popupCleanup = null;
+        popupBackdrop.remove();
+        popupBackdrop = null; popupImage = null; popupImageRevision = null;
+        if (document.body) document.body.style.overflow = previousBodyOverflow;
+        if (previousFocus && typeof previousFocus.focus === 'function') {
+            try { previousFocus.focus(); } catch (ignored) { }
+        }
+        previousFocus = null;
+    }
+    function showPopup() {
+        if (popupConsumed || popupFailed || !popup || !popup.hasImage) return;
+        if (!popupBackdrop) {
+            previousFocus = document.activeElement || null;
+            previousBodyOverflow = document.body ? document.body.style.overflow : '';
+            popupBackdrop = document.createElement('div');
+            popupBackdrop.className = 'portal-ad-popup-backdrop';
+            popupBackdrop.setAttribute('role', 'dialog');
+            popupBackdrop.setAttribute('aria-modal', 'true');
+            popupBackdrop.setAttribute('aria-label', 'Advertisement');
+            popupBackdrop.setAttribute('tabindex', '-1');
+            popupImage = document.createElement('img');
+            popupImage.className = 'portal-ad-popup-image';
+            popupImage.alt = 'Advertisement';
+            var closeButton = document.createElement('button');
+            closeButton.type = 'button';
+            closeButton.className = 'portal-ad-popup-close';
+            closeButton.setAttribute('aria-label', 'Close advertisement');
+            closeButton.textContent = '\u00d7';
+            popupBackdrop.appendChild(popupImage);
+            popupBackdrop.appendChild(closeButton);
+            if (document.body) document.body.appendChild(popupBackdrop);
+            if (document.body) document.body.style.overflow = 'hidden';
+            var onClose = function () { closePopup(true); };
+            var onBackdropClick = function (event) { if (event.target === popupBackdrop) closePopup(true); };
+            var onKeyDown = function (event) {
+                if (!popupBackdrop) return;
+                if (event.key === 'Escape' || event.keyCode === 27) {
+                    event.preventDefault(); closePopup(true); return;
+                }
+                if (event.key === 'Tab' || event.keyCode === 9) {
+                    event.preventDefault(); closeButton.focus();
+                }
+            };
+            var onImageError = function () { popupFailed = true; closePopup(false); };
+            closeButton.addEventListener('click', onClose);
+            popupBackdrop.addEventListener('click', onBackdropClick);
+            document.addEventListener('keydown', onKeyDown);
+            popupImage.addEventListener('error', onImageError);
+            popupCleanup = function () {
+                closeButton.removeEventListener('click', onClose);
+                popupBackdrop.removeEventListener('click', onBackdropClick);
+                document.removeEventListener('keydown', onKeyDown);
+                popupImage.removeEventListener('error', onImageError);
+            };
+            closeButton.focus();
+        }
+        popupImage.alt = 'Advertisement';
+        if (popupImageRevision !== popup.revision) {
+            popupImageRevision = popup.revision;
+            popupImage.src = baseUrl + '/ads/popup-image?revision=' + encodeURIComponent(popup.revision);
+        }
+    }
+    function applyPopup(nextPopup) {
+        var nextRevision = nextPopup.revision;
+        var changed = nextRevision !== popupRevision;
+        popup = nextPopup;
+        popupRevision = nextRevision;
+        if (changed) popupFailed = false;
+        if (!popup.hasImage) { closePopup(false); return; }
+        if (popupBackdrop && changed) { showPopup(); return; }
+        if (!popupConsumed && !popupFailed) showPopup();
+    }
+    function schedule() {
+        stop();
+        if (destroyed || document.hidden || (motion && motion.matches) || available().length < 2) return;
+        timer = setTimeout(function () { timer = null; move(1); }, 3000);
+    }
+    function claimBanner() {
+        if (owned) return;
+        owned = true;
+        // Retire loader callbacks before taking control of its existing banner.
+        if (banner.__juanfiPortalAssetTimeout != null) clearTimeout(banner.__juanfiPortalAssetTimeout);
+        banner.__juanfiPortalAssetTimeout = null;
+        banner.__juanfiPortalAssetRequest = null;
+        banner.onload = null;
+        banner.onerror = null;
+        banner.removeAttribute('data-opi-asset');
+        wrapper = document.createElement('div');
+        wrapper.className = 'portal-ad-carousel';
+        banner.parentNode.insertBefore(wrapper, banner);
+        viewport = document.createElement('div');
+        viewport.className = 'portal-ad-viewport';
+        wrapper.appendChild(viewport);
+        viewport.appendChild(banner);
+        listen(banner, 'error', imageFailed);
+        listen(banner, 'load', function () { currentReady = true; });
+    }
+    function original() {
+        claimBanner();
+        stop();
+        cancelTransition();
+        currentReady = false;
+        fallbackStage = 1;
+        updateRegion();
+        banner.alt = 'WiFi portal';
+        banner.src = baseUrl + '/static/assets/MainPic.PNG?original=true';
+    }
+    function updateRegion() {
+        if (available().length > 1) {
+            wrapper.setAttribute('role', 'region');
+            wrapper.setAttribute('aria-roledescription', 'carousel');
+            wrapper.setAttribute('aria-label', 'Advertisements');
+        } else {
+            wrapper.removeAttribute('role');
+            wrapper.removeAttribute('aria-roledescription');
+            wrapper.removeAttribute('aria-label');
+        }
+    }
+    function imageUrl(position) { return baseUrl + '/ads/' + images[position].id + '?revision=' + revision; }
+    function cancelTransition() {
+        var pending = transition;
+        transition = null;
+        if (!pending) return;
+        clearTimeout(pending.loadTimer); clearTimeout(pending.endTimer);
+        pending.image.onload = pending.image.onerror = null;
+        pending.image.removeEventListener('transitionend', pending.finished);
+        pending.image.remove();
+        viewport.classList.remove('portal-ad-sliding');
+        banner.classList.remove('portal-ad-outgoing-next', 'portal-ad-outgoing-previous');
+    }
+    function completeTransition(pending) {
+        if (destroyed || transition !== pending) return;
+        index = pending.position;
+        banner.src = pending.image.src;
+        banner.alt = 'Advertisement ' + (index + 1) + ' of ' + images.length;
+        currentReady = true;
+        cancelTransition();
+    }
+    function show(position, direction) {
+        if (destroyed || !images.length || failed[images[position].id] || transition) return;
+        var url = imageUrl(position);
+        if (!currentReady || fallbackStage || position === index || !direction || document.hidden || (motion && motion.matches)) {
+            index = position; fallbackStage = 0; currentReady = false;
+            banner.alt = 'Advertisement ' + (position + 1) + ' of ' + images.length;
+            banner.src = url;
+            schedule();
+            return;
+        }
+        stop();
+        var incoming = document.createElement('img');
+        incoming.className = 'img-fluid banner portal-ad-incoming' + (direction < 0 ? ' portal-ad-incoming-previous' : '');
+        incoming.alt = ''; incoming.setAttribute('aria-hidden', 'true');
+        var pending = { image: incoming, position: position, started: false, loadTimer: null, endTimer: null, finished: null };
+        transition = pending;
+        pending.finished = function (event) {
+            if (event.target === incoming && event.propertyName === 'transform') completeTransition(pending);
+        };
+        incoming.onload = function () {
+            if (destroyed || transition !== pending) return;
+            clearTimeout(pending.loadTimer);
+            incoming.onload = incoming.onerror = null;
+            pending.started = true;
+            // Force the off-screen position to settle before starting the slide.
+            void incoming.offsetWidth;
+            if (document.hidden || (motion && motion.matches)) { completeTransition(pending); schedule(); return; }
+            viewport.classList.add('portal-ad-sliding');
+            banner.classList.add(direction < 0 ? 'portal-ad-outgoing-previous' : 'portal-ad-outgoing-next');
+            incoming.classList.add('portal-ad-incoming-active');
+            incoming.addEventListener('transitionend', pending.finished);
+            // Finish even if a browser does not deliver transitionend.
+            pending.endTimer = setTimeout(function () { completeTransition(pending); }, 650);
+            // Start-to-start cadence is three seconds; completion adds no delay.
+            schedule();
+        };
+        incoming.onerror = function () {
+            if (destroyed || transition !== pending) return;
+            failed[images[position].id] = true;
+            cancelTransition(); updateRegion();
+            if (!available().length) original(); else move(direction);
+        };
+        viewport.appendChild(incoming);
+        pending.loadTimer = setTimeout(incoming.onerror, 8000);
+        incoming.src = url;
+    }
+    function move(direction) {
+        // Like Bootstrap, ignore repeated navigation while a slide is pending.
+        if (transition) return;
+        for (var offset = 1; offset <= images.length; offset++) {
+            var next = (index + direction * offset + images.length) % images.length;
+            if (!failed[images[next].id]) { show(next, direction); return; }
+        }
+        original();
+    }
+    function imageFailed() {
+        cancelTransition();
+        currentReady = false;
+        if (fallbackStage === 1) { fallbackStage = 2; banner.src = originalLocal; return; }
+        if (fallbackStage === 2 || !images[index]) return;
+        failed[images[index].id] = true;
+        updateRegion();
+        if (!available().length) original(); else move(1);
+    }
+    function apply(manifest) {
+        if (!manifest || !Array.isArray(manifest.images) || manifest.images.length > 10 ||
+            (manifest.revision !== 'none' && !uuid.test(manifest.revision)) ||
+            (manifest.images.length && manifest.revision === 'none')) return false;
+        var nextPopup = manifest.popup || { revision: 'none', hasImage: false };
+        if (!nextPopup || (nextPopup.revision !== 'none' && !uuid.test(nextPopup.revision)) ||
+            typeof nextPopup.hasImage !== 'boolean' ||
+            (nextPopup.hasImage && (nextPopup.revision === 'none' || !/^image\/(png|jpeg|webp)$/.test(nextPopup.contentType || '') ||
+                !Number.isInteger(nextPopup.sizeBytes) || nextPopup.sizeBytes < 1 || nextPopup.sizeBytes > 5 * 1024 * 1024 ||
+                !Number.isInteger(nextPopup.width) || nextPopup.width < 1 || nextPopup.width > 8192 ||
+                !Number.isInteger(nextPopup.height) || nextPopup.height < 1 || nextPopup.height > 8192 ||
+                nextPopup.width * nextPopup.height > 16000000 ||
+                !/^[0-9a-f]{64}$/.test(nextPopup.sha256 || ''))) ||
+            (!nextPopup.hasImage && (nextPopup.contentType != null || (nextPopup.sizeBytes || 0) !== 0 ||
+                nextPopup.width != null || nextPopup.height != null || nextPopup.sha256 != null))) return false;
+        var seen = {};
+        for (var i = 0; i < manifest.images.length; i++) {
+            var item = manifest.images[i];
+            if (!item || !uuid.test(item.id) || seen[item.id] || !/^image\/(png|jpeg|webp)$/.test(item.contentType)) return false;
+            seen[item.id] = true;
+        }
+        lastConfirmed = Date.now();
+        // Popup content has its own revision and image resource. Apply it even
+        // when the carousel revision is unchanged.
+        applyPopup(nextPopup);
+        if (revision === manifest.revision && owned) {
+            // A transient fetch failure retires a slide only until the next
+            // successful poll. Retry at that bounded cadence, not on error.
+            if (Object.keys(failed).length) {
+                failed = {};
+                updateRegion();
+                show(fallbackStage ? 0 : index);
+            }
+            return true;
+        }
+        cancelTransition(); currentReady = false;
+        revision = manifest.revision; images = manifest.images; failed = {}; index = 0;
+        claimBanner();
+        updateRegion();
+        if (!images.length) original(); else show(0);
+        return true;
+    }
+    function refresh() {
+        if (destroyed || request) return;
+        request = new XMLHttpRequest();
+        request.open('GET', baseUrl + '/ads', true); request.timeout = 8000;
+        request.onload = function () {
+            var response = request; request = null;
+            if (response.status === 200) {
+                try { apply(JSON.parse(response.responseText)); } catch (ignored) { }
+            }
+            finish();
+        };
+        request.onerror = request.ontimeout = function () { request = null; finish(); };
+        request.send();
+    }
+    function finish() {
+        if (destroyed) return;
+        if (owned && lastConfirmed && Date.now() - lastConfirmed >= 120000) {
+            revision = ''; images = []; original(); closePopup(false);
+        }
+        pollTimer = setTimeout(refresh, 30000);
+    }
+    function preferencesChanged() {
+        if ((document.hidden || (motion && motion.matches)) && transition && transition.started) completeTransition(transition);
+        schedule();
+    }
+    listen(document, 'visibilitychange', preferencesChanged);
+    if (motion) {
+        if (motion.addEventListener) listen(motion, 'change', preferencesChanged);
+        else if (motion.addListener) { motion.addListener(preferencesChanged); listeners.push(function () { motion.removeListener(preferencesChanged); }); }
+    }
+    var api = {
+        baseUrl: baseUrl,
+        destroy: function () {
+            destroyed = true; stop(); cancelTransition(); clearTimeout(pollTimer);
+            if (request) { request.onload = request.onerror = request.ontimeout = null; request.abort(); request = null; }
+            listeners.forEach(function (remove) { remove(); });
+            closePopup(false);
+            if (wrapper) { wrapper.parentNode.insertBefore(banner, wrapper); wrapper.remove(); }
+            if (owned) { banner.src = originalLocal; banner.alt = 'WiFi portal'; }
+            banner.__portalAds = null;
+        }
+    };
+    banner.__portalAds = api;
+    refresh();
+    return api;
+}
+
+function startPortalAdCarousel() {
+    var banner = document.querySelector('#headerContainer img.banner');
+    createPortalAdCarousel(banner, juanfiExtendedServerUrl);
+}
+
 function initValues() {
 
     macNoColon = replaceAll(mac, ":");
@@ -1187,6 +1510,7 @@ $(document).ready(function () {
 
     fetchServerData().then(function (server) {
         juanfiExtendedServerUrl = "http://" + server.ip + ":8080/api/portal";
+        startPortalAdCarousel();
         $('#displayVersion').html("v" + server.version);
         if (!initLoad) {
             initValues();
