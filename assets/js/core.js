@@ -1418,6 +1418,7 @@ function createPortalAdCarousel(banner, baseUrl) {
 }
 
 function startPortalAdCarousel() {
+    if (window.juanfiOpiPortalAssetsEnabled === false) return;
     var banner = document.querySelector('#headerContainer img.banner');
     createPortalAdCarousel(banner, juanfiExtendedServerUrl);
 }
@@ -5282,7 +5283,7 @@ function drawSpinWheel(mac, prizes, colors) {
     var spinCancelBtn = document.getElementById('spinCancelBtn');
     spinBtn.textContent = "SPIN";
 
-    var clickSound = new Audio('https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg');
+    var clickSound = new Audio(window.juanfiOpiPortalAssetsEnabled === false ? 'assets/insertcoinbg.mp3' : 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg');
 
 
     var expandedPrizes = [];

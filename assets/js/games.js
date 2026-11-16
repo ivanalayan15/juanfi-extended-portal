@@ -222,8 +222,8 @@ function initializeAudio(server) {
     }
 
     juanfiExtendedIp = server.ip;
-    duckRacingMusic = new Audio("http://" + server.ip + ":8080/sounds/duck-racing.mp3");
-    lobbyMusic = new Audio("http://" + server.ip + ":8080/sounds/lobby.mp3");
+    duckRacingMusic = new Audio(window.juanfiOpiPortalAssetsEnabled === false ? "sounds/duck-racing.mp3" : "http://" + server.ip + ":8080/sounds/duck-racing.mp3");
+    lobbyMusic = new Audio(window.juanfiOpiPortalAssetsEnabled === false ? "sounds/lobby.mp3" : "http://" + server.ip + ":8080/sounds/lobby.mp3");
 
     duckRacingMusic.loop = true;
     lobbyMusic.loop = true;

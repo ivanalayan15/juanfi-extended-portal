@@ -6,6 +6,9 @@
     }
     window.__juanfiCoreLoaderStarted = true;
 
+    // Until fresh router configuration arrives, use only router assets.
+    window.juanfiOpiPortalAssetsEnabled = false;
+
     var scriptElement = document.currentScript || document.getElementById("juanfiCoreLoader");
     var gamesScriptUrl = scriptElement && scriptElement.getAttribute("data-games-src");
     var localGamesUrl = scriptElement && scriptElement.getAttribute("data-local-games");
@@ -420,6 +423,12 @@
             }
         } catch (ignore) {
             // Storage is optional; the core script can fetch the same router-local file itself.
+        }
+
+        window.juanfiOpiPortalAssetsEnabled = server.enableOpiPortalAssets !== false;
+        if (!window.juanfiOpiPortalAssetsEnabled) {
+            loadLocalCore();
+            return;
         }
 
         var version = server.version === undefined || server.version === null
