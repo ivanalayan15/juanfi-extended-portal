@@ -17,6 +17,7 @@ var initLoad = false;
 
 
 var portalShellShown = false;
+var portalRenderGeneration = 0;
 var insertcoinbg = null;
 var coinCount = null;
 var TOPUP_CHARGER = "CHARGER";
@@ -1933,7 +1934,18 @@ bindEvent(window, "resize", function () {
     updateAnnouncementMarqueeSpeed(false);
 });
 
+function renderPortalVendoName(vendoIp, vendoName) {
+    var label = document.getElementById("portalVendoName");
+    if (!label) return;
+
+    var name = vendoIp && typeof vendoName === "string" ? vendoName.trim() : "";
+    label.textContent = name;
+    label.hidden = !name;
+}
+
 function renderView() {
+    var renderGeneration = ++portalRenderGeneration;
+    renderPortalVendoName();
     $("#voucherInput").val("");
     $('.modal').modal('hide');
 
@@ -1952,6 +1964,8 @@ function renderView() {
     var channelRequestGeneration = ++portalWalletChannelRequestGeneration;
     $("#wifreeBtn").addClass("hide");
     fetchPortalConfig(function (data, error) {
+        if (renderGeneration !== portalRenderGeneration) return;
+
         if (!!error) {
 
             $.toast({
@@ -1969,6 +1983,9 @@ function renderView() {
             loginOption = data.loginOption;
             dataRateOption = data.dataRateOption;
             vendorIpAddress = data.vendorIpAddress;
+            if (!isMultiVendo && !error) {
+                renderPortalVendoName(vendorIpAddress, data.vendoName);
+            }
             chargingEnable = data.chargingEnable;
             eloadEnable = data.eLoadEnable;
             showPauseTime = data.showPauseTime;
@@ -2080,7 +2097,11 @@ function renderView() {
         }
 
         setTimeout(function () {
+            if (renderGeneration !== portalRenderGeneration) return;
+
             fetchUserInfo(macNoColon, pointsEnabled, function (userData, error) {
+            if (renderGeneration !== portalRenderGeneration) return;
+
             if (pauseAwaitingUserInfoResponse) {
                 removeLoader('pauseTimeBtn');
                 pauseAwaitingUserInfoResponse = false;
@@ -2130,6 +2151,7 @@ function renderView() {
                         vendorIpAddress = dtls.vendoIp;
                         localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
                         multiVendoSelectionReady = !!vendorIpAddress;
+                        renderPortalVendoName(vendorIpAddress, dtls.vendoName);
                         multiVendoConfiguration(dtls, userData);
                     }
                 } else if (multiVendoOption == 2) {
@@ -2150,6 +2172,7 @@ function renderView() {
                         vendorIpAddress = dtls.vendoIp;
                         localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
                         multiVendoSelectionReady = !!vendorIpAddress;
+                        renderPortalVendoName(vendorIpAddress, dtls.vendoName);
                         multiVendoConfiguration(dtls, userData);
                     }
                 } else {
