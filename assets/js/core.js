@@ -656,10 +656,17 @@ function getStorageAreaMemoryCompat(areaName) {
 }
 
 function createStorageFacadeCompat(areaName) {
+    // Some WebViews expose readable storage after writes have been refused.
+    var failedChanges = Object.create(null);
+
     return {
         getItem: function (key) {
             var storageArea = resolveStorageAreaCompat(areaName);
             var memoryStore = getStorageAreaMemoryCompat(areaName);
+
+            if (Object.prototype.hasOwnProperty.call(failedChanges, key)) {
+                return failedChanges[key];
+            }
 
             if (storageArea) {
                 try {
@@ -680,8 +687,10 @@ function createStorageFacadeCompat(areaName) {
             if (storageArea) {
                 try {
                     storageArea.setItem(key, stringValue);
+                    delete failedChanges[key];
                     return true;
                 } catch (e) {
+                    failedChanges[key] = stringValue;
                 }
             }
 
@@ -696,8 +705,10 @@ function createStorageFacadeCompat(areaName) {
             if (storageArea) {
                 try {
                     storageArea.removeItem(key);
+                    delete failedChanges[key];
                     return true;
                 } catch (e) {
+                    failedChanges[key] = null;
                 }
             }
 
@@ -706,12 +717,14 @@ function createStorageFacadeCompat(areaName) {
         clear: function () {
             var storageArea = resolveStorageAreaCompat(areaName);
             storageAreaCompatMemory[areaName] = {};
+            failedChanges = Object.create(null);
 
             if (storageArea) {
                 try {
                     storageArea.clear();
                     return true;
                 } catch (e) {
+                    storageAreaCompatCache[areaName] = null;
                 }
             }
 
@@ -1090,14 +1103,16 @@ if (isTestMode) {
     $("#serverStatus").addClass("hide");
 }
 
-try {
+if (!isTestMode) {
     setTimeout(function () {
-        if (window.history && typeof window.history.replaceState === 'function') {
-            window.history.replaceState({}, document.title, getRootUrl());
+        try {
+            if (window.history && typeof window.history.replaceState === 'function') {
+                window.history.replaceState({}, document.title, getRootUrl());
+            }
+        } catch (ignored) {
+            // Captive browsers can restrict history updates.
         }
-    }, 100)
-} catch (e) {
-
+    }, 100);
 }
 
 // Keep only the current image and, during a slide, one bounded incoming image.
@@ -1510,6 +1525,7 @@ $(document).ready(function () {
         return;
     }
 
+    renderPortalVendoName();
     fetchServerData().then(function (server) {
         juanfiExtendedServerUrl = "http://" + server.ip + ":8080/api/portal";
         startPortalAdCarousel();
@@ -1934,13 +1950,58 @@ bindEvent(window, "resize", function () {
     updateAnnouncementMarqueeSpeed(false);
 });
 
-function renderPortalVendoName(vendoIp, vendoName) {
+function renderPortalVendoName(vendoIp, vendoName, usePicker) {
+    var header = document.getElementById("headerContainer");
+    var banner = header && header.querySelector("img.banner");
+    if (!banner) return;
+
+    var host = banner.parentNode;
+    while (host !== header && host.parentNode !== header) {
+        host = host.parentNode;
+    }
+
     var label = document.getElementById("portalVendoName");
-    if (!label) return;
+    if (!label) {
+        label = document.createElement("span");
+        label.id = "portalVendoName";
+    }
+
+    if (label.parentNode !== host) {
+        var hostStyle = getComputedStyleCompat(host);
+        if (hostStyle && hostStyle.position === "static") {
+            host.style.position = "relative";
+        }
+
+        label.className = "";
+        label.style.cssText =
+            "position:absolute;top:9px;left:8px;z-index:2;max-width:55%;box-sizing:border-box;" +
+            "margin:0;padding:4px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" +
+            "color:#222321;background-color:#c9c8b9;" +
+            "background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.1) 0,rgba(255,255,255,.1) 1px," +
+            "transparent 1px,transparent 3px)," +
+            "linear-gradient(112deg,#dedccf,#bdbcae);" +
+            "font:700 11px/1.2 system-ui,sans-serif;letter-spacing:.02em;pointer-events:none;" +
+            "transform:rotate(-7deg);transform-origin:right center;" +
+            "clip-path:polygon(2% 0,98% 0,96% 17%,100% 27%,97% 43%,100% 57%,97% 76%,99% 100%," +
+            "1% 100%,3% 83%,0 68%,3% 53%,0 38%,3% 23%,0 12%);";
+        host.appendChild(label);
+    }
 
     var name = vendoIp && typeof vendoName === "string" ? vendoName.trim() : "";
-    label.textContent = name;
-    label.hidden = !name;
+    label.textContent = name || "No vendo";
+    label.hidden = usePicker === true && !!name;
+}
+
+function showPortalDisconnected() {
+    $("#connectionDot").attr("class", "connection-dot blinking-dot-red").attr("title", "Disconnected");
+    setRemainingTimeConnectionState(false);
+    if (typeof window.juanfiSetPortalAssetSource === 'function') {
+        window.juanfiSetPortalAssetSource($("#statusImg")[0], "assets/img/off_wifi.png");
+    } else {
+        $("#statusImg").attr("src", "assets/img/off_wifi.png");
+    }
+    $("#statusImg").removeClass("hide").removeClass("blinking2").addClass("blinking1");
+    showResumeButton();
 }
 
 function renderView() {
@@ -2109,7 +2170,12 @@ function renderView() {
             }
 
             if (!!error) {
-
+                if (remainingTimer != null) {
+                    clearInterval(remainingTimer);
+                    remainingTimer = null;
+                }
+                updateLastKnownVoucherSessionState(false, lastKnownVoucherSessionState.timeRemaining);
+                showPortalDisconnected();
                 $.toast({
                     title: 'Failed',
                     content: error || 'Server request failed. Try again later.',
@@ -2220,6 +2286,7 @@ function renderView() {
                             }
                         }
 
+                        renderPortalVendoName(vendorIpAddress, dtls && dtls.vendoName, !!userData);
                         if (!!dtls) {
                             selectedVendoDtls = dtls;
                             wheelConfig = selectedVendoDtls.wheelConfig;
@@ -2344,16 +2411,7 @@ function renderView() {
                     $("#remainingTimeWrapper").addClass("hide");
                 }
 
-                $("#connectionDot").attr("class", "connection-dot blinking-dot-red").attr("title", "Disconnected");
-                setRemainingTimeConnectionState(false);
-                if (typeof window.juanfiSetPortalAssetSource === 'function') {
-                    window.juanfiSetPortalAssetSource($("#statusImg")[0], "assets/img/off_wifi.png");
-                } else {
-                    $("#statusImg").attr("src", "assets/img/off_wifi.png");
-                }
-                $("#statusImg").removeClass("hide");
-                $("#statusImg").addClass("blinking1");
-                showResumeButton();
+                showPortalDisconnected();
             }
 
             if (!!timeExpiry) {
@@ -3863,6 +3921,7 @@ function applyUserInfoState(data, macNoColon, options) {
         return null;
     }
 
+    normalizedData.isOnline = !isPersistedFallback && normalizedData.isOnline === true;
     setUserInfoOfflineFallbackState(isPersistedFallback);
     userInfo = data;
     voucherCode = normalizedData.voucherCode || "";
@@ -6021,8 +6080,8 @@ function addLoader(buttonId) {
 
     var spinner = document.createElement('span');
     spinner.className = 'spinner-border spinner-border-sm me-2';
-    spinner.role = 'status';
-    spinner.ariaHidden = true;
+    spinner.setAttribute('role', 'status');
+    spinner.setAttribute('aria-hidden', 'true');
     spinner.setAttribute('data-spinner', "true");
 
     prependNode(btn, spinner);
@@ -6076,7 +6135,7 @@ $.toast = function (options) {
     var toastEl = document.createElement('div');
     toastEl.className = 'toast align-items-center ' + bgClass + ' border-0 mb-2';
     toastEl.style.pointerEvents = 'auto';
-    toastEl.role = 'alert';
+    toastEl.setAttribute('role', 'alert');
     toastEl.setAttribute('aria-live', 'assertive');
     toastEl.setAttribute('aria-atomic', 'true');
 

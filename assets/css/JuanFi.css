@@ -355,7 +355,8 @@ body {
 /** spin to redeem styles **/
 /* wheel canvas */
 #wheelCanvas {
-  width: min(520px, 92vw);
+  width: 92vw;
+  max-width: 520px;
   height: auto;
   border-radius:50%;
   border:10px solid rgba(0,0,0,0.08);
@@ -652,7 +653,8 @@ body.portal-body .portal-payment-qr-wrap.hide {
 }
 
 body.portal-body .portal-payment-qr {
-    width: min(100%, 360px);
+    width: 100%;
+    max-width: 360px;
     height: auto;
     border: 1px solid #e2e7f0;
     border-radius: 12px;

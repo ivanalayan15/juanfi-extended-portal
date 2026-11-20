@@ -14,7 +14,7 @@
     var localGamesUrl = scriptElement && scriptElement.getAttribute("data-local-games");
     var localCoreUrl = scriptElement && scriptElement.getAttribute("data-local-core");
     var requestUrl = "/juanfi-extended.json?t=" + new Date().getTime();
-    var request = new XMLHttpRequest();
+    var request;
     var requestTimeoutId = null;
     var requestCompleted = false;
     var failed = false;
@@ -220,7 +220,7 @@
         var panel = document.createElement("div");
         panel.id = "juanfiCoreLoadFailure";
         panel.setAttribute("role", "alert");
-        panel.style.cssText = "position:fixed;z-index:2147483647;inset:0 0 auto 0;padding:16px;background:#fff;color:#222;border-bottom:1px solid #bbb;font:16px sans-serif;text-align:center";
+        panel.style.cssText = "position:fixed;z-index:2147483647;top:0;right:0;left:0;padding:16px;background:#fff;color:#222;border-bottom:1px solid #bbb;font:16px sans-serif;text-align:center";
 
         var message = document.createElement("p");
         message.textContent = "JuanFi could not connect to this installation. Check your connection and try again.";
@@ -464,6 +464,12 @@
         loadLocalCore();
     }
 
+    if (window.location.protocol === "file:") {
+        loadLocalCore();
+        return;
+    }
+
+    request = new XMLHttpRequest();
     request.open("GET", requestUrl, true);
     request.timeout = routerJsonTimeoutMs;
     request.onload = function () {
