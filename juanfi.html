@@ -13,7 +13,7 @@
 
     <link rel="stylesheet" data-opi-asset="assets/css/bootstrap.min.css" data-local-asset="assets/css/bootstrap.min.css?v=$(ip)-$(mac)-$(interface-name)-ewallet-20261009">
     <link rel="stylesheet" data-opi-asset="assets/css/core.css" data-local-asset="assets/css/core.css?v=$(ip)-$(mac)-$(interface-name)-ewallet-20261009">
-    <link rel="stylesheet" data-opi-asset="assets/css/JuanFi.css" data-local-asset="assets/css/JuanFi.css?v=$(ip)-$(mac)-$(interface-name)-ads-display-mode-20261109">
+    <link rel="stylesheet" data-opi-asset="assets/css/JuanFi.css" data-local-asset="assets/css/JuanFi.css?v=$(ip)-$(mac)-$(interface-name)-mobile-width-20261120">
 
     <script>
         var loginError = "";
@@ -24,10 +24,7 @@
         var interfaceName = "$(interface-name)";
         var remainingTimer = null;
         var sessiontimeInSecs = "$(session-time-left-secs)";
-        var isLoggedIn = false;
-        $(if logged-in)
-            isLoggedIn = parseInt(sessiontimeInSecs) > 0;
-        $(endif)
+        var isLoggedIn = "$(logged-in)" === "yes" && parseInt(sessiontimeInSecs, 10) > 0;
     </script>
     <script>
         var eloadAssetsState = "idle";
@@ -218,8 +215,8 @@
     <script src="assets/js/jquery.min.js?v=$(ip)-$(mac)-$(interface-name)-ewallet-20261009" defer></script>
     <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)-$(interface-name)-ewallet-20261009" defer></script>
     <script src="assets/js/cache.js?v=$(ip)-$(mac)-$(interface-name)-ewallet-20261009" defer></script>
-    <script id="juanfiCoreLoader" src="assets/js/core-loader.js?v=$(ip)-$(mac)-core-loader-20261028-opi-assets"
-        data-local-core="assets/js/core.js?v=$(ip)-$(mac)-core-fallback-20261120-vendo-name" defer></script>
+    <script id="juanfiCoreLoader" src="assets/js/core-loader.js?v=$(ip)-$(mac)-core-loader-20261120-safari"
+        data-local-core="assets/js/core.js?v=$(ip)-$(mac)-core-fallback-20261120-safari" defer></script>
 </head>
 
 <body class="portal-body col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2 ">
@@ -851,13 +848,16 @@
 
 
     <script>
-        $(if refresh - timeout)
+        // $(if refresh - timeout)
+        var refreshSeconds = Number("$(refresh - timeout - secs)");
+        if (refreshSeconds > 0 && refreshSeconds <= 2147483) {
             setInterval(function () {
-                if (!insertingCoin) {
+                if (typeof newLogin === "function" && !insertingCoin) {
                     newLogin();
                 }
-            }, $(refresh - timeout - secs) * 1000);
-        $(endif)
+            }, refreshSeconds * 1000);
+        }
+        // $(endif)
     </script>
 
 
