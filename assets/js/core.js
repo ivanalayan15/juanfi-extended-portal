@@ -1992,6 +1992,57 @@ function renderPortalVendoName(vendoIp, vendoName, usePicker) {
     label.hidden = usePicker === true && !!name;
 }
 
+function renderPortalVendoHeader(vendoIp, vendoName, showPortalHeader, usePicker) {
+    var resolvedVendoIp = typeof vendoIp === "string" ? vendoIp.trim() : "";
+    if (resolvedVendoIp && showPortalHeader === false) {
+        $("#headerContainer").addClass("hide");
+    } else {
+        $("#headerContainer").removeClass("hide");
+    }
+    renderPortalVendoName(resolvedVendoIp, vendoName, usePicker);
+}
+
+function findPortalVendo(vendos, field, value) {
+    for (var i = 0; i < vendos.length; i++) {
+        if (vendos[i] && vendos[i][field] === value) {
+            return vendos[i];
+        }
+    }
+    return null;
+}
+
+function renderPortalHeaderFromConfig(config) {
+    if (!config.isMultiVendo) {
+        renderPortalVendoHeader(config.vendorIpAddress, config.vendoName, config.showPortalHeader);
+        return;
+    }
+
+    var vendos = config.multiVendoAddresses || [];
+    var option = Number(config.multiVendoOption);
+    var field = "vendoIp";
+    var value;
+    var selected;
+    if (option === 1) {
+        field = "hotspotAddress";
+        value = typeof hotspotAddress === "string" ? hotspotAddress.split(":")[0] : "";
+    } else if (option === 2) {
+        field = "interfaceName";
+        value = typeof interfaceName === "string" ? interfaceName : "";
+    } else {
+        value = getStorageValue("selectedVendo");
+        if (!value || value === "null") {
+            selected = vendos[0];
+        }
+    }
+
+    if (!selected && typeof value === "string" && value.trim() !== "" && value.indexOf("$(") === -1) {
+        selected = findPortalVendo(vendos, field, value);
+    }
+
+    renderPortalVendoHeader(selected && selected.vendoIp, selected && selected.vendoName,
+        selected && selected.showPortalHeader);
+}
+
 function showPortalDisconnected() {
     $("#connectionDot").attr("class", "connection-dot blinking-dot-red").attr("title", "Disconnected");
     setRemainingTimeConnectionState(false);
@@ -2027,6 +2078,9 @@ function renderView() {
     fetchPortalConfig(function (data, error) {
         if (renderGeneration !== portalRenderGeneration) return;
 
+        if (data && !error) {
+            renderPortalHeaderFromConfig(data);
+        }
         if (!!error) {
 
             $.toast({
@@ -2044,9 +2098,6 @@ function renderView() {
             loginOption = data.loginOption;
             dataRateOption = data.dataRateOption;
             vendorIpAddress = data.vendorIpAddress;
-            if (!isMultiVendo && !error) {
-                renderPortalVendoName(vendorIpAddress, data.vendoName);
-            }
             chargingEnable = data.chargingEnable;
             eloadEnable = data.eLoadEnable;
             showPauseTime = data.showPauseTime;
@@ -2092,12 +2143,6 @@ function renderView() {
                 $("#historyContainer").addClass("hide");
                 $("#historyTab").addClass("hide");
                 $("#history").addClass("hide");
-            }
-
-            if (!data.showPortalHeader) {
-                $("#headerContainer").addClass("hide");
-            } else {
-                $("#headerContainer").removeClass("hide");
             }
         }
 
@@ -2205,19 +2250,12 @@ function renderView() {
                 if (multiVendoOption == 1) {
                     $("#vendoSelectDiv").addClass("hide");
                     var currentHotspot = hotspotAddress.split(":")[0];
-                    var dtls = null;
-                    for (var i = 0; i < multiVendoAddresses.length; i++) {
-                        if (multiVendoAddresses[i].hotspotAddress === currentHotspot) {
-                            dtls = multiVendoAddresses[i];
-                            break;
-                        }
-                    }
+                    var dtls = findPortalVendo(multiVendoAddresses, "hotspotAddress", currentHotspot);
                     if (!!dtls) {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
                         localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
                         multiVendoSelectionReady = !!vendorIpAddress;
-                        renderPortalVendoName(vendorIpAddress, dtls.vendoName);
                         multiVendoConfiguration(dtls, userData);
                     }
                 } else if (multiVendoOption == 2) {
@@ -2226,19 +2264,12 @@ function renderView() {
                     if (vendoSelectOption) {
                         vendoSelectOption.onchange = null;
                     }
-                    var dtls = null;
-                    for (var i = 0; i < multiVendoAddresses.length; i++) {
-                        if (multiVendoAddresses[i].interfaceName === interfaceName) {
-                            dtls = multiVendoAddresses[i];
-                            break;
-                        }
-                    }
+                    var dtls = findPortalVendo(multiVendoAddresses, "interfaceName", interfaceName);
                     if (!!dtls) {
                         selectedVendoDtls = dtls;
                         vendorIpAddress = dtls.vendoIp;
                         localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
                         multiVendoSelectionReady = !!vendorIpAddress;
-                        renderPortalVendoName(vendorIpAddress, dtls.vendoName);
                         multiVendoConfiguration(dtls, userData);
                     }
                 } else {
@@ -2275,18 +2306,16 @@ function renderView() {
                     $("#vendoSelected").val(vendorIpAddress);
                     var vendoSelectOption = document.getElementById("vendoSelected");
                     vendoSelectOption.onchange = function () {
+                        if (renderGeneration !== portalRenderGeneration) return;
                         vendorIpAddress = $("#vendoSelected").val();
                         setStorageValue('selectedVendo', vendorIpAddress);
                         localStorageCompat.setItem('vendorIpAddress', vendorIpAddress);
-                        var dtls = null;
-                        for (var i = 0; i < multiVendoAddresses.length; i++) {
-                            if (multiVendoAddresses[i].vendoIp === vendorIpAddress) {
-                                dtls = multiVendoAddresses[i];
-                                break;
-                            }
-                        }
+                        var dtls = findPortalVendo(multiVendoAddresses, "vendoIp", vendorIpAddress);
 
-                        renderPortalVendoName(vendorIpAddress, dtls && dtls.vendoName, !!userData);
+                        if (data && !error) {
+                            renderPortalVendoHeader(dtls && dtls.vendoIp, dtls && dtls.vendoName,
+                                dtls && dtls.showPortalHeader, !!userData);
+                        }
                         if (!!dtls) {
                             selectedVendoDtls = dtls;
                             wheelConfig = selectedVendoDtls.wheelConfig;
@@ -2593,11 +2622,6 @@ function multiVendoConfiguration(vendo, user) {
         $("#historyContainer").removeClass("hide");
         $("#historyTab").removeClass("hide");
         $("#history").removeClass("hide");
-    }
-    if (!vendo.showPortalHeader) {
-        $("#headerContainer").addClass("hide");
-    } else {
-        $("#headerContainer").removeClass("hide");
     }
     if (!vendo.wheelConfig) {
         $("#spinRedeemBtn").addClass("hide");
