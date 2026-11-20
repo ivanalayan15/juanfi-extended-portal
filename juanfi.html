@@ -219,7 +219,7 @@
     <script src="assets/js/bootstrap.bundle.min.js?v=$(ip)-$(mac)-$(interface-name)-ewallet-20261009" defer></script>
     <script src="assets/js/cache.js?v=$(ip)-$(mac)-$(interface-name)-ewallet-20261009" defer></script>
     <script id="juanfiCoreLoader" src="assets/js/core-loader.js?v=$(ip)-$(mac)-core-loader-20261028-opi-assets"
-        data-local-core="assets/js/core.js?v=$(ip)-$(mac)-core-fallback-20261109-popup-carousel-separation" defer></script>
+        data-local-core="assets/js/core.js?v=$(ip)-$(mac)-core-fallback-20261120-vendo-name" defer></script>
 </head>
 
 <body class="portal-body col-xxl-4 col-xl-4 col-lg-6 col-md-8 col-sm-9 col-12 mx-auto pt-3 px-2 ">
@@ -330,6 +330,7 @@
         <div class="tab-content mt-3" id="myTabContent">
             <div class="tab-pane fade show active" id="home" role="tabpanel">
                 <div class="d-flex flex-column pt-2">
+                    <p id="portalVendoName" class="small fw-bold text-break mb-2" hidden></p>
                     <div id="vendoSelectDiv" class="mb-3">
                         <label for="vendoSelected">Select Vendo</label>
                         <select class="form-control fullwidth" name="vendoSelected" id="vendoSelected">
