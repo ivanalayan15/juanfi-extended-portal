@@ -4202,10 +4202,12 @@ function finishPortalPayment(status, reference, creditedPoints) {
         delay: 5000
     });
 
-    if (isSuccess || isPointsCredit) {
+    clearPortalPaymentRequestId(completedVoucher, completedPlan, completedRequestId);
+    if (isSuccess) {
+        window.location.reload();
+    } else if (isPointsCredit) {
         refreshPortalUserInfoAfterPayment();
     }
-    clearPortalPaymentRequestId(completedVoucher, completedPlan, completedRequestId);
 }
 
 function createPortalPaymentRequestId() {
